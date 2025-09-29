@@ -60,15 +60,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
   const { showSuccess, showWarning } = useNotification();
 
-  // ADD this useEffect to your existing NavigationPanel.tsx:
-  useEffect(() => {
-    console.log("NavigationPanel: Props updated!", {
-      viewsCount: views.length,
-      viewGroupsCount: viewGroups.length,
-      userNavSettingsCount: userNavSettings.length,
-    });
-  }, [views, viewGroups, userNavSettings]); // This should trigger when DashboardDock state updates
-
   const toggleViewGroupExpansion = (viewGroupId: string) => {
     setExpandedViewGroups((prev) => ({
       ...prev,

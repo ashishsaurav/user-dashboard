@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useState } from "react";
-import DockLayout, { LayoutData, PanelData, TabData } from "rc-dock";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import DockLayout, { LayoutData } from "rc-dock";
 import "rc-dock/dist/rc-dock.css";
+import "rc-dock/dist/rc-dock-dark.css"; // Keep this for dark theme
 import {
   User,
   View,
@@ -10,6 +11,8 @@ import {
   Widget,
 } from "../types";
 import {
+  testReports,
+  testWidgets,
   getUserNavigationData,
   initializeUserNavigationData,
 } from "../data/testData";
@@ -24,29 +27,28 @@ interface DashboardDockProps {
   onLogout: () => void;
 }
 
-// Icons for buttons - properly sized
+// Icons for buttons - properly sized (keeping your existing icons)
 const SettingsIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="white"
+    stroke="currentColor"
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M12 20V10" />
-    <path d="M18 20V4" />
-    <path d="M6 20v-6" />
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.4a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
 const NavigationIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -59,8 +61,8 @@ const NavigationIcon = () => (
 
 const ReportsIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -76,8 +78,8 @@ const ReportsIcon = () => (
 
 const WidgetsIcon = () => (
   <svg
-    width="16"
-    height="16"
+    width="14"
+    height="14"
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -91,21 +93,37 @@ const WidgetsIcon = () => (
 );
 
 // Button icons - smaller for buttons
-const NavigationButtonIcon = () => (
+const ManageIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    width="16"
-    height="16"
+    width="12"
+    height="12"
     viewBox="0 0 24 24"
     fill="none"
-    stroke="white"
+    stroke="currentColor"
     strokeWidth="2"
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M4 6h16" />
-    <path d="M4 12h16" />
-    <path d="M4 18h16" />
+    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+  </svg>
+);
+
+const SettingsSmallIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="12"
+    height="12"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <circle cx="12" cy="12" r="3" />
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.4a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
   </svg>
 );
 
@@ -149,14 +167,58 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const [showNavigationModal, setShowNavigationModal] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  // Navigation state with default data
+  // RC-DOCK REF for updates
+  const dockLayoutRef = useRef<DockLayout>(null);
+
+  // Apply RC-Dock theme classes properly when theme changes
+  useEffect(() => {
+    // Apply theme to document root for global theming
+    document.documentElement.setAttribute("data-theme", theme);
+
+    // Apply RC-Dock theme classes to the dock layout container
+    const dockContainer = document.querySelector(".dock-container");
+    const dockLayoutElement = document.querySelector(".dock-layout");
+
+    if (dockContainer) {
+      // Remove all theme classes first
+      dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
+
+      // Add appropriate theme class
+      if (theme === "dark") {
+        dockContainer.classList.add("dock-layout-dark");
+      } else {
+        dockContainer.classList.add("dock-layout-light");
+      }
+    }
+
+    if (dockLayoutElement) {
+      // Remove all theme classes first
+      dockLayoutElement.classList.remove(
+        "dock-layout-dark",
+        "dock-layout-light"
+      );
+
+      // Add appropriate theme class
+      if (theme === "dark") {
+        dockLayoutElement.classList.add("dock-layout-dark");
+      } else {
+        dockLayoutElement.classList.add("dock-layout-light");
+      }
+    }
+
+    // Also apply to body for global theme switching
+    document.body.setAttribute("data-theme", theme);
+
+    console.log(`Theme switched to: ${theme}`);
+  }, [theme]);
+
+  // Navigation state management (keeping your original logic)
   const [views, setViews] = useState<View[]>(() => {
     const savedViews = sessionStorage.getItem(`navigationViews_${user.name}`);
     if (savedViews) {
       return JSON.parse(savedViews);
     }
 
-    // Get default views from test data
     const defaultData = getUserNavigationData(user.name);
     if (defaultData) {
       const defaultViews = defaultData.views;
@@ -167,7 +229,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       return defaultViews;
     }
 
-    // Initialize new user with default structure
     const newUserData = initializeUserNavigationData(user.name);
     sessionStorage.setItem(
       `navigationViews_${user.name}`,
@@ -184,7 +245,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       return JSON.parse(savedGroups);
     }
 
-    // Get default view groups from test data
     const defaultData = getUserNavigationData(user.name);
     if (defaultData) {
       const defaultViewGroups = defaultData.viewGroups;
@@ -195,7 +255,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       return defaultViewGroups;
     }
 
-    // Initialize new user with default structure
     const newUserData = initializeUserNavigationData(user.name);
     sessionStorage.setItem(
       `navigationViewGroups_${user.name}`,
@@ -213,7 +272,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         return JSON.parse(savedSettings);
       }
 
-      // Get default navigation settings from test data
       const defaultData = getUserNavigationData(user.name);
       if (defaultData) {
         const defaultSettings = defaultData.navigationSettings;
@@ -224,7 +282,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         return defaultSettings;
       }
 
-      // Initialize new user with default structure
       const newUserData = initializeUserNavigationData(user.name);
       sessionStorage.setItem(
         `navigationSettings_${user.name}`,
@@ -234,88 +291,50 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   );
 
-  // REPLACE the existing saveToSessionStorage useEffect with this:
-  useEffect(() => {
-    try {
-      sessionStorage.setItem(
-        `navigationViews_${user.name}`,
-        JSON.stringify(views)
-      );
-      sessionStorage.setItem(
-        `navigationViewGroups_${user.name}`,
-        JSON.stringify(viewGroups)
-      );
-      sessionStorage.setItem(
-        `navigationSettings_${user.name}`,
-        JSON.stringify(navSettings)
-      ); // Fixed: use navSettings
-
-      console.log("DashboardDock state updated and saved:", {
-        viewsCount: views.length,
-        viewGroupsCount: viewGroups.length,
-        navSettings: navSettings,
-      });
-    } catch (error) {
-      console.error("Error saving to session storage:", error);
-    }
-  }, [views, viewGroups, navSettings, user.name]); // Fixed: use navSettings instead of userNavSettings
-
-  // UPDATE these handlers to ensure state updates:
-  const handleUpdateViews = useCallback((updatedViews: View[]) => {
-    console.log(
-      "DashboardDock: handleUpdateViews called with:",
-      updatedViews.length,
-      "views"
-    );
+  // State handlers
+  const handleUpdateViews = (updatedViews: View[]) => {
     const sortedViews = [...updatedViews].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
-    setViews(sortedViews); // This triggers the NavigationPanel re-render
-  }, []);
+    setViews(sortedViews);
+    sessionStorage.setItem(
+      `navigationViews_${user.name}`,
+      JSON.stringify(sortedViews)
+    );
+  };
 
-  const handleUpdateViewGroups = useCallback(
-    (updatedViewGroups: ViewGroup[]) => {
-      console.log(
-        "DashboardDock: handleUpdateViewGroups called with:",
-        updatedViewGroups.length,
-        "groups"
-      );
-      const sortedGroups = [...updatedViewGroups].sort(
-        (a, b) => (a.order || 0) - (b.order || 0)
-      );
-      setViewGroups(sortedGroups); // This triggers the NavigationPanel re-render
-    },
-    []
-  );
+  const handleUpdateViewGroups = (updatedViewGroups: ViewGroup[]) => {
+    const sortedGroups = [...updatedViewGroups].sort(
+      (a, b) => (a.order || 0) - (b.order || 0)
+    );
+    setViewGroups(sortedGroups);
+    sessionStorage.setItem(
+      `navigationViewGroups_${user.name}`,
+      JSON.stringify(sortedGroups)
+    );
+  };
 
-  const handleUpdateNavSettings = useCallback(
-    (settings: UserNavigationSettings) => {
-      console.log("DashboardDock: handleUpdateNavSettings called");
-      setNavSettings(settings); // This triggers the NavigationPanel re-render
-    },
-    []
-  );
+  const handleUpdateNavSettings = (settings: UserNavigationSettings) => {
+    setNavSettings(settings);
+    sessionStorage.setItem(
+      `navigationSettings_${user.name}`,
+      JSON.stringify(settings)
+    );
+  };
 
   const handleAddView = (newView: View, viewGroupIds?: string[]) => {
-    console.log("Adding new view:", newView.name, "to groups:", viewGroupIds);
-    // Add the new view to views array
     const updatedViews = [...views, newView];
     handleUpdateViews(updatedViews);
 
-    // Add view to selected view groups
     if (viewGroupIds && viewGroupIds.length > 0) {
       const updatedViewGroups = viewGroups.map((vg) => {
         if (viewGroupIds.includes(vg.id)) {
-          return {
-            ...vg,
-            viewIds: [...vg.viewIds, newView.id],
-          };
+          return { ...vg, viewIds: [...vg.viewIds, newView.id] };
         }
         return vg;
       });
       handleUpdateViewGroups(updatedViewGroups);
     } else {
-      // If no viewGroupIds specified, add to default group
       const defaultGroup = viewGroups.find((vg) => vg.isDefault);
       if (defaultGroup) {
         const updatedViewGroups = viewGroups.map((vg) =>
@@ -329,20 +348,16 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   };
 
   const handleAddViewGroup = (newViewGroup: ViewGroup) => {
-    console.log("Adding new view group:", newViewGroup.name);
     const updatedViewGroups = [...viewGroups, newViewGroup];
     handleUpdateViewGroups(updatedViewGroups);
   };
 
-  const ThemeIcon = () =>
-    theme === "light" ? <ThemeIconLight /> : <ThemeIconDark />;
-
-  // Get user's accessible reports and widgets
   const getUserAccessibleReports = (): Report[] => {
     const savedReports = sessionStorage.getItem("reports");
     const systemReports: Report[] = savedReports
       ? JSON.parse(savedReports)
-      : [];
+      : testReports;
+
     return user.role === "admin"
       ? systemReports
       : systemReports.filter((report: Report) =>
@@ -354,7 +369,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     const savedWidgets = sessionStorage.getItem("widgets");
     const systemWidgets: Widget[] = savedWidgets
       ? JSON.parse(savedWidgets)
-      : [];
+      : testWidgets;
+
     return user.role === "admin"
       ? systemWidgets
       : systemWidgets.filter((widget: Widget) =>
@@ -362,29 +378,75 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         );
   };
 
-  // Already defined in the state management methods above
-
-  // Convert navSettings to array format for compatibility
   const userNavSettingsArray = navSettings ? [navSettings] : [];
 
-  // Navigation Panel Component
-  interface NavigationPanelProps {
-    user: User;
-    views: View[];
-    viewGroups: ViewGroup[];
-    userNavSettings: UserNavigationSettings[];
-    reports: Report[];
-    widgets: Widget[];
-    onUpdateViews: (updatedViews: View[]) => void;
-    onUpdateViewGroups: (updatedViewGroups: ViewGroup[]) => void;
-    onUpdateNavSettings: (settings: UserNavigationSettings[]) => void;
-    onAddView: (newView: View, viewGroupIds?: string[]) => void;
-    onAddViewGroup: (newViewGroup: ViewGroup) => void;
-  }
+  // Create NavigationPanel content
+  const createNavigationContent = useCallback(() => {
+    return (
+      <NavigationPanel
+        user={user}
+        views={views}
+        viewGroups={viewGroups}
+        userNavSettings={userNavSettingsArray}
+        reports={getUserAccessibleReports()}
+        widgets={getUserAccessibleWidgets()}
+        onUpdateViews={handleUpdateViews}
+        onUpdateViewGroups={handleUpdateViewGroups}
+        onUpdateNavSettings={handleUpdateNavSettings}
+      />
+    );
+  }, [user, views, viewGroups, userNavSettingsArray]);
 
-  const ReportsPanel = () => <div className="reports-panel"></div>;
-  const WidgetsPanel = () => <div className="widgets-panel"></div>;
+  // RC-DOCK UPDATE using updateTab API
+  useEffect(() => {
+    if (dockLayoutRef.current) {
+      const updated = dockLayoutRef.current.updateTab("navigation", {
+        id: "navigation",
+        title: (
+          <div className="dock-tab-header navigation-tab-header">
+            <div className="tab-title">
+              <NavigationIcon />
+              <span>Navigation</span>
+            </div>
+            <div className="tab-actions">
+              <button
+                className="tab-action-btn manage-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowNavigationModal(true);
+                }}
+                title="Manage Navigation"
+              >
+                <ManageIcon />
+              </button>
+              {user.role === "admin" && (
+                <button
+                  className="tab-action-btn settings-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowManageModal(true);
+                  }}
+                  title="System Settings"
+                >
+                  <SettingsSmallIcon />
+                </button>
+              )}
+            </div>
+          </div>
+        ),
+        content: createNavigationContent(),
+        closable: false,
+      });
 
+      if (!updated) {
+        console.warn("Failed to update navigation tab");
+      }
+    }
+  }, [views, viewGroups, navSettings, createNavigationContent, user.role]);
+
+  const ThemeIcon = theme === "light" ? ThemeIconLight : ThemeIconDark;
+
+  // Dock layout with proper theme class application
   const layout: LayoutData = {
     dockbox: {
       mode: "horizontal",
@@ -394,53 +456,38 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             {
               id: "navigation",
               title: (
-                <div className="dock-tab-simple navigation-tab">
-                  <div className="tab-title-section">
+                <div className="dock-tab-header navigation-tab-header">
+                  <div className="tab-title">
                     <NavigationIcon />
                     <span>Navigation</span>
                   </div>
-                  <div className="tab-controls">
+                  <div className="tab-actions">
                     <button
-                      className="tab-btn primary"
+                      className="tab-action-btn manage-btn"
                       onClick={(e) => {
                         e.stopPropagation();
                         setShowNavigationModal(true);
                       }}
                       title="Manage Navigation"
                     >
-                      <NavigationButtonIcon />
+                      <ManageIcon />
                     </button>
                     {user.role === "admin" && (
                       <button
-                        className="tab-btn secondary"
+                        className="tab-action-btn settings-btn"
                         onClick={(e) => {
                           e.stopPropagation();
                           setShowManageModal(true);
                         }}
-                        title="Manage Reports & Widgets"
+                        title="System Settings"
                       >
-                        <SettingsIcon />
+                        <SettingsSmallIcon />
                       </button>
                     )}
                   </div>
                 </div>
               ),
-              content: (
-                <NavigationPanel
-                  key={`nav-${views.length}-${viewGroups.length}-${
-                    navSettings?.userId || "none"
-                  }`} // Add this key
-                  user={user}
-                  views={views}
-                  viewGroups={viewGroups}
-                  userNavSettings={navSettings ? [navSettings] : []}
-                  reports={getUserAccessibleReports()}
-                  widgets={getUserAccessibleWidgets()}
-                  onUpdateViews={handleUpdateViews}
-                  onUpdateViewGroups={handleUpdateViewGroups}
-                  onUpdateNavSettings={handleUpdateNavSettings}
-                />
-              ),
+              content: createNavigationContent(),
               closable: false,
             },
           ],
@@ -451,14 +498,32 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             {
               id: "reports",
               title: (
-                <div className="dock-tab-simple">
-                  <div className="tab-title-section">
+                <div className="dock-tab-header">
+                  <div className="tab-title">
                     <ReportsIcon />
                     <span>Reports</span>
                   </div>
                 </div>
               ),
-              content: <ReportsPanel />,
+              content: (
+                <div className="panel-content">
+                  <div className="reports-list">
+                    {getUserAccessibleReports().map((report) => (
+                      <div key={report.id} className="content-item report-item">
+                        <h4>{report.name}</h4>
+                        <p>Type: {report.type}</p>
+                        <a
+                          href={report.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open Report
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ),
               closable: false,
             },
           ],
@@ -469,14 +534,32 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             {
               id: "widgets",
               title: (
-                <div className="dock-tab-simple">
-                  <div className="tab-title-section">
+                <div className="dock-tab-header">
+                  <div className="tab-title">
                     <WidgetsIcon />
                     <span>Widgets</span>
                   </div>
                 </div>
               ),
-              content: <WidgetsPanel />,
+              content: (
+                <div className="panel-content">
+                  <div className="widgets-list">
+                    {getUserAccessibleWidgets().map((widget) => (
+                      <div key={widget.id} className="content-item widget-item">
+                        <h4>{widget.name}</h4>
+                        <p>Type: {widget.type}</p>
+                        <a
+                          href={widget.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open Widget
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ),
               closable: false,
             },
           ],
@@ -487,11 +570,22 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <div className="dashboard-dock modern" data-theme={theme}>
-      <div className="dock-container full-height">
+    <div className={`dashboard-dock modern`} data-theme={theme}>
+      <div
+        className={`dock-container ${
+          theme === "dark" ? "dock-layout-dark" : "dock-layout-light"
+        }`}
+      >
         <DockLayout
+          ref={dockLayoutRef}
           defaultLayout={layout}
-          style={{ position: "absolute", left: 0, top: 0, right: 0, bottom: 0 }}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+          }}
         />
       </div>
 
@@ -508,6 +602,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       {showManageModal && (
         <ManageModal onClose={() => setShowManageModal(false)} />
       )}
+
       {showNavigationModal && (
         <NavigationManageModal
           user={user}
@@ -519,7 +614,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onAddViewGroup={handleAddViewGroup}
           views={views}
           viewGroups={viewGroups}
-          userNavSettings={navSettings ? [navSettings] : []} // Convert single object to array
+          userNavSettings={navSettings ? [navSettings] : []}
         />
       )}
     </div>
