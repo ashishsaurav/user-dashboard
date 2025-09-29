@@ -1,0 +1,1383 @@
+/* Navigation Management Modal Styles */
+.navigation-manage-container {
+  padding: 2rem;
+  background: var(--bg-primary);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.navigation-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.navigation-header h2 {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.navigation-header p {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+/* View Groups Section */
+.view-groups-section {
+  margin-bottom: 3rem;
+}
+
+.view-groups-section:last-child {
+  margin-bottom: 1rem;
+}
+
+.section-title {
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.view-groups-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* View Group Cards */
+.view-group-card {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.view-group-card:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+}
+
+.view-group-header {
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.view-group-header:hover {
+  background: var(--bg-quaternary);
+}
+
+.view-group-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.view-group-icon {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: white;
+  padding: 1rem;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-group-name {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.default-badge {
+  background: var(--warning-color);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.view-group-summary {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.view-group-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+/* Action Buttons */
+.drag-handle,
+.visibility-btn,
+.edit-btn-compact,
+.delete-btn-compact {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.4rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.drag-handle:hover {
+  background: var(--bg-quaternary);
+  color: var(--text-secondary);
+  border-color: var(--border-hover);
+}
+
+.visibility-btn.visible {
+  color: var(--success-color);
+  border-color: var(--success-border);
+  background: var(--success-light);
+}
+
+.visibility-btn.hidden {
+  color: var(--danger-color);
+  border-color: var(--danger-border);
+  background: var(--danger-light);
+}
+
+.visibility-btn:hover {
+  transform: scale(1.05);
+}
+
+.edit-btn-compact {
+  color: var(--primary-color);
+  border-color: var(--primary-border);
+  background: var(--primary-light);
+}
+
+.edit-btn-compact:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* Delete Button Styling */
+.delete-btn-compact {
+  background: var(--danger-light);
+  border: 1px solid var(--danger-border);
+  color: var(--danger-color);
+}
+
+.delete-btn-compact:hover {
+  background: var(--danger-color);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.expand-indicator {
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* View Group Content */
+.view-group-content {
+  background: var(--bg-primary);
+  max-height: 400px;
+  overflow-y: auto;
+  animation: expandContent 0.3s ease;
+}
+
+.views-list {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* View Items */
+.view-item {
+  background: var(--bg-secondary);
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: all 0.2s ease;
+  position: relative; /* Add this for better positioning */
+}
+
+.view-item:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+}
+
+/* Add icon positioning fix */
+.view-item .add-btn-with-icon {
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.view-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.view-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.view-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin-bottom: 0.25rem;
+}
+
+.view-content {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+}
+
+.view-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* WORKING Drag and Drop Styles */
+.view-group-card[draggable="true"],
+.view-item[draggable="true"] {
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.view-group-card[draggable="true"]:active,
+.view-item[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+/* Drag over states */
+.view-group-card.drag-over {
+  border: 2px solid var(--primary-color) !important;
+  background: var(--primary-light) !important;
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px var(--primary-color) !important;
+}
+
+.view-item.drag-over {
+  border: 2px solid var(--primary-color) !important;
+  background: var(--primary-light) !important;
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px var(--primary-color) !important;
+  position: relative;
+}
+
+/* Precise drop indicators */
+.view-item.drag-over-top::before {
+  content: '';
+  position: absolute;
+  top: -3px;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  z-index: 10;
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+.view-item.drag-over-bottom::after {
+  content: '';
+  position: absolute;
+  bottom: -3px;
+  left: -2px;
+  right: -2px;
+  height: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  z-index: 10;
+  animation: pulse 1s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+  from { opacity: 0.7; }
+  to { opacity: 1; }
+}
+
+/* Enhanced drag handle */
+.drag-handle {
+  opacity: 0.7;
+  transition: all 0.2s ease;
+}
+
+.view-group-card:hover .drag-handle,
+.view-item:hover .drag-handle {
+  opacity: 1;
+  color: var(--primary-color);
+}
+
+.drag-handle:hover {
+  background: var(--primary-light);
+  color: var(--primary-color);
+  border-color: var(--primary-border);
+  transform: scale(1.1);
+  cursor: grab;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+/* Prevent interference during drag */
+.view-group-actions button {
+  pointer-events: auto;
+}
+
+.view-actions button {
+  pointer-events: auto;
+}
+
+/* Create Forms */
+.create-form-container {
+  padding: 2rem;
+  background: var(--bg-primary);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.create-form-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.create-form-header h2 {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.create-form-header p {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.create-form-wrapper {
+  position: relative;
+  min-height: 60vh;
+}
+
+.create-form {
+  background: var(--bg-secondary);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  margin-bottom: 6rem;
+}
+
+/* Selection Grid */
+.selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: var(--bg-primary);
+}
+
+/* View Groups Selection Buttons */
+.view-groups-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.view-group-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem;
+  background: var(--bg-primary);
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+  width: 100%;
+}
+
+.view-group-btn:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-tertiary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.view-group-btn.selected {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+  box-shadow: 0 0 0 3px var(--primary-light);
+}
+
+.view-group-btn.default {
+  border-color: var(--warning-border);
+}
+
+.view-group-btn.default.selected {
+  border-color: var(--warning-color);
+  background: var(--warning-light);
+  box-shadow: 0 0 0 3px var(--warning-light);
+}
+
+.view-group-btn-icon {
+  background: var(--bg-secondary);
+  padding: 0.75rem;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+}
+
+.view-group-btn.selected .view-group-btn-icon {
+  background: var(--primary-color);
+  color: white;
+}
+
+.view-group-btn.default.selected .view-group-btn-icon {
+  background: var(--warning-color);
+  color: white;
+}
+
+.view-group-btn-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.view-group-btn-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.view-group-btn-views {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.view-group-btn-check {
+  color: var(--primary-color);
+  background: var(--primary-light);
+  padding: 0.5rem;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.view-group-btn.default.selected .view-group-btn-check {
+  color: var(--warning-color);
+  background: var(--warning-light);
+}
+
+.small-badge {
+  background: var(--warning-color);
+  color: white;
+  font-size: 0.65rem;
+  padding: 0.1rem 0.3rem;
+  border-radius: 6px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.section-description {
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  margin: 0.5rem 0 0 0;
+  line-height: 1.5;
+}
+
+.selection-summary {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+}
+
+.selection-summary p {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.selected-groups {
+  color: var(--text-secondary);
+  font-weight: normal;
+}
+
+/* Floating Create Button */
+.floating-create-btn {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, var(--success-color), #059669);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  font-weight: 700;
+}
+
+.floating-create-btn:hover {
+  transform: translateY(-4px) scale(1.1);
+  box-shadow: 0 12px 24px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+.floating-create-btn svg {
+  transition: transform 0.2s ease;
+}
+
+.floating-create-btn:hover svg {
+  transform: rotate(90deg) scale(1.1);
+}
+
+.floating-create-btn::before {
+  content: attr(title);
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  margin-right: 0.5rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  font-weight: 500;
+}
+
+.floating-create-btn:hover::before {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Form note styling */
+.form-note {
+  margin-top: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-style: italic;
+  background: var(--bg-tertiary);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border-left: 3px solid var(--warning-color);
+}
+
+/* No Items State */
+.no-items {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-style: italic;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  border: 1px dashed var(--border-color);
+}
+
+.no-items p {
+  margin: 0;
+}
+
+/* Disabled Create Button */
+.floating-create-btn:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.floating-create-btn:disabled:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  transform: none;
+  box-shadow: none;
+}
+
+.floating-create-btn:disabled::before {
+  content: "Fill required fields";
+}
+
+/* Default Badge in Selection */
+.checkbox-label .default-badge {
+  margin-left: 0.5rem;
+  font-size: 0.6rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: 8px;
+}
+
+/* Better spacing for role sections */
+.role-section {
+  margin-bottom: 1.5rem;
+}
+
+.role-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Improved checkbox styling in selection grids */
+.selection-grid .modern-checkbox {
+  padding: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.selection-grid .checkbox-label {
+  font-size: 0.9rem;
+  line-height: 1.3;
+}
+
+/* Enhanced scrollbar for selection grids */
+.selection-grid::-webkit-scrollbar {
+  width: 6px;
+}
+
+.selection-grid::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+  border-radius: 3px;
+}
+
+.selection-grid::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 3px;
+}
+
+.selection-grid::-webkit-scrollbar-thumb:hover {
+  background: var(--border-active);
+}
+
+/* Custom Scrollbar for View Content */
+.view-group-content::-webkit-scrollbar {
+  width: 4px;
+}
+
+.view-group-content::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+}
+
+.view-group-content::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 2px;
+}
+
+.view-group-content::-webkit-scrollbar-thumb:hover {
+  background: var(--border-active);
+}
+
+/* Loading state for create buttons */
+.floating-create-btn.loading {
+  pointer-events: none;
+}
+
+.floating-create-btn.loading svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Success feedback */
+.create-success-message {
+  position: fixed;
+  top: 2rem;
+  right: 2rem;
+  background: var(--success-color);
+  color: white;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  box-shadow: var(--shadow-lg);
+  z-index: 9999;
+  animation: slideInRight 0.3s ease;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes expandContent {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+  to {
+    max-height: 400px;
+    opacity: 1;
+  }
+}
+
+/* Role Permissions Styles - Reuse from ManageModal */
+.modern-permissions-container {
+  padding: 2rem;
+  background: var(--bg-primary);
+  height: 100%;
+  overflow-y: auto;
+}
+
+.permissions-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.permissions-header h2 {
+  margin: 0 0 0.75rem 0;
+  color: var(--text-primary);
+  font-size: 2rem;
+  font-weight: 800;
+}
+
+.permissions-header p {
+  color: var(--text-secondary);
+  font-size: 1.125rem;
+  margin: 0;
+}
+
+.role-permissions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-width: 100%;
+}
+
+.role-permission-card-compact {
+  background: var(--bg-secondary);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.role-permission-card-compact:hover {
+  box-shadow: var(--shadow-lg);
+  border-color: var(--border-hover);
+}
+
+.role-card-header-clickable {
+  padding: 1.5rem;
+  background: var(--bg-tertiary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.role-card-header-clickable:hover {
+  background: var(--bg-quaternary);
+}
+
+.role-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.role-icon {
+  background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+  color: white;
+  padding: 1rem;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.role-name {
+  margin: 0 0 0.25rem 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.role-summary {
+  margin-top: 0.25rem;
+}
+
+.summary-text {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.role-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.edit-role-btn-compact {
+  background: var(--primary-light);
+  border: 1px solid var(--primary-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: var(--primary-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.edit-role-btn-compact:hover {
+  background: var(--primary-color);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.role-permissions-content-scrollable {
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border-top: 1px solid var(--border-color);
+  animation: expandContent 0.3s ease;
+}
+
+.role-items-container {
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.role-section h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.role-items-scrollable {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.role-item-compact {
+  background: var(--bg-secondary);
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.role-item-compact:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+}
+
+.role-items-scrollable::-webkit-scrollbar {
+  width: 4px;
+}
+
+.role-items-scrollable::-webkit-scrollbar-track {
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+}
+
+.role-items-scrollable::-webkit-scrollbar-thumb {
+  background: var(--border-hover);
+  border-radius: 2px;
+}
+
+.role-items-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--border-active);
+}
+
+/* Delete Modal Styles */
+.delete-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-overlay);
+  backdrop-filter: blur(12px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+  animation: fadeIn 0.3s ease;
+}
+
+.delete-modal {
+  background: var(--bg-primary);
+  border-radius: 20px;
+  width: 90%;
+  max-width: 450px;
+  box-shadow: var(--shadow-xl);
+  animation: slideIn 0.3s ease;
+  border: 1px solid var(--border-color);
+}
+
+.delete-modal-large {
+  max-width: 550px;
+}
+
+.delete-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-secondary);
+  border-radius: 20px 20px 0 0;
+}
+
+.delete-modal-header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.delete-modal-content {
+  padding: 2.5rem;
+  text-align: center;
+}
+
+.warning-icon {
+  margin-bottom: 2rem;
+}
+
+.warning-icon svg {
+  color: var(--warning-color);
+  background: var(--warning-light);
+  padding: 1.25rem;
+  border-radius: 50%;
+  border: 2px solid var(--warning-border);
+}
+
+.delete-text h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text-primary);
+  font-size: 1.375rem;
+  font-weight: 700;
+}
+
+.delete-text p {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  font-size: 1rem;
+}
+
+.delete-text p:last-child {
+  margin-bottom: 0;
+}
+
+.delete-options {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.option-btn {
+  width: 100%;
+  padding: 1rem;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.group-only-btn:hover {
+  border-color: var(--primary-color);
+  background: var(--primary-light);
+}
+
+.group-and-views-btn:hover {
+  border-color: var(--danger-color);
+  background: var(--danger-light);
+}
+
+.option-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.option-title {
+  font-weight: 600;
+  color: var(--text-primary);
+  font-size: 1rem;
+}
+
+.option-description {
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+.delete-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.cancel-btn, .confirm-delete-btn {
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 2px solid;
+  transition: all 0.2s ease;
+  width: auto;
+  min-width: 120px;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+  font-size: 0.875rem;
+}
+
+.cancel-btn {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+.cancel-btn:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-hover);
+  transform: translateY(-2px);
+}
+
+.confirm-delete-btn {
+  background: var(--danger-color);
+  color: white;
+  border-color: var(--danger-color);
+}
+
+.confirm-delete-btn:hover {
+  background: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(239, 68, 68, 0.4);
+}
+
+/* Close button in delete modal header */
+.delete-modal-header .close-btn {
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.delete-modal-header .close-btn:hover {
+  background: var(--bg-quaternary);
+  color: var(--text-primary);
+  border-color: var(--border-hover);
+}
+
+/* Admin Role Styling */
+.admin-role-card.role-permission-card-compact {
+  border: 2px solid var(--warning-border);
+  background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--warning-light) 100%);
+}
+
+.admin-role-card .role-card-header-clickable {
+  background: linear-gradient(135deg, var(--warning-light) 0%, var(--warning-border) 100%);
+}
+
+.admin-role-card .role-card-header-clickable:hover {
+  background: linear-gradient(135deg, var(--warning-border) 0%, rgba(245, 158, 11, 0.2) 100%);
+}
+
+.admin-role-icon {
+  background: linear-gradient(135deg, var(--warning-color), #f97316);
+}
+
+.admin-badge {
+  display: inline-block;
+  background: var(--warning-color);
+  color: white;
+  font-size: 0.7rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  margin-left: 0.5rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+
+.admin-lock-indicator {
+  background: var(--warning-light);
+  border: 1px solid var(--warning-border);
+  border-radius: 8px;
+  padding: 0.5rem;
+  color: var(--warning-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.admin-access-notice {
+  background: var(--warning-light);
+  border: 1px solid var(--warning-border);
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+.admin-access-notice p {
+  margin: 0;
+  color: var(--warning-color);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from { 
+    opacity: 0;
+    transform: translateY(-30px) scale(0.9);
+  }
+  to { 
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .navigation-manage-container {
+    padding: 1.5rem;
+  }
+  
+  .view-group-header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .view-group-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .view-item {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  
+  .view-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .selection-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .create-form-container {
+    padding: 1rem;
+  }
+  
+  .floating-create-btn {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 50px;
+    height: 50px;
+  }
+  
+  .floating-create-btn svg {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .role-items-container {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .role-permissions-content-scrollable {
+    max-height: 400px;
+  }
+  
+  .role-items-scrollable {
+    max-height: 150px;
+  }
+  
+  .role-card-header-clickable {
+    padding: 1rem;
+  }
+  
+  .role-name {
+    font-size: 1.125rem;
+  }
+  
+  .delete-actions {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .cancel-btn, .confirm-delete-btn {
+    width: 100%;
+  }
+  
+  .view-groups-selection {
+    grid-template-columns: 1fr;
+  }
+  
+  .drag-handle {
+    width: 32px;
+    height: 32px;
+    opacity: 1;
+  }
+  
+  .view-item.drag-over-top::before,
+  .view-item.drag-over-bottom::after {
+    height: 6px;
+  }
+}
+
+@media (max-width: 480px) {
+  .create-form-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .create-form-header p {
+    font-size: 1rem;
+  }
+  
+  .form-section {
+    padding: 1.5rem;
+  }
+  
+  .section-title {
+    font-size: 1.125rem;
+  }
+  
+  .selection-grid {
+    max-height: 200px;
+    padding: 0.25rem;
+  }
+  
+  .modern-checkbox {
+    padding: 0.5rem !important;
+  }
+  
+  .checkbox-label {
+    font-size: 0.85rem !important;
+  }
+  
+  .view-group-btn {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+  
+  .view-group-btn-icon {
+    padding: 0.5rem;
+  }
+}
