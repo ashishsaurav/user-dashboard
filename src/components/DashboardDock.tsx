@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import DockLayout, { LayoutData, PanelData, TabData } from "rc-dock";
 import "rc-dock/dist/rc-dock.css";
 import {
@@ -234,36 +234,67 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   );
 
-  // Navigation state management methods
-  const handleUpdateViews = (updatedViews: View[]) => {
+  // REPLACE the existing saveToSessionStorage useEffect with this:
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        `navigationViews_${user.name}`,
+        JSON.stringify(views)
+      );
+      sessionStorage.setItem(
+        `navigationViewGroups_${user.name}`,
+        JSON.stringify(viewGroups)
+      );
+      sessionStorage.setItem(
+        `navigationSettings_${user.name}`,
+        JSON.stringify(navSettings)
+      ); // Fixed: use navSettings
+
+      console.log("DashboardDock state updated and saved:", {
+        viewsCount: views.length,
+        viewGroupsCount: viewGroups.length,
+        navSettings: navSettings,
+      });
+    } catch (error) {
+      console.error("Error saving to session storage:", error);
+    }
+  }, [views, viewGroups, navSettings, user.name]); // Fixed: use navSettings instead of userNavSettings
+
+  // UPDATE these handlers to ensure state updates:
+  const handleUpdateViews = useCallback((updatedViews: View[]) => {
+    console.log(
+      "DashboardDock: handleUpdateViews called with:",
+      updatedViews.length,
+      "views"
+    );
     const sortedViews = [...updatedViews].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
-    setViews(sortedViews);
-    sessionStorage.setItem(
-      `navigationViews_${user.name}`,
-      JSON.stringify(sortedViews)
-    );
-  };
+    setViews(sortedViews); // This triggers the NavigationPanel re-render
+  }, []);
 
-  const handleUpdateViewGroups = (updatedViewGroups: ViewGroup[]) => {
-    const sortedGroups = [...updatedViewGroups].sort(
-      (a, b) => (a.order || 0) - (b.order || 0)
-    );
-    setViewGroups(sortedGroups);
-    sessionStorage.setItem(
-      `navigationViewGroups_${user.name}`,
-      JSON.stringify(sortedGroups)
-    );
-  };
+  const handleUpdateViewGroups = useCallback(
+    (updatedViewGroups: ViewGroup[]) => {
+      console.log(
+        "DashboardDock: handleUpdateViewGroups called with:",
+        updatedViewGroups.length,
+        "groups"
+      );
+      const sortedGroups = [...updatedViewGroups].sort(
+        (a, b) => (a.order || 0) - (b.order || 0)
+      );
+      setViewGroups(sortedGroups); // This triggers the NavigationPanel re-render
+    },
+    []
+  );
 
-  const handleUpdateNavSettings = (settings: UserNavigationSettings) => {
-    setNavSettings(settings);
-    sessionStorage.setItem(
-      `navigationSettings_${user.name}`,
-      JSON.stringify(settings)
-    );
-  };
+  const handleUpdateNavSettings = useCallback(
+    (settings: UserNavigationSettings) => {
+      console.log("DashboardDock: handleUpdateNavSettings called");
+      setNavSettings(settings); // This triggers the NavigationPanel re-render
+    },
+    []
+  );
 
   const handleAddView = (newView: View, viewGroupIds?: string[]) => {
     console.log("Adding new view:", newView.name, "to groups:", viewGroupIds);
@@ -396,10 +427,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               ),
               content: (
                 <NavigationPanel
+                  key={`nav-${views.length}-${viewGroups.length}-${
+                    navSettings?.userId || "none"
+                  }`} // Add this key
                   user={user}
                   views={views}
                   viewGroups={viewGroups}
-                  userNavSettings={userNavSettingsArray}
+                  userNavSettings={navSettings ? [navSettings] : []}
                   reports={getUserAccessibleReports()}
                   widgets={getUserAccessibleWidgets()}
                   onUpdateViews={handleUpdateViews}
@@ -485,7 +519,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onAddViewGroup={handleAddViewGroup}
           views={views}
           viewGroups={viewGroups}
-          userNavSettings={navSettings ? [navSettings] : []}
+          userNavSettings={navSettings ? [navSettings] : []} // Convert single object to array
         />
       )}
     </div>
