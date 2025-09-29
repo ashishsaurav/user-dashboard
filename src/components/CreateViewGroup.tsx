@@ -1,26 +1,60 @@
-import React, { useState } from "react";
-import { User, View, ViewGroup, ViewGroupFormData } from "../types";
+import React, { useState, useMemo } from "react";
+import { User, View, ViewGroup, UserNavigationSettings } from "../types";
 import { useNotification } from "./NotificationProvider";
 
 interface CreateViewGroupProps {
   user: User;
   views: View[];
+  userNavSettings?: UserNavigationSettings[];
   onAddViewGroup: (viewGroup: ViewGroup) => void;
+  onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
+}
+
+// Define interface for form data to fix TypeScript inference
+interface CreateViewGroupFormData {
+  name: string;
+  viewIds: string[];
 }
 
 const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
   user,
   views,
+  userNavSettings = [],
   onAddViewGroup,
+  onUpdateNavSettings,
 }) => {
-  const [formData, setFormData] = useState<ViewGroupFormData>({
+  // Fix: Explicitly type the form data
+  const [formData, setFormData] = useState<CreateViewGroupFormData>({
     name: "",
-    viewIds: [],
+    viewIds: [] as string[], // Explicit type annotation
   });
 
   const { showSuccess } = useNotification();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Get current user settings - same logic as EditViewGroupModal
+  const currentSettings = useMemo((): UserNavigationSettings => {
+    const settings = userNavSettings.find((s) => s.userId === user?.name);
+    return (
+      settings || {
+        userId: user?.name || "",
+        viewGroupOrder: [],
+        viewOrders: {},
+        hiddenViewGroups: [],
+        hiddenViews: [],
+      }
+    );
+  }, [userNavSettings, user?.name]);
+
+  // Initialize local hidden views with CURRENT base data
+  const [localHiddenViews, setLocalHiddenViews] = useState<string[]>(() => {
+    console.log(
+      "CreateViewGroup - Initializing local hidden views:",
+      currentSettings.hiddenViews
+    );
+    return [...currentSettings.hiddenViews];
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const timestamp = Date.now();
@@ -37,8 +71,21 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
     };
 
     onAddViewGroup(newViewGroup);
-
     console.log("Creating new view group:", newViewGroup);
+
+    // Save visibility changes if there are any changes
+    if (onUpdateNavSettings && user) {
+      const updatedSettings = {
+        ...currentSettings,
+        hiddenViews: localHiddenViews,
+      };
+
+      console.log(
+        "CreateViewGroup - Updating navigation settings:",
+        updatedSettings
+      );
+      onUpdateNavSettings(updatedSettings);
+    }
 
     // Show beautiful success notification
     showSuccess(
@@ -46,101 +93,197 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
       `"${formData.name}" has been created and is ready to organize your views.`
     );
 
-    // Reset form
+    // Reset form and visibility state
     setFormData({
       name: "",
-      viewIds: [],
+      viewIds: [] as string[], // Explicit type
     });
+
+    // Reset visibility to current settings
+    setLocalHiddenViews([...currentSettings.hiddenViews]);
   };
 
   const handleViewToggle = (viewId: string, checked: boolean) => {
-    setFormData({
-      ...formData,
+    setFormData((prevFormData) => ({
+      ...prevFormData,
       viewIds: checked
-        ? [...formData.viewIds, viewId]
-        : formData.viewIds.filter((id) => id !== viewId),
+        ? [...prevFormData.viewIds, viewId]
+        : prevFormData.viewIds.filter((id) => id !== viewId),
+    }));
+  };
+
+  // LOCAL VISIBILITY TOGGLE: Update local state only - same as EditViewGroupModal
+  const handleVisibilityToggle = (viewId: string) => {
+    setLocalHiddenViews((prev) => {
+      const isCurrentlyHidden = prev.includes(viewId);
+      const newState = isCurrentlyHidden
+        ? prev.filter((id) => id !== viewId) // Show view
+        : [...prev, viewId]; // Hide view
+
+      console.log(`CreateViewGroup - Toggling view ${viewId}:`, {
+        wasHidden: isCurrentlyHidden,
+        newHidden: !isCurrentlyHidden,
+        newState,
+      });
+
+      return newState;
     });
   };
 
+  // Check if view is hidden (using local state) - same as EditViewGroupModal
+  const isViewHidden = (viewId: string): boolean => {
+    return localHiddenViews.includes(viewId);
+  };
+
+  // Icons - same as EditViewGroupModal
   const CreateIcon = () => (
     <svg
-      width="16"
-      height="16"
+      width="20"
+      height="20"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
-      strokeWidth="2.5"
+      strokeWidth="2"
     >
-      <line x1="12" y1="5" x2="12" y2="19" />
-      <line x1="5" y1="12" x2="19" y2="12" />
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="16" />
+      <line x1="8" y1="12" x2="16" y2="12" />
     </svg>
   );
 
+  const EyeIcon = ({ isVisible }: { isVisible: boolean }) =>
+    isVisible ? (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ) : (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    );
+
   return (
-    <div className="create-form-container">
-      <div className="create-form-header">
-        <h2>Create View Group</h2>
-        <p>Group related views together for better organization</p>
+    <form onSubmit={handleSubmit} className="modern-form">
+      <div className="form-header">
+        <div className="header-left">
+          <div className="header-icon-container">
+            <CreateIcon />
+          </div>
+          <div className="header-content">
+            <h2>Create View Group</h2>
+            <p>Group related views together for better organization</p>
+          </div>
+        </div>
       </div>
 
-      <div className="create-form-wrapper">
-        <form onSubmit={handleSubmit} className="create-form">
-          <div className="form-section">
-            <h3 className="section-title">View Group Information</h3>
+      {/* View Group Name Section */}
+      <div className="form-section">
+        <h3>View Group Information</h3>
+        <div className="form-group">
+          <label htmlFor="name" className="form-label">
+            View Group Name
+          </label>
+          <input
+            type="text"
+            id="name"
+            className="form-input"
+            value={formData.name}
+            onChange={(e) =>
+              setFormData((prev) => ({ ...prev, name: e.target.value }))
+            }
+            placeholder="Enter view group name"
+            required
+          />
+        </div>
+      </div>
 
-            <div className="form-row">
-              <div className="input-group">
-                <label className="modern-label">View Group Name</label>
-                <input
-                  type="text"
-                  className="modern-input"
-                  value={formData.name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
-                  }
-                  placeholder="Enter view group name"
-                  required
-                />
-              </div>
-            </div>
-          </div>
+      {/* Views Section with Visibility Toggle */}
+      <div className="form-section">
+        <h3>Select Views</h3>
+        <p className="section-description">
+          Choose views for this group and control their navigation visibility
+        </p>
+        <div className="views-container-modal">
+          {views.length > 0 ? (
+            views.map((view) => {
+              const isInGroup = formData.viewIds.includes(view.id);
+              const isHidden = isViewHidden(view.id);
 
-          <div className="form-section">
-            <h3 className="section-title">Select Views</h3>
-            <div className="selection-grid">
-              {views.length > 0 ? (
-                views.map((view) => (
-                  <label key={view.id} className="modern-checkbox">
+              return (
+                <div key={view.id} className="view-row-modal">
+                  {/* Left: Checkbox and view info */}
+                  <div className="view-info-section">
                     <input
                       type="checkbox"
-                      checked={formData.viewIds.includes(view.id)}
+                      id={`view-${view.id}`}
+                      className="view-checkbox"
+                      checked={isInGroup}
                       onChange={(e) =>
                         handleViewToggle(view.id, e.target.checked)
                       }
                     />
-                    <span className="checkmark"></span>
-                    <span className="checkbox-label">{view.name}</span>
-                  </label>
-                ))
-              ) : (
-                <div className="no-items">
-                  <p>No views available. Create some views first.</p>
+                    <label
+                      htmlFor={`view-${view.id}`}
+                      className="view-info-label"
+                    >
+                      <span className="view-name">{view.name}</span>
+                      <span className="view-meta">
+                        {view.reportIds?.length || 0} Reports,{" "}
+                        {view.widgetIds?.length || 0} Widgets
+                      </span>
+                    </label>
+                  </div>
+
+                  {/* Right: Visibility toggle button (icon only) - ALWAYS SHOWN */}
+                  {onUpdateNavSettings && user && (
+                    <button
+                      type="button"
+                      className={`visibility-btn-modal ${
+                        isHidden ? "hidden" : "visible"
+                      }`}
+                      onClick={() => handleVisibilityToggle(view.id)}
+                      title={
+                        isHidden ? "Show in navigation" : "Hide from navigation"
+                      }
+                    >
+                      <EyeIcon isVisible={!isHidden} />
+                    </button>
+                  )}
                 </div>
-              )}
+              );
+            })
+          ) : (
+            <div className="no-views-message">
+              <p>No views available. Create some views first.</p>
             </div>
-          </div>
-        </form>
-        <button
-          type="submit"
-          onClick={handleSubmit}
-          className="floating-create-btn"
-          title="Create View Group"
-          disabled={!formData.name.trim()}
-        >
-          <CreateIcon />
-        </button>
+          )}
+        </div>
       </div>
-    </div>
+
+      <button
+        type="submit"
+        title="Create View Group"
+        className="floating-create-btn"
+      >
+        <CreateIcon />
+      </button>
+    </form>
   );
 };
 

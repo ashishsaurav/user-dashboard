@@ -143,7 +143,18 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
             <CreateViewGroup
               user={user}
               views={views}
-              onAddViewGroup={onAddViewGroup}
+              userNavSettings={userNavSettings}
+              onAddViewGroup={(newViewGroup) => {
+                onAddViewGroup(newViewGroup);
+                setActiveTab("all");
+              }}
+              onUpdateNavSettings={(updatedSettings) => {
+                onUpdateNavSettings(updatedSettings);
+                console.log(
+                  "CreateViewGroup - Navigation settings updated:",
+                  updatedSettings
+                );
+              }}
             />
           )}
           {activeTab === "createView" && (
