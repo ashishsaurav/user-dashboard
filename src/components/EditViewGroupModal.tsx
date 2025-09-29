@@ -1,28 +1,82 @@
-import React, { useState } from "react";
-import { ViewGroup, View } from "../types";
+import React, { useState, useMemo } from "react";
+import { ViewGroup, View, UserNavigationSettings } from "../types";
 
 interface EditViewGroupModalProps {
   viewGroup: ViewGroup;
   views: View[];
   userRole: string;
+  userNavSettings?: UserNavigationSettings[];
+  user?: { name: string };
   onSave: (viewGroup: ViewGroup) => void;
   onClose: () => void;
+  onUpdateNavSettings?: (settings: UserNavigationSettings) => void; // Changed to single object
 }
 
 const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
   viewGroup,
   views,
   userRole,
+  userNavSettings = [],
+  user,
   onSave,
   onClose,
+  onUpdateNavSettings,
 }) => {
-  const [formData, setFormData] = useState<ViewGroup>({
+  const [formData, setFormData] = useState({
     ...viewGroup,
   });
 
+  // Get current user settings - this will sync with base data
+  const currentSettings = useMemo((): UserNavigationSettings => {
+    const settings = userNavSettings.find((s) => s.userId === user?.name);
+    return (
+      settings || {
+        userId: user?.name || "",
+        viewGroupOrder: [],
+        viewOrders: {},
+        hiddenViewGroups: [],
+        hiddenViews: [],
+      }
+    );
+  }, [userNavSettings, user?.name]);
+
+  // Initialize local hidden views with CURRENT base data - will sync properly
+  const [localHiddenViews, setLocalHiddenViews] = useState<string[]>(() => {
+    console.log(
+      "Initializing local hidden views:",
+      currentSettings.hiddenViews
+    );
+    return [...currentSettings.hiddenViews]; // Create a copy to avoid mutation
+  });
+
+  // Reset local state when modal reopens with new data
+  React.useEffect(() => {
+    console.log("Syncing with new base data:", currentSettings.hiddenViews);
+    setLocalHiddenViews([...currentSettings.hiddenViews]);
+  }, [viewGroup.id]); // Only reset when editing a different viewgroup
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    console.log("Saving changes:", {
+      viewGroup: formData,
+      hiddenViews: localHiddenViews,
+      originalHidden: currentSettings.hiddenViews,
+    });
+
+    // Save the view group changes
     onSave(formData);
+
+    // Save visibility changes if there are any changes
+    if (onUpdateNavSettings && user) {
+      const updatedSettings = {
+        ...currentSettings,
+        hiddenViews: localHiddenViews,
+      };
+
+      console.log("Updating navigation settings:", updatedSettings);
+      onUpdateNavSettings(updatedSettings);
+    }
   };
 
   const handleViewToggle = (viewId: string, checked: boolean) => {
@@ -34,6 +88,32 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     });
   };
 
+  // LOCAL VISIBILITY TOGGLE: Update local state only
+  const handleVisibilityToggle = (viewId: string) => {
+    setLocalHiddenViews((prev) => {
+      const isCurrentlyHidden = prev.includes(viewId);
+      const newState = isCurrentlyHidden
+        ? prev.filter((id) => id !== viewId) // Show view
+        : [...prev, viewId]; // Hide view
+
+      console.log(`Toggling view ${viewId}:`, {
+        wasHidden: isCurrentlyHidden,
+        newHidden: !isCurrentlyHidden,
+        newState,
+      });
+
+      return newState;
+    });
+  };
+
+  // Check if view is hidden (using local state)
+  const isViewHidden = (viewId: string): boolean => {
+    const hidden = localHiddenViews.includes(viewId);
+    // console.log(`View ${viewId} is hidden:`, hidden);
+    return hidden;
+  };
+
+  // Icons
   const CloseIcon = () => (
     <svg
       width="20"
@@ -64,90 +144,160 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     </svg>
   );
 
+  const EyeIcon = ({ isVisible }: { isVisible: boolean }) =>
+    isVisible ? (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ) : (
+      <svg
+        width="14"
+        height="14"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    );
+
   return (
     <div className="modern-modal-overlay">
-      <div className="modern-modal">
+      <div className="modern-modal-container edit-viewgroup-container">
         <div className="modern-modal-header">
-          <div className="header-left">
-            <div className="header-icon-container">
-              <ViewGroupIcon />
-            </div>
-            <div>
+          <div className="modal-header-content">
+            <ViewGroupIcon />
+            <div className="modal-header-text">
               <h2>Edit View Group</h2>
-              <p>Modify view group details and views</p>
+              <p>Modify view group details and control view visibility</p>
             </div>
           </div>
-          <button className="modern-close-btn" onClick={onClose}>
+          <button className="modal-close-btn" onClick={onClose}>
             <CloseIcon />
           </button>
         </div>
 
-        <div className="modern-modal-content">
-          <form onSubmit={handleSubmit} className="modern-form">
-            <div className="form-section">
-              <h3 className="section-title">View Group Information</h3>
+        <form onSubmit={handleSubmit} className="modern-modal-content">
+          {/* View Group Name Section */}
+          <div className="form-section">
+            <h3>View Group Information</h3>
+            <div className="form-group">
+              <label htmlFor="name" className="form-label">
+                View Group Name
+                {viewGroup.isDefault && (
+                  <span className="default-badge">Default</span>
+                )}
+              </label>
+              <input
+                type="text"
+                id="name"
+                className="form-input"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                placeholder="Enter view group name"
+                required
+              />
+              {viewGroup.isDefault && (
+                <p className="form-help">
+                  This is the default view group. You can rename it, but it will
+                  remain as the default group.
+                </p>
+              )}
+            </div>
+          </div>
 
-              <div className="form-row">
-                <div className="input-group">
-                  <label className="modern-label">
-                    View Group Name
-                    {viewGroup.isDefault && (
-                      <span className="default-badge">Default</span>
-                    )}
-                  </label>
-                  <input
-                    type="text"
-                    className="modern-input"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                    placeholder="Enter view group name"
-                    required
-                  />
-                  {viewGroup.isDefault && (
-                    <p className="form-note">
-                      This is the default view group. You can rename it, but it
-                      will remain as the default group.
-                    </p>
-                  )}
+          {/* Views Section */}
+          <div className="form-section">
+            <h3>Views in Group</h3>
+            <p className="section-description">
+              Select which views belong to this group and control their
+              navigation visibility
+            </p>
+            <div className="views-container-modal">
+              {views.length === 0 ? (
+                <div className="no-views-message">
+                  <p>
+                    No views available. Create views first to add them to this
+                    group.
+                  </p>
                 </div>
-              </div>
-            </div>
+              ) : (
+                views.map((view) => {
+                  const isInGroup = formData.viewIds.includes(view.id);
+                  const isHidden = isViewHidden(view.id);
 
-            <div className="form-section">
-              <h3 className="section-title">Views</h3>
-              <div className="items-selection-grid">
-                {views.map((view) => (
-                  <label key={view.id} className="modern-checkbox">
-                    <input
-                      type="checkbox"
-                      checked={formData.viewIds.includes(view.id)}
-                      onChange={(e) =>
-                        handleViewToggle(view.id, e.target.checked)
-                      }
-                    />
-                    <span className="checkmark"></span>
-                    <span className="checkbox-label">{view.name}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+                  return (
+                    <div key={view.id} className="view-row-modal">
+                      {/* Left: Checkbox and view info */}
+                      <div className="view-info-section">
+                        <input
+                          type="checkbox"
+                          id={`view-${view.id}`}
+                          className="view-checkbox"
+                          checked={isInGroup}
+                          onChange={(e) =>
+                            handleViewToggle(view.id, e.target.checked)
+                          }
+                        />
+                        <label
+                          htmlFor={`view-${view.id}`}
+                          className="view-info-label"
+                        >
+                          <span className="view-name">{view.name}</span>
+                          <span className="view-meta">
+                            {view.reportIds?.length || 0} Reports,{" "}
+                            {view.widgetIds?.length || 0} Widgets
+                          </span>
+                        </label>
+                      </div>
 
-            <div className="modern-form-actions-fixed">
-              <button
-                type="button"
-                className="modern-btn secondary"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="modern-btn primary">
-                Save Changes
-              </button>
+                      {/* Right: Visibility toggle button (icon only) - ALWAYS SHOWN */}
+                      <button
+                        type="button"
+                        className={`visibility-btn-modal ${
+                          isHidden ? "hidden" : "visible"
+                        }`}
+                        onClick={() => handleVisibilityToggle(view.id)}
+                        title={
+                          isHidden
+                            ? "Show in navigation"
+                            : "Hide from navigation"
+                        }
+                      >
+                        <EyeIcon isVisible={!isHidden} />
+                      </button>
+                    </div>
+                  );
+                })
+              )}
             </div>
-          </form>
-        </div>
+          </div>
+
+          <div className="modern-modal-footer">
+            <button
+              type="button"
+              className="modal-btn modal-btn-secondary"
+              onClick={onClose}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="modal-btn modal-btn-primary">
+              Save Changes
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
