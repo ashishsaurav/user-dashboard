@@ -37,20 +37,23 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
   const { theme, toggleTheme } = useTheme();
 
-  // NEW: Selected view state for dynamic content
+  // Selected view state for dynamic content
   const [selectedView, setSelectedView] = useState<View | null>(null);
 
-  // NEW: Section visibility states
+  // Section visibility states
   const [reportsVisible, setReportsVisible] = useState(true);
   const [widgetsVisible, setWidgetsVisible] = useState(true);
 
-  // FIXED: Force re-render trigger for NavigationPanel
+  // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
+
+  // NEW: Track layout structure to detect when we need full reload
+  const [layoutStructure, setLayoutStructure] = useState<string>("");
 
   // RC-DOCK REF for updates
   const dockLayoutRef = useRef<DockLayout>(null);
 
-  // ... (keep all existing state management - shortened for brevity)
+  // State management for views, viewGroups, and navigation settings
   const [views, setViews] = useState<View[]>(() => {
     const savedViews = sessionStorage.getItem(`navigationViews_${user.name}`);
     if (savedViews) {
@@ -121,7 +124,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return newUserData.navigationSettings;
   });
 
-  // Enhanced state handlers (keep existing logic)
+  // Enhanced state handlers
   const handleUpdateViews = (updatedViews: View[]) => {
     const sortedViews = [...updatedViews].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
@@ -164,7 +167,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     setNavigationUpdateTrigger((prev) => prev + 1);
   };
 
-  // NEW: Enhanced view selection handler - auto-show sections when view selected
+  // Enhanced view selection handler - auto-show sections when view selected
   const handleViewSelect = (view: View) => {
     console.log("View selected:", view.name);
     setSelectedView(view);
@@ -174,7 +177,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     setWidgetsVisible(true);
   };
 
-  // NEW: Section close handlers
+  // Section close handlers
   const handleCloseReports = () => {
     setReportsVisible(false);
   };
@@ -183,7 +186,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     setWidgetsVisible(false);
   };
 
-  // NEW: Section reopen handlers
+  // Section reopen handlers
   const handleReopenReports = () => {
     if (selectedView) {
       setReportsVisible(true);
@@ -196,7 +199,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   };
 
-  // Keep existing handlers for add/remove/reorder (shortened for brevity)
+  // Content management handlers (keep existing...)
   const handleAddReportsToView = (reports: Report[]) => {
     if (!selectedView || reports.length === 0) return;
     const newReportIds = reports.map((r) => r.id);
@@ -210,6 +213,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
     setShowAddReportModal(false);
+    console.log(`Added ${reports.length} reports to view`);
   };
 
   const handleAddWidgetsToView = (widgets: Widget[]) => {
@@ -225,6 +229,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
     setShowAddWidgetModal(false);
+    console.log(`Added ${widgets.length} widgets to view`);
   };
 
   const handleRemoveReportFromView = (reportId: string) => {
@@ -238,6 +243,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
+    console.log("Report removed from view");
   };
 
   const handleRemoveWidgetFromView = (widgetId: string) => {
@@ -251,6 +257,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
+    console.log("Widget removed from view");
   };
 
   const handleReorderReports = (newReportOrder: string[]) => {
@@ -261,6 +268,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
+    console.log("Reports reordered:", newReportOrder);
   };
 
   const handleReorderWidgets = (newWidgetOrder: string[]) => {
@@ -271,9 +279,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
+    console.log("Widgets reordered:", newWidgetOrder);
   };
 
-  // Get accessible reports and widgets (keep existing)
+  // Get accessible reports and widgets (keep existing...)
   const getUserAccessibleReports = (): Report[] => {
     const savedReports = sessionStorage.getItem("reports");
     const systemReports: Report[] = savedReports
@@ -298,7 +307,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         );
   };
 
-  // Apply theme changes (keep existing)
+  // Apply theme changes (keep existing...)
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
@@ -328,7 +337,20 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [theme]);
 
-  // Icons
+  // NEW: Get current layout structure signature
+  const getCurrentLayoutStructure = () => {
+    const panels = [];
+    if (!selectedView) {
+      panels.push("welcome");
+    } else {
+      if (reportsVisible) panels.push("reports");
+      if (widgetsVisible) panels.push("widgets");
+      if (!reportsVisible && !widgetsVisible) panels.push("welcome-closed");
+    }
+    return `navigation,${panels.join(",")}`;
+  };
+
+  // Icons (keep all existing icons...)
   const NavigationIcon = () => (
     <svg
       width="16"
@@ -494,7 +516,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     navigationUpdateTrigger,
   ]);
 
-  // NEW: Welcome content for when no view is selected
+  // Welcome content (keep existing...)
   const createWelcomeContent = () => (
     <div className="welcome-dock-section">
       <div className="welcome-content">
@@ -522,7 +544,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     </div>
   );
 
-  // Dynamic content panels
+  // Dynamic content panels (keep existing...)
   const createReportsContent = () => (
     <ViewContentPanel
       type="reports"
@@ -547,11 +569,58 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     />
   );
 
-  // FIXED: Enhanced dynamic layout generation (removed groups)
+  // NEW: Smart update that preserves RC-Dock internal state
+  const updateLayoutContent = useCallback(() => {
+    if (!dockLayoutRef.current) return;
+
+    try {
+      // Get current layout from RC-Dock (preserves user's manual resizing)
+      const currentLayout = dockLayoutRef.current.getLayout();
+
+      if (currentLayout?.dockbox?.children) {
+        // Update content in existing panels without changing structure
+        currentLayout.dockbox.children.forEach((panel: any) => {
+          if (panel.tabs && panel.tabs[0]) {
+            const tabId = panel.tabs[0].id;
+
+            // Update content based on tab ID
+            if (tabId === "navigation") {
+              panel.tabs[0].content = createNavigationContent();
+            } else if (tabId === "reports") {
+              panel.tabs[0].content = createReportsContent();
+            } else if (tabId === "widgets") {
+              panel.tabs[0].content = createWidgetsContent();
+            } else if (tabId.startsWith("welcome")) {
+              panel.tabs[0].content = createWelcomeContent();
+            }
+          }
+        });
+
+        // Apply the updated layout (preserves sizes)
+        dockLayoutRef.current.loadLayout(currentLayout);
+        console.log("Content updated, sizes preserved");
+      }
+    } catch (error) {
+      console.warn(
+        "Error updating content, falling back to full reload:",
+        error
+      );
+      // Fallback: full layout reload
+      const newLayout = generateDynamicLayout();
+      dockLayoutRef.current.loadLayout(newLayout);
+    }
+  }, [
+    createNavigationContent,
+    createReportsContent,
+    createWidgetsContent,
+    createWelcomeContent,
+  ]);
+
+  // Generate layout (only for structure changes)
   const generateDynamicLayout = useCallback((): LayoutData => {
     const children: any[] = [];
 
-    // Navigation tab (non-resizable via CSS)
+    // Navigation tab (fixed size, always 320)
     const navigationTab = {
       id: "navigation",
       title: (
@@ -561,7 +630,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             <span>Navigation</span>
           </div>
           <div className="tab-actions">
-            {/* Show/Hide buttons for closed sections */}
             {selectedView && !reportsVisible && (
               <button
                 className="tab-action-btn show-section-btn"
@@ -615,10 +683,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       closable: false,
     };
 
-    // Navigation panel (fixed width controlled by CSS)
+    // Navigation panel - always fixed at 320
     children.push({
       tabs: [navigationTab],
       size: 320,
+      minSize: 320,
+      maxSize: 320,
     });
 
     // Show welcome section when no view is selected
@@ -683,6 +753,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             },
           ],
           size: widgetsVisible ? 440 : 880,
+          minSize: 250,
         });
       }
 
@@ -727,6 +798,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             },
           ],
           size: reportsVisible ? 440 : 880,
+          minSize: 250,
         });
       }
 
@@ -792,22 +864,33 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     selectedView,
     reportsVisible,
     widgetsVisible,
-    views,
-    viewGroups,
-    navSettings,
-    navigationUpdateTrigger,
+    createNavigationContent,
+    createReportsContent,
+    createWidgetsContent,
+    createWelcomeContent,
   ]);
 
-  // Update layout when dependencies change
+  // NEW: Smart layout management
   useEffect(() => {
-    if (dockLayoutRef.current) {
+    if (!dockLayoutRef.current) return;
+
+    const newStructure = getCurrentLayoutStructure();
+
+    if (newStructure !== layoutStructure) {
+      // Structure changed - need full layout reload
+      console.log(
+        "Layout structure changed:",
+        layoutStructure,
+        "->",
+        newStructure
+      );
       const newLayout = generateDynamicLayout();
       dockLayoutRef.current.loadLayout(newLayout);
-      console.log("Layout updated:", {
-        selectedView: selectedView?.name || "none",
-        reportsVisible,
-        widgetsVisible,
-      });
+      setLayoutStructure(newStructure);
+    } else {
+      // Only content changed - update content only
+      console.log("Only content changed, updating content");
+      updateLayoutContent();
     }
   }, [selectedView, reportsVisible, widgetsVisible, navigationUpdateTrigger]);
 
@@ -838,7 +921,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <ThemeIcon />
       </button>
 
-      {/* Keep existing modals... */}
+      {/* Keep all existing modals... */}
       {showManageModal && (
         <ManageModal onClose={() => setShowManageModal(false)} />
       )}

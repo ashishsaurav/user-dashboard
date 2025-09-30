@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   User,
   View,
@@ -43,14 +43,14 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [expandedViewGroups, setExpandedViewGroups] = useState<{
     [key: string]: boolean;
   }>({});
-  const [editingView, setEditingView] = useState<View | null>(null);
-  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(
-    null
-  );
-  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(
-    null
-  );
-  const [deletingView, setDeletingView] = useState<View | null>(null);
+  const [editingView, setEditingView] = useState<any>(null);
+  const [editingViewGroup, setEditingViewGroup] = useState<any>(null);
+  const [deletingViewGroup, setDeletingViewGroup] = useState<any>(null);
+  const [deletingView, setDeletingView] = useState<any>(null);
+
+  // NEW: Responsive layout state
+  const [isHorizontalLayout, setIsHorizontalLayout] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Drag and drop state
   const [draggedItem, setDraggedItem] = useState<{
@@ -64,6 +64,42 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   } | null>(null);
 
   const { showSuccess, showWarning } = useNotification();
+
+  // NEW: Detect if navigation is in horizontal layout (top/bottom dock)
+  useEffect(() => {
+    const detectLayout = () => {
+      if (!containerRef.current) return;
+
+      const container = containerRef.current;
+      const rect = container.getBoundingClientRect();
+
+      // If width is significantly larger than height, it's horizontal layout
+      const aspectRatio = rect.width / rect.height;
+      const newIsHorizontal = aspectRatio > 2; // Width is more than 2x height
+
+      if (newIsHorizontal !== isHorizontalLayout) {
+        setIsHorizontalLayout(newIsHorizontal);
+        console.log(
+          "Navigation layout changed:",
+          newIsHorizontal ? "Horizontal" : "Vertical"
+        );
+      }
+    };
+
+    // Initial detection
+    detectLayout();
+
+    // Create ResizeObserver to detect layout changes
+    const resizeObserver = new ResizeObserver(detectLayout);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    // Cleanup
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isHorizontalLayout]);
 
   // FIXED: Get current user settings - now expects single object
   const getCurrentUserSettings = (): UserNavigationSettings => {
@@ -91,11 +127,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const getViewGroupViews = (viewGroupId: string): View[] => {
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
     if (!viewGroup) return [];
-
     const groupViews = viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean) as View[];
-
     return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
   };
 
@@ -115,9 +149,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   // Toggle visibility
   const handleToggleVisibility = (type: "view" | "viewgroup", id: string) => {
     const currentSettings = getCurrentUserSettings();
-
     let updatedSettings: UserNavigationSettings;
-
     if (type === "view") {
       updatedSettings = {
         ...currentSettings,
@@ -157,7 +189,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }));
   };
 
-  // Drag handlers (existing implementation...)
+  // Drag handlers
   const handleDragStart = (
     e: React.DragEvent,
     type: "view" | "viewgroup",
@@ -188,21 +220,30 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   ) => {
     e.preventDefault();
     if (!draggedItem) return;
-
     let position: "top" | "bottom" | "middle" = "middle";
-
     if (targetType === "view") {
       const rect = e.currentTarget.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const height = rect.height;
 
-      if (y < height * 0.33) {
-        position = "top";
-      } else if (y > height * 0.66) {
-        position = "bottom";
+      if (isHorizontalLayout) {
+        // Horizontal layout - use left/right instead of top/bottom
+        const x = e.clientX - rect.left;
+        const width = rect.width;
+        if (x < width * 0.33) {
+          position = "top"; // Left side
+        } else if (x > width * 0.66) {
+          position = "bottom"; // Right side
+        }
+      } else {
+        // Vertical layout - use top/bottom
+        const y = e.clientY - rect.top;
+        const height = rect.height;
+        if (y < height * 0.33) {
+          position = "top";
+        } else if (y > height * 0.66) {
+          position = "bottom";
+        }
       }
     }
-
     setDragOverItem({ id: targetId, position });
   };
 
@@ -210,7 +251,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     const rect = e.currentTarget.getBoundingClientRect();
     const x = e.clientX;
     const y = e.clientY;
-
     if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
       setDragOverItem(null);
     }
@@ -223,7 +263,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   ) => {
     e.preventDefault();
     e.stopPropagation();
-
     if (!draggedItem || draggedItem.id === targetId) {
       setDragOverItem(null);
       return;
@@ -238,11 +277,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         handleViewMoveToGroup(draggedItem.id, targetId);
       }
     }
-
     setDragOverItem(null);
   };
 
-  // Reorder handlers (existing implementation...)
+  // Keep all your existing reorder handlers...
   const handleViewGroupReorder = (
     draggedGroupId: string,
     targetGroupId: string
@@ -299,7 +337,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
         const position = dragOverItem?.position || "middle";
         let insertIndex = targetIndex;
-
         if (position === "top") {
           insertIndex = targetIndex;
         } else if (position === "bottom") {
@@ -357,7 +394,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           const targetIndex = vg.viewIds.findIndex((id) => id === targetViewId);
           const position = dragOverItem?.position || "bottom";
           const newViewIds = [...vg.viewIds];
-
           let insertIndex = targetIndex;
           if (position === "top") {
             insertIndex = targetIndex;
@@ -397,12 +433,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           return { ...view, order: newIndex + 1 };
         }
       }
-
       if (targetGroup && newTargetViewIds.includes(view.id)) {
         const newIndex = newTargetViewIds.findIndex((id) => id === view.id);
         return { ...view, order: newIndex + 1 };
       }
-
       return view;
     });
 
@@ -415,6 +449,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     const targetGroupName = viewGroups.find(
       (vg) => vg.id === targetGroupId
     )?.name;
+
     showSuccess(
       "View Moved",
       `${draggedView.name} moved from ${sourceGroupName} to ${targetGroupName}.`
@@ -484,11 +519,11 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     setDeletingViewGroup(null);
   };
 
-  // Icons (existing)
+  // Icons
   const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
     <svg
-      width="16"
-      height="16"
+      width="12"
+      height="12"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -498,27 +533,11 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         transition: "transform 0.2s ease",
       }}
     >
-      <path d="M9 18l6-6-6-6" />
+      <polyline points="9 18 15 12 9 6" />
     </svg>
   );
 
   const ViewGroupIcon = () => (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
-    </svg>
-  );
-
-  const ViewIcon = () => (
     <svg
       width="16"
       height="16"
@@ -527,12 +546,11 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       stroke="currentColor"
       strokeWidth="2"
     >
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <circle cx="12" cy="12" r="3" />
+      <path d="M3 3h18v18H3zM9 9h6v6H9z" />
     </svg>
   );
 
-  const EditIcon = () => (
+  const ViewIcon = () => (
     <svg
       width="14"
       height="14"
@@ -541,24 +559,36 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       stroke="currentColor"
       strokeWidth="2"
     >
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14,2 14,8 20,8" />
+    </svg>
+  );
+
+  const EditIcon = () => (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 1 2-2v-7" />
+      <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
     </svg>
   );
 
   const DeleteIcon = () => (
     <svg
-      width="14"
-      height="14"
+      width="12"
+      height="12"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
     >
       <polyline points="3,6 5,6 21,6" />
-      <path d="M19,6V20a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6M8,6V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2V6" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   );
 
@@ -608,19 +638,34 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   );
 
   return (
-    <div className="navigation-panel">
-      <div className="nav-menu">
+    <div
+      ref={containerRef}
+      className={`navigation-panel ${
+        isHorizontalLayout ? "horizontal-layout" : "vertical-layout"
+      }`}
+    >
+      <div
+        className={`nav-menu ${
+          isHorizontalLayout ? "nav-menu-horizontal" : "nav-menu-vertical"
+        }`}
+      >
         {getVisibleOrderedViewGroups().map((viewGroup) => {
           const groupViews = getVisibleViewsInGroup(viewGroup.id);
-          const isExpanded = expandedViewGroups[viewGroup.id];
+          const isExpanded = isHorizontalLayout
+            ? true
+            : expandedViewGroups[viewGroup.id]; // Always expanded in horizontal
           const isHidden = isItemHidden("viewgroup", viewGroup.id);
           const isDragOver = dragOverItem?.id === viewGroup.id;
 
           return (
             <div
               key={viewGroup.id}
-              className={`nav-group ${isDragOver ? "drag-over" : ""}`}
-              draggable
+              className={`nav-group ${isDragOver ? "drag-over" : ""} ${
+                isHorizontalLayout
+                  ? "nav-group-horizontal"
+                  : "nav-group-vertical"
+              }`}
+              draggable={!isHorizontalLayout} // Disable drag in horizontal mode for simplicity
               onDragStart={(e) => handleDragStart(e, "viewgroup", viewGroup.id)}
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
@@ -629,28 +674,40 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
               onDrop={(e) => handleDrop(e, viewGroup.id, "viewgroup")}
             >
               <div
-                className="nav-group-header"
-                onClick={() => toggleViewGroupExpansion(viewGroup.id)}
+                className={`nav-group-header ${
+                  isHorizontalLayout
+                    ? "nav-group-header-horizontal"
+                    : "nav-group-header-vertical"
+                }`}
+                onClick={() =>
+                  !isHorizontalLayout && toggleViewGroupExpansion(viewGroup.id)
+                }
               >
                 <div className="nav-group-info">
                   <div className="nav-group-icon">
-                    <ChevronIcon expanded={isExpanded} />
+                    <ViewGroupIcon />
                   </div>
-                  <ViewGroupIcon />
-                  <span className="nav-group-title">{viewGroup.name}</span>
+                  <div className="nav-group-title">{viewGroup.name}</div>
                   {viewGroup.isDefault && (
                     <span className="default-badge">Default</span>
                   )}
                 </div>
-                <div className="nav-group-actions">
-                  <button
-                    className="nav-action-btn drag-btn"
-                    title="Drag to reorder"
-                    onClick={(e) => e.stopPropagation()}
-                    onMouseDown={(e) => e.stopPropagation()}
-                  >
-                    <DragIcon />
-                  </button>
+                <div
+                  className="nav-group-actions"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {!isHorizontalLayout && (
+                    <button
+                      className="nav-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleViewGroupExpansion(viewGroup.id);
+                      }}
+                    >
+                      <ChevronIcon expanded={isExpanded} />
+                    </button>
+                  )}
                   <button
                     className="nav-action-btn visibility-btn"
                     onClick={(e) => {
@@ -688,7 +745,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                 </div>
               </div>
               {isExpanded && groupViews.length > 0 && (
-                <div className="nav-group-content">
+                <div
+                  className={`nav-group-content ${
+                    isHorizontalLayout
+                      ? "nav-group-content-horizontal"
+                      : "nav-group-content-vertical"
+                  }`}
+                >
                   {groupViews.map((view) => {
                     const viewIsHidden = isItemHidden("view", view.id);
                     const viewReports = view.reportIds
@@ -699,23 +762,19 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                       .filter(Boolean);
                     const isViewDragOver = dragOverItem?.id === view.id;
                     const dragPosition = dragOverItem?.position;
-                    const isSelected = selectedView?.id === view.id; // NEW: Check if selected
+                    const isSelected = selectedView?.id === view.id;
 
                     return (
                       <div
                         key={view.id}
                         className={`nav-view-item ${
                           isViewDragOver ? "drag-over" : ""
+                        } ${dragPosition ? `drag-${dragPosition}` : ""} ${
+                          isSelected ? "selected" : ""
                         } ${
-                          isViewDragOver && dragPosition === "top"
-                            ? "drag-over-top"
-                            : ""
-                        } ${
-                          isViewDragOver && dragPosition === "bottom"
-                            ? "drag-over-bottom"
-                            : ""
-                        } ${
-                          isSelected ? "selected" : "" // NEW: Selected styling
+                          isHorizontalLayout
+                            ? "nav-view-item-horizontal"
+                            : "nav-view-item-vertical"
                         }`}
                         draggable
                         onDragStart={(e) => handleDragStart(e, "view", view.id)}
@@ -724,27 +783,24 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                         onDragEnter={(e) => handleDragEnter(e, view.id, "view")}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, view.id, "view")}
-                        onClick={() => handleViewClick(view)} // NEW: Handle view selection
+                        onClick={() => handleViewClick(view)}
                       >
                         <div className="nav-view-info">
-                          <ViewIcon />
                           <div className="nav-view-content">
-                            <span className="nav-view-title">{view.name}</span>
-                            <span className="nav-view-meta">
-                              {viewReports.length} Reports, {viewWidgets.length}{" "}
-                              Widgets
-                            </span>
+                            <div className="nav-view-title">{view.name}</div>
+                            {!isHorizontalLayout && (
+                              <div className="nav-view-meta">
+                                {viewReports.length} Reports,{" "}
+                                {viewWidgets.length} Widgets
+                              </div>
+                            )}
                           </div>
                         </div>
-                        <div className="nav-view-actions">
-                          <button
-                            className="nav-action-btn drag-btn"
-                            title="Drag to reorder"
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            <DragIcon />
-                          </button>
+                        <div
+                          className="nav-view-actions"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
                           <button
                             className="nav-action-btn visibility-btn"
                             onClick={(e) => {
@@ -790,7 +846,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         })}
       </div>
 
-      {/* Edit Modals */}
+      {/* Keep all existing modals */}
       {editingView && (
         <EditViewModal
           view={editingView}
@@ -841,7 +897,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         />
       )}
 
-      {/* Delete Confirmation Modals */}
       {deletingViewGroup && (
         <DeleteConfirmationModal
           type="viewgroup"
