@@ -251,7 +251,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       }));
 
       onUpdateViewGroups(updatedGroupsWithOrder);
-      showSuccess("Order Updated", "View group order has been updated.");
     }
   };
 
@@ -315,7 +314,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
         onUpdateViews(updatedViews);
         onUpdateViewGroups(updatedViewGroups);
-        showSuccess("Order Updated", "View order has been updated.");
       }
     } else {
       // Move to different group
@@ -834,12 +832,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
             // Pass the single settings object to DashboardDock
             onUpdateNavSettings(updatedSettings);
-
-            // Show success message
-            showSuccess(
-              "Visibility Updated",
-              "View visibility settings have been saved."
-            );
 
             // Force a small re-render to ensure NavigationPanel updates
             setEditingViewGroup(null);
