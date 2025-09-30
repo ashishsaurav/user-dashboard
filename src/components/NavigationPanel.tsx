@@ -16,12 +16,14 @@ interface NavigationPanelProps {
   user: User;
   views: View[];
   viewGroups: ViewGroup[];
-  userNavSettings: UserNavigationSettings[]; // This is array from DashboardDock
+  userNavSettings: UserNavigationSettings; // FIXED: Single object, not array
   reports: Report[];
   widgets: Widget[];
   onUpdateViews: (views: View[]) => void;
   onUpdateViewGroups: (viewGroups: ViewGroup[]) => void;
-  onUpdateNavSettings: (settings: UserNavigationSettings) => void; // But this expects single object
+  onUpdateNavSettings: (settings: UserNavigationSettings) => void;
+  onViewSelect?: (view: View) => void; // NEW: View selection handler
+  selectedView?: View | null; // NEW: Currently selected view
 }
 
 const NavigationPanel: React.FC<NavigationPanelProps> = ({
@@ -34,6 +36,8 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
+  onViewSelect,
+  selectedView,
 }) => {
   // Local state
   const [expandedViewGroups, setExpandedViewGroups] = useState<{
@@ -61,12 +65,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
   const { showSuccess, showWarning } = useNotification();
 
-  // Get current user settings - Compatible with DashboardDock's single object
+  // FIXED: Get current user settings - now expects single object
   const getCurrentUserSettings = (): UserNavigationSettings => {
-    // userNavSettings comes as array from DashboardDock, but we need single object
-    const currentSettings = userNavSettings.find((s) => s.userId === user.name);
     return (
-      currentSettings || {
+      userNavSettings || {
         userId: user.name,
         viewGroupOrder: [],
         viewOrders: {},
@@ -85,8 +87,8 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       : settings.hiddenViewGroups.includes(id);
   };
 
-  // Get viewgroup views with proper ordering (same as AllViewGroupsViews)
-  const getViewGroupViews = (viewGroupId: string) => {
+  // Get viewgroup views with proper ordering
+  const getViewGroupViews = (viewGroupId: string): View[] => {
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
     if (!viewGroup) return [];
 
@@ -110,9 +112,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     return groupViews.filter((view) => !isItemHidden("view", view.id));
   };
 
-  // FIXED: Toggle visibility - Works with DashboardDock's single object expectation
+  // Toggle visibility
   const handleToggleVisibility = (type: "view" | "viewgroup", id: string) => {
     const currentSettings = getCurrentUserSettings();
+
     let updatedSettings: UserNavigationSettings;
 
     if (type === "view") {
@@ -131,8 +134,19 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       };
     }
 
-    // DashboardDock expects single UserNavigationSettings object
+    console.log("NavigationPanel - Toggle visibility:", {
+      type,
+      id,
+      updatedSettings,
+    });
     onUpdateNavSettings(updatedSettings);
+  };
+
+  // NEW: Handle view selection
+  const handleViewClick = (view: View) => {
+    if (onViewSelect) {
+      onViewSelect(view);
+    }
   };
 
   // Toggle expansion
@@ -143,7 +157,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }));
   };
 
-  // Same drag handlers as AllViewGroupsViews
+  // Drag handlers (existing implementation...)
   const handleDragStart = (
     e: React.DragEvent,
     type: "view" | "viewgroup",
@@ -228,7 +242,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     setDragOverItem(null);
   };
 
-  // Same ordering logic as AllViewGroupsViews
+  // Reorder handlers (existing implementation...)
   const handleViewGroupReorder = (
     draggedGroupId: string,
     targetGroupId: string
@@ -265,7 +279,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     if (!sourceGroupId || !targetGroupId) return;
 
     if (sourceGroupId === targetGroupId) {
-      // Reordering within the same group
       const viewGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
       if (!viewGroup) return;
 
@@ -285,7 +298,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         const [draggedViewIdItem] = reorderedViewIds.splice(draggedIndex, 1);
 
         const position = dragOverItem?.position || "middle";
-        let insertIndex;
+        let insertIndex = targetIndex;
 
         if (position === "top") {
           insertIndex = targetIndex;
@@ -300,10 +313,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         const updatedViews = views.map((view) => {
           if (reorderedViewIds.includes(view.id)) {
             const newIndex = reorderedViewIds.findIndex((id) => id === view.id);
-            return {
-              ...view,
-              order: newIndex + 1,
-            };
+            return { ...view, order: newIndex + 1 };
           }
           return view;
         });
@@ -316,7 +326,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         onUpdateViewGroups(updatedViewGroups);
       }
     } else {
-      // Move to different group
       handleViewMoveToGroup(draggedViewId, targetGroupId, targetViewId);
     }
   };
@@ -335,7 +344,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       return;
 
     let updatedViewGroups = [...viewGroups];
-    let newTargetViewIds: string[] = [];
+    let newTargetViewIds: string[];
 
     updatedViewGroups = viewGroups.map((vg) => {
       if (vg.id === sourceGroupId) {
@@ -360,22 +369,15 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
           newViewIds.splice(insertIndex, 0, draggedViewId);
           newTargetViewIds = newViewIds;
-          return {
-            ...vg,
-            viewIds: newViewIds,
-          };
+          return { ...vg, viewIds: newViewIds };
         } else {
           newTargetViewIds = [...vg.viewIds, draggedViewId];
-          return {
-            ...vg,
-            viewIds: newTargetViewIds,
-          };
+          return { ...vg, viewIds: newTargetViewIds };
         }
       }
       return vg;
     });
 
-    // Update view orders
     const sourceGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
     const targetGroup = updatedViewGroups.find((vg) => vg.id === targetGroupId);
 
@@ -392,19 +394,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           const newIndex = sourceGroupAfterRemoval.viewIds.findIndex(
             (id) => id === view.id
           );
-          return {
-            ...view,
-            order: newIndex + 1,
-          };
+          return { ...view, order: newIndex + 1 };
         }
       }
 
       if (targetGroup && newTargetViewIds.includes(view.id)) {
         const newIndex = newTargetViewIds.findIndex((id) => id === view.id);
-        return {
-          ...view,
-          order: newIndex + 1,
-        };
+        return { ...view, order: newIndex + 1 };
       }
 
       return view;
@@ -419,14 +415,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     const targetGroupName = viewGroups.find(
       (vg) => vg.id === targetGroupId
     )?.name;
-
     showSuccess(
       "View Moved",
-      `"${draggedView.name}" moved from "${sourceGroupName}" to "${targetGroupName}"`
+      `${draggedView.name} moved from ${sourceGroupName} to ${targetGroupName}.`
     );
   };
 
-  // Delete handlers (same as before)
+  // Delete handlers
   const handleDeleteView = (view: View) => {
     const updatedViews = views.filter((v) => v.id !== view.id);
     const updatedViewGroups = viewGroups.map((vg) => ({
@@ -436,10 +431,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
     onUpdateViews(updatedViews);
     onUpdateViewGroups(updatedViewGroups);
-    showSuccess(
-      "View Deleted",
-      `"${view.name}" has been removed successfully.`
-    );
+    showSuccess("View Deleted", `${view.name} has been removed successfully.`);
   };
 
   const handleDeleteViewGroupConfirm = (
@@ -472,7 +464,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       onUpdateViewGroups(updatedViewGroups);
       showSuccess(
         "View Group Deleted",
-        `"${deletingViewGroup.name}" deleted. Views moved to Default group.`
+        `${deletingViewGroup.name} deleted. Views moved to Default group.`
       );
     } else {
       const viewsToDelete = deletingViewGroup.viewIds;
@@ -485,14 +477,14 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       onUpdateViewGroups(updatedViewGroups);
       showSuccess(
         "View Group and Views Deleted",
-        `"${deletingViewGroup.name}" and all its views have been removed.`
+        `${deletingViewGroup.name} and all its views have been removed.`
       );
     }
 
     setDeletingViewGroup(null);
   };
 
-  // Icons (keeping existing)
+  // Icons (existing)
   const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
     <svg
       width="16"
@@ -628,7 +620,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             <div
               key={viewGroup.id}
               className={`nav-group ${isDragOver ? "drag-over" : ""}`}
-              draggable={true}
+              draggable
               onDragStart={(e) => handleDragStart(e, "viewgroup", viewGroup.id)}
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
@@ -695,7 +687,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                   )}
                 </div>
               </div>
-
               {isExpanded && groupViews.length > 0 && (
                 <div className="nav-group-content">
                   {groupViews.map((view) => {
@@ -708,6 +699,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                       .filter(Boolean);
                     const isViewDragOver = dragOverItem?.id === view.id;
                     const dragPosition = dragOverItem?.position;
+                    const isSelected = selectedView?.id === view.id; // NEW: Check if selected
 
                     return (
                       <div
@@ -722,14 +714,17 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                           isViewDragOver && dragPosition === "bottom"
                             ? "drag-over-bottom"
                             : ""
+                        } ${
+                          isSelected ? "selected" : "" // NEW: Selected styling
                         }`}
-                        draggable={true}
+                        draggable
                         onDragStart={(e) => handleDragStart(e, "view", view.id)}
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                         onDragEnter={(e) => handleDragEnter(e, view.id, "view")}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, view.id, "view")}
+                        onClick={() => handleViewClick(view)} // NEW: Handle view selection
                       >
                         <div className="nav-view-info">
                           <ViewIcon />
@@ -752,9 +747,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                           </button>
                           <button
                             className="nav-action-btn visibility-btn"
-                            onClick={() =>
-                              handleToggleVisibility("view", view.id)
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleVisibility("view", view.id);
+                            }}
                             title={
                               viewIsHidden
                                 ? "Show in navigation"
@@ -765,14 +761,20 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                           </button>
                           <button
                             className="nav-action-btn edit-btn"
-                            onClick={() => setEditingView(view)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingView(view);
+                            }}
                             title="Edit view"
                           >
                             <EditIcon />
                           </button>
                           <button
                             className="nav-action-btn delete-btn"
-                            onClick={() => setDeletingView(view)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingView(view);
+                            }}
                             title="Delete view"
                           >
                             <DeleteIcon />
@@ -787,6 +789,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           );
         })}
       </div>
+
       {/* Edit Modals */}
       {editingView && (
         <EditViewModal
@@ -809,7 +812,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           viewGroup={editingViewGroup}
           views={views}
           userRole={user.role}
-          userNavSettings={userNavSettings}
+          userNavSettings={[userNavSettings]} // Convert single object to array for modal
           user={user}
           onSave={(updatedViewGroup) => {
             onUpdateViewGroups(
@@ -829,20 +832,15 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
               "NavigationPanel receiving settings update:",
               updatedSettings
             );
-
-            // Pass the single settings object to DashboardDock
             onUpdateNavSettings(updatedSettings);
-
-            // Force a small re-render to ensure NavigationPanel updates
-            setEditingViewGroup(null);
-
-            // Optional: Add a small delay to ensure state has propagated
-            setTimeout(() => {
-              console.log("Navigation panel should now reflect changes");
-            }, 100);
+            showSuccess(
+              "Visibility Updated",
+              "View visibility settings have been saved."
+            );
           }}
         />
       )}
+
       {/* Delete Confirmation Modals */}
       {deletingViewGroup && (
         <DeleteConfirmationModal
@@ -852,6 +850,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           onCancel={() => setDeletingViewGroup(null)}
         />
       )}
+
       {deletingView && (
         <DeleteConfirmationModal
           type="view"

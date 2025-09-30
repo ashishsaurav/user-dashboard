@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import DockLayout, { LayoutData } from "rc-dock";
 import "rc-dock/dist/rc-dock.css";
-import "rc-dock/dist/rc-dock-dark.css"; // Keep this for dark theme
+import "rc-dock/dist/rc-dock-dark.css";
 import {
   User,
   View,
@@ -21,196 +21,30 @@ import ManageModal from "./ManageModal";
 import NavigationManageModal from "./NavigationManageModal";
 import "./DashboardDock.css";
 import NavigationPanel from "./NavigationPanel";
+import ViewContentPanel from "./ViewContentPanel";
+import AddReportModal from "./AddReportModal";
+import AddWidgetModal from "./AddWidgetModal";
 
 interface DashboardDockProps {
   user: User;
   onLogout: () => void;
 }
 
-// Icons for buttons - properly sized (keeping your existing icons)
-const SettingsIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.4a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-);
-
-const NavigationIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-    <polyline points="9,22 9,12 15,12 15,22" />
-  </svg>
-);
-
-const ReportsIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14,2 14,8 20,8" />
-    <line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" />
-    <polyline points="10,9 9,9 8,9" />
-  </svg>
-);
-
-const WidgetsIcon = () => (
-  <svg
-    width="14"
-    height="14"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <rect x="3" y="3" width="7" height="7" />
-    <rect x="14" y="3" width="7" height="7" />
-    <rect x="14" y="14" width="7" height="7" />
-    <rect x="3" y="14" width="7" height="7" />
-  </svg>
-);
-
-// Button icons - smaller for buttons
-const ManageIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-  </svg>
-);
-
-const SettingsSmallIcon = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    width="12"
-    height="12"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <circle cx="12" cy="12" r="3" />
-    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.4a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-  </svg>
-);
-
-// Theme toggle icons for floating button
-const ThemeIconLight = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <circle cx="12" cy="12" r="5" />
-    <line x1="12" y1="1" x2="12" y2="3" />
-    <line x1="12" y1="21" x2="12" y2="23" />
-    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
-    <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-    <line x1="1" y1="12" x2="3" y2="12" />
-    <line x1="21" y1="12" x2="23" y2="12" />
-    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-    <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-  </svg>
-);
-
-const ThemeIconDark = () => (
-  <svg
-    width="20"
-    height="20"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-  </svg>
-);
-
 const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const [showManageModal, setShowManageModal] = useState(false);
   const [showNavigationModal, setShowNavigationModal] = useState(false);
+  const [showAddReportModal, setShowAddReportModal] = useState(false);
+  const [showAddWidgetModal, setShowAddWidgetModal] = useState(false);
   const { theme, toggleTheme } = useTheme();
+
+  // NEW: Selected view state for dynamic content
+  const [selectedView, setSelectedView] = useState<View | null>(null);
+
+  // FIXED: Force re-render trigger for NavigationPanel
+  const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
 
   // RC-DOCK REF for updates
   const dockLayoutRef = useRef<DockLayout>(null);
-
-  // Apply RC-Dock theme classes properly when theme changes
-  useEffect(() => {
-    // Apply theme to document root for global theming
-    document.documentElement.setAttribute("data-theme", theme);
-
-    // Apply RC-Dock theme classes to the dock layout container
-    const dockContainer = document.querySelector(".dock-container");
-    const dockLayoutElement = document.querySelector(".dock-layout");
-
-    if (dockContainer) {
-      // Remove all theme classes first
-      dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
-
-      // Add appropriate theme class
-      if (theme === "dark") {
-        dockContainer.classList.add("dock-layout-dark");
-      } else {
-        dockContainer.classList.add("dock-layout-light");
-      }
-    }
-
-    if (dockLayoutElement) {
-      // Remove all theme classes first
-      dockLayoutElement.classList.remove(
-        "dock-layout-dark",
-        "dock-layout-light"
-      );
-
-      // Add appropriate theme class
-      if (theme === "dark") {
-        dockLayoutElement.classList.add("dock-layout-dark");
-      } else {
-        dockLayoutElement.classList.add("dock-layout-light");
-      }
-    }
-
-    // Also apply to body for global theme switching
-    document.body.setAttribute("data-theme", theme);
-
-    console.log(`Theme switched to: ${theme}`);
-  }, [theme]);
 
   // Navigation state management (keeping your original logic)
   const [views, setViews] = useState<View[]>(() => {
@@ -263,35 +97,33 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return newUserData.viewGroups;
   });
 
-  const [navSettings, setNavSettings] = useState<UserNavigationSettings | null>(
-    () => {
-      const savedSettings = sessionStorage.getItem(
-        `navigationSettings_${user.name}`
-      );
-      if (savedSettings) {
-        return JSON.parse(savedSettings);
-      }
+  const [navSettings, setNavSettings] = useState<UserNavigationSettings>(() => {
+    const savedSettings = sessionStorage.getItem(
+      `navigationSettings_${user.name}`
+    );
+    if (savedSettings) {
+      return JSON.parse(savedSettings);
+    }
 
-      const defaultData = getUserNavigationData(user.name);
-      if (defaultData) {
-        const defaultSettings = defaultData.navigationSettings;
-        sessionStorage.setItem(
-          `navigationSettings_${user.name}`,
-          JSON.stringify(defaultSettings)
-        );
-        return defaultSettings;
-      }
-
-      const newUserData = initializeUserNavigationData(user.name);
+    const defaultData = getUserNavigationData(user.name);
+    if (defaultData) {
+      const defaultSettings = defaultData.navigationSettings;
       sessionStorage.setItem(
         `navigationSettings_${user.name}`,
-        JSON.stringify(newUserData.navigationSettings)
+        JSON.stringify(defaultSettings)
       );
-      return newUserData.navigationSettings;
+      return defaultSettings;
     }
-  );
 
-  // State handlers
+    const newUserData = initializeUserNavigationData(user.name);
+    sessionStorage.setItem(
+      `navigationSettings_${user.name}`,
+      JSON.stringify(newUserData.navigationSettings)
+    );
+    return newUserData.navigationSettings;
+  });
+
+  // FIXED: Enhanced state handlers with real-time updates
   const handleUpdateViews = (updatedViews: View[]) => {
     const sortedViews = [...updatedViews].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
@@ -301,6 +133,19 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       `navigationViews_${user.name}`,
       JSON.stringify(sortedViews)
     );
+
+    // FIXED: Trigger navigation panel update
+    setNavigationUpdateTrigger((prev) => prev + 1);
+
+    // FIXED: Update selected view if it was modified
+    if (selectedView) {
+      const updatedSelectedView = sortedViews.find(
+        (v) => v.id === selectedView.id
+      );
+      if (updatedSelectedView) {
+        setSelectedView(updatedSelectedView);
+      }
+    }
   };
 
   const handleUpdateViewGroups = (updatedViewGroups: ViewGroup[]) => {
@@ -312,6 +157,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       `navigationViewGroups_${user.name}`,
       JSON.stringify(sortedGroups)
     );
+
+    // FIXED: Trigger navigation panel update
+    setNavigationUpdateTrigger((prev) => prev + 1);
   };
 
   const handleUpdateNavSettings = (settings: UserNavigationSettings) => {
@@ -320,44 +168,106 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       `navigationSettings_${user.name}`,
       JSON.stringify(settings)
     );
+
+    // FIXED: Trigger navigation panel update
+    setNavigationUpdateTrigger((prev) => prev + 1);
   };
 
-  const handleAddView = (newView: View, viewGroupIds?: string[]) => {
-    const updatedViews = [...views, newView];
+  // NEW: View selection handler
+  const handleViewSelect = (view: View) => {
+    console.log("View selected:", view.name);
+    setSelectedView(view);
+  };
+
+  const handleAddReportsToView = (reports: Report[]) => {
+    if (!selectedView || reports.length === 0) return;
+
+    const newReportIds = reports.map((r) => r.id);
+    const updatedView = {
+      ...selectedView,
+      reportIds: [...selectedView.reportIds, ...newReportIds],
+    };
+
+    const updatedViews = views.map((v) =>
+      v.id === selectedView.id ? updatedView : v
+    );
+
     handleUpdateViews(updatedViews);
+    setSelectedView(updatedView);
+    setShowAddReportModal(false);
 
-    if (viewGroupIds && viewGroupIds.length > 0) {
-      const updatedViewGroups = viewGroups.map((vg) => {
-        if (viewGroupIds.includes(vg.id)) {
-          return { ...vg, viewIds: [...vg.viewIds, newView.id] };
-        }
-        return vg;
-      });
-      handleUpdateViewGroups(updatedViewGroups);
-    } else {
-      const defaultGroup = viewGroups.find((vg) => vg.isDefault);
-      if (defaultGroup) {
-        const updatedViewGroups = viewGroups.map((vg) =>
-          vg.id === defaultGroup.id
-            ? { ...vg, viewIds: [...vg.viewIds, newView.id] }
-            : vg
-        );
-        handleUpdateViewGroups(updatedViewGroups);
-      }
-    }
+    console.log(
+      `Added ${reports.length} reports to view, navigation should update immediately`
+    );
   };
 
-  const handleAddViewGroup = (newViewGroup: ViewGroup) => {
-    const updatedViewGroups = [...viewGroups, newViewGroup];
-    handleUpdateViewGroups(updatedViewGroups);
+  // UPDATED: Handle multiple widgets
+  const handleAddWidgetsToView = (widgets: Widget[]) => {
+    if (!selectedView || widgets.length === 0) return;
+
+    const newWidgetIds = widgets.map((w) => w.id);
+    const updatedView = {
+      ...selectedView,
+      widgetIds: [...selectedView.widgetIds, ...newWidgetIds],
+    };
+
+    const updatedViews = views.map((v) =>
+      v.id === selectedView.id ? updatedView : v
+    );
+
+    handleUpdateViews(updatedViews);
+    setSelectedView(updatedView);
+    setShowAddWidgetModal(false);
+
+    console.log(
+      `Added ${widgets.length} widgets to view, navigation should update immediately`
+    );
   };
 
+  const handleRemoveReportFromView = (reportId: string) => {
+    if (!selectedView) return;
+
+    const updatedView = {
+      ...selectedView,
+      reportIds: selectedView.reportIds.filter((id) => id !== reportId),
+    };
+
+    const updatedViews = views.map((v) =>
+      v.id === selectedView.id ? updatedView : v
+    );
+
+    // Update all states immediately
+    handleUpdateViews(updatedViews);
+    setSelectedView(updatedView);
+
+    console.log("Report removed, navigation should update immediately");
+  };
+
+  const handleRemoveWidgetFromView = (widgetId: string) => {
+    if (!selectedView) return;
+
+    const updatedView = {
+      ...selectedView,
+      widgetIds: selectedView.widgetIds.filter((id) => id !== widgetId),
+    };
+
+    const updatedViews = views.map((v) =>
+      v.id === selectedView.id ? updatedView : v
+    );
+
+    // Update all states immediately
+    handleUpdateViews(updatedViews);
+    setSelectedView(updatedView);
+
+    console.log("Widget removed, navigation should update immediately");
+  };
+
+  // Get accessible reports and widgets
   const getUserAccessibleReports = (): Report[] => {
     const savedReports = sessionStorage.getItem("reports");
     const systemReports: Report[] = savedReports
       ? JSON.parse(savedReports)
       : testReports;
-
     return user.role === "admin"
       ? systemReports
       : systemReports.filter((report: Report) =>
@@ -370,7 +280,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     const systemWidgets: Widget[] = savedWidgets
       ? JSON.parse(savedWidgets)
       : testWidgets;
-
     return user.role === "admin"
       ? systemWidgets
       : systemWidgets.filter((widget: Widget) =>
@@ -378,29 +287,227 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         );
   };
 
-  const userNavSettingsArray = navSettings ? [navSettings] : [];
+  // Apply theme changes
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", theme);
+    document.body.setAttribute("data-theme", theme);
 
-  // Create NavigationPanel content
+    const dockContainer = document.querySelector(".dock-container");
+    const dockLayoutElement = document.querySelector(".dock-layout");
+
+    if (dockContainer) {
+      dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
+      if (theme === "dark") {
+        dockContainer.classList.add("dock-layout-dark");
+      } else {
+        dockContainer.classList.add("dock-layout-light");
+      }
+    }
+
+    if (dockLayoutElement) {
+      dockLayoutElement.classList.remove(
+        "dock-layout-dark",
+        "dock-layout-light"
+      );
+      if (theme === "dark") {
+        dockLayoutElement.classList.add("dock-layout-dark");
+      } else {
+        dockLayoutElement.classList.add("dock-layout-light");
+      }
+    }
+
+    console.log(`Theme switched to: ${theme}`);
+  }, [theme]);
+
+  // Icons (keeping existing)
+  const SettingsIcon = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 20V10" />
+      <path d="M18 20V4" />
+      <path d="M6 20v-6" />
+    </svg>
+  );
+
+  const NavigationIcon = () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+      <polyline points="9,22 9,12 15,12 15,22" />
+    </svg>
+  );
+
+  const ReportsIcon = () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14,2 14,8 20,8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+      <polyline points="10,9 9,9 8,9" />
+    </svg>
+  );
+
+  const WidgetsIcon = () => (
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="14" y="14" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+    </svg>
+  );
+
+  const ManageIcon = () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
+  );
+
+  const PlusIcon = () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  );
+
+  const ThemeIconLight = () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1" x2="12" y2="3" />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1" y1="12" x2="3" y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+    </svg>
+  );
+
+  const ThemeIconDark = () => (
+    <svg
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+
+  // FIXED: Navigation content with forced updates using navigationUpdateTrigger
   const createNavigationContent = useCallback(() => {
+    console.log(
+      "Creating navigation content, trigger:",
+      navigationUpdateTrigger
+    );
+
     return (
       <NavigationPanel
         user={user}
         views={views}
         viewGroups={viewGroups}
-        userNavSettings={userNavSettingsArray}
+        userNavSettings={navSettings}
         reports={getUserAccessibleReports()}
         widgets={getUserAccessibleWidgets()}
         onUpdateViews={handleUpdateViews}
         onUpdateViewGroups={handleUpdateViewGroups}
         onUpdateNavSettings={handleUpdateNavSettings}
+        onViewSelect={handleViewSelect}
+        selectedView={selectedView}
       />
     );
-  }, [user, views, viewGroups, userNavSettingsArray]);
+  }, [
+    user,
+    views,
+    viewGroups,
+    navSettings,
+    selectedView,
+    navigationUpdateTrigger,
+  ]);
 
-  // RC-DOCK UPDATE using updateTab API
+  // Dynamic content panels
+  const createReportsContent = () => (
+    <ViewContentPanel
+      type="reports"
+      selectedView={selectedView}
+      reports={getUserAccessibleReports()}
+      widgets={[]}
+      onRemoveReport={handleRemoveReportFromView}
+      onRemoveWidget={() => {}}
+    />
+  );
+
+  const createWidgetsContent = () => (
+    <ViewContentPanel
+      type="widgets"
+      selectedView={selectedView}
+      reports={[]}
+      widgets={getUserAccessibleWidgets()}
+      onRemoveReport={() => {}}
+      onRemoveWidget={handleRemoveWidgetFromView}
+    />
+  );
+
+  // FIXED: Update dock layout when content changes - force update using updateTab
   useEffect(() => {
+    console.log("Updating dock layout due to navigation changes");
+
     if (dockLayoutRef.current) {
-      const updated = dockLayoutRef.current.updateTab("navigation", {
+      // Force update navigation tab with new content
+      dockLayoutRef.current.updateTab("navigation", {
         id: "navigation",
         title: (
           <div className="dock-tab-header navigation-tab-header">
@@ -428,7 +535,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                   }}
                   title="System Settings"
                 >
-                  <SettingsSmallIcon />
+                  <ManageIcon />
                 </button>
               )}
             </div>
@@ -438,15 +545,67 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         closable: false,
       });
 
-      if (!updated) {
-        console.warn("Failed to update navigation tab");
-      }
+      dockLayoutRef.current.updateTab("reports", {
+        id: "reports",
+        title: (
+          <div className="dock-tab-header">
+            <div className="tab-title">
+              <ReportsIcon />
+              <span>Reports</span>
+            </div>
+            {selectedView && (
+              <div className="tab-actions">
+                <button
+                  className="tab-action-btn add-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAddReportModal(true);
+                  }}
+                  title="Add Report"
+                >
+                  <PlusIcon />
+                </button>
+              </div>
+            )}
+          </div>
+        ),
+        content: createReportsContent(),
+        closable: false,
+      });
+
+      dockLayoutRef.current.updateTab("widgets", {
+        id: "widgets",
+        title: (
+          <div className="dock-tab-header">
+            <div className="tab-title">
+              <WidgetsIcon />
+              <span>Widgets</span>
+            </div>
+            {selectedView && (
+              <div className="tab-actions">
+                <button
+                  className="tab-action-btn add-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowAddWidgetModal(true);
+                  }}
+                  title="Add Widget"
+                >
+                  <PlusIcon />
+                </button>
+              </div>
+            )}
+          </div>
+        ),
+        content: createWidgetsContent(),
+        closable: false,
+      });
     }
-  }, [views, viewGroups, navSettings, createNavigationContent, user.role]);
+  }, [selectedView, views, viewGroups, navSettings, navigationUpdateTrigger]);
 
   const ThemeIcon = theme === "light" ? ThemeIconLight : ThemeIconDark;
 
-  // Dock layout with proper theme class application
+  // Dock layout configuration
   const layout: LayoutData = {
     dockbox: {
       mode: "horizontal",
@@ -481,7 +640,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                         }}
                         title="System Settings"
                       >
-                        <SettingsSmallIcon />
+                        <ManageIcon />
                       </button>
                     )}
                   </div>
@@ -503,27 +662,23 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                     <ReportsIcon />
                     <span>Reports</span>
                   </div>
+                  {selectedView && (
+                    <div className="tab-actions">
+                      <button
+                        className="tab-action-btn add-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAddReportModal(true);
+                        }}
+                        title="Add Report"
+                      >
+                        <PlusIcon />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ),
-              content: (
-                <div className="panel-content">
-                  <div className="reports-list">
-                    {getUserAccessibleReports().map((report) => (
-                      <div key={report.id} className="content-item report-item">
-                        <h4>{report.name}</h4>
-                        <p>Type: {report.type}</p>
-                        <a
-                          href={report.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open Report
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ),
+              content: createReportsContent(),
               closable: false,
             },
           ],
@@ -539,27 +694,23 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                     <WidgetsIcon />
                     <span>Widgets</span>
                   </div>
+                  {selectedView && (
+                    <div className="tab-actions">
+                      <button
+                        className="tab-action-btn add-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowAddWidgetModal(true);
+                        }}
+                        title="Add Widget"
+                      >
+                        <PlusIcon />
+                      </button>
+                    </div>
+                  )}
                 </div>
               ),
-              content: (
-                <div className="panel-content">
-                  <div className="widgets-list">
-                    {getUserAccessibleWidgets().map((widget) => (
-                      <div key={widget.id} className="content-item widget-item">
-                        <h4>{widget.name}</h4>
-                        <p>Type: {widget.type}</p>
-                        <a
-                          href={widget.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          Open Widget
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ),
+              content: createWidgetsContent(),
               closable: false,
             },
           ],
@@ -570,12 +721,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   };
 
   return (
-    <div className={`dashboard-dock modern`} data-theme={theme}>
-      <div
-        className={`dock-container ${
-          theme === "dark" ? "dock-layout-dark" : "dock-layout-light"
-        }`}
-      >
+    <div className="dashboard-dock modern" data-theme={theme}>
+      <div className="dock-container full-height">
         <DockLayout
           ref={dockLayoutRef}
           defaultLayout={layout}
@@ -607,14 +754,57 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <NavigationManageModal
           user={user}
           onClose={() => setShowNavigationModal(false)}
-          onUpdateViews={handleUpdateViews}
-          onUpdateViewGroups={handleUpdateViewGroups}
-          onUpdateNavSettings={handleUpdateNavSettings}
-          onAddView={handleAddView}
-          onAddViewGroup={handleAddViewGroup}
+          onUpdateViews={(newViews) => {
+            handleUpdateViews(newViews);
+          }}
+          onUpdateViewGroups={(newViewGroups) => {
+            handleUpdateViewGroups(newViewGroups);
+          }}
+          onUpdateNavSettings={(newSettings) => {
+            handleUpdateNavSettings(newSettings);
+          }}
+          onAddView={(newView, viewGroupIds) => {
+            const updatedViews = [...views, newView];
+            handleUpdateViews(updatedViews);
+
+            if (viewGroupIds && viewGroupIds.length > 0) {
+              const updatedViewGroups = viewGroups.map((vg) => {
+                if (viewGroupIds.includes(vg.id)) {
+                  return { ...vg, viewIds: [...vg.viewIds, newView.id] };
+                }
+                return vg;
+              });
+              handleUpdateViewGroups(updatedViewGroups);
+            }
+          }}
+          onAddViewGroup={(newViewGroup) => {
+            const updatedViewGroups = [...viewGroups, newViewGroup];
+            handleUpdateViewGroups(updatedViewGroups);
+          }}
           views={views}
           viewGroups={viewGroups}
           userNavSettings={navSettings ? [navSettings] : []}
+        />
+      )}
+
+      {/* Add Report Modal */}
+      {showAddReportModal && selectedView && (
+        <AddReportModal
+          onAddReports={handleAddReportsToView} // CHANGED: onAddReports
+          onClose={() => setShowAddReportModal(false)}
+          availableReports={getUserAccessibleReports().filter(
+            (report) => !selectedView.reportIds.includes(report.id)
+          )}
+        />
+      )}
+
+      {showAddWidgetModal && selectedView && (
+        <AddWidgetModal
+          onAddWidgets={handleAddWidgetsToView} // CHANGED: onAddWidgets
+          onClose={() => setShowAddWidgetModal(false)}
+          availableWidgets={getUserAccessibleWidgets().filter(
+            (widget) => !selectedView.widgetIds.includes(widget.id)
+          )}
         />
       )}
     </div>
