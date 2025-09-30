@@ -280,7 +280,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                   </div>
                   <span className="tab-title">{report.name}</span>
                   <button
-                    className="close-btn"
+                    className="tab-action-btn close-btn"
                     onClick={(e) => {
                       e.stopPropagation();
                       onRemoveReport(report.id);
@@ -437,7 +437,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                   <span>{widget.name}</span>
                 </div>
                 <button
-                  className="close-btn"
+                  className="tab-action-btn close-btn"
                   onClick={() => onRemoveWidget(widget.id)}
                   title="Remove from view"
                 >
