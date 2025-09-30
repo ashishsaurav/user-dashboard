@@ -1438,3 +1438,284 @@
     height: 12px;
   }
 }
+
+/* ==============================================
+   ORDERABLE TABS & WIDGETS STYLING
+   ============================================== */
+
+/* Orderable Tabs */
+.orderable-tabs {
+  position: relative;
+}
+
+.orderable-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  cursor: move;
+  user-select: none;
+  transition: all 0.2s ease;
+}
+
+.orderable-tab.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+  z-index: 1000;
+}
+
+.orderable-tab.drag-over-left::before {
+  content: '';
+  position: absolute;
+  left: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  z-index: 10;
+}
+
+.orderable-tab.drag-over-right::after {
+  content: '';
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--primary-color);
+  border-radius: 2px;
+  z-index: 10;
+}
+
+.tab-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  color: var(--text-muted);
+  cursor: move;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.orderable-tab:hover .tab-drag-handle {
+  opacity: 1;
+}
+
+.tab-drag-handle svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Orderable Widgets */
+.orderable-widgets {
+  position: relative;
+}
+
+.orderable-widget {
+  transition: all 0.3s ease;
+  cursor: move;
+  user-select: none;
+}
+
+.orderable-widget.dragging {
+  opacity: 0.7;
+  transform: scale(1.05) rotate(5deg);
+  z-index: 1000;
+  box-shadow: var(--shadow-lg);
+}
+
+.orderable-widget.drag-over {
+  border: 2px dashed var(--primary-color);
+  background: rgba(79, 70, 229, 0.05);
+  transform: scale(1.02);
+}
+
+.widget-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--text-muted);
+  cursor: move;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  margin-right: 8px;
+}
+
+.widget-card:hover .widget-drag-handle {
+  opacity: 1;
+}
+
+.widget-drag-handle svg {
+  width: 14px;
+  height: 14px;
+}
+
+.widget-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+/* Enhanced hover states for drag handles */
+.tab-drag-handle:hover,
+.widget-drag-handle:hover {
+  color: var(--primary-color);
+  background: rgba(79, 70, 229, 0.1);
+  border-radius: 4px;
+}
+
+/* Drag feedback animations */
+@keyframes dragPulse {
+  0%, 100% { 
+    box-shadow: 0 0 0 0 rgba(79, 70, 229, 0.4);
+  }
+  50% { 
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+  }
+}
+
+.orderable-tab.dragging,
+.orderable-widget.dragging {
+  animation: dragPulse 1s infinite;
+}
+
+/* Drop zones */
+.orderable-tabs .tab-item {
+  position: relative;
+}
+
+.orderable-widgets .widget-card {
+  position: relative;
+}
+
+/* Prevent text selection during drag */
+.orderable-tabs,
+.orderable-widgets {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Enhanced visual feedback */
+.orderable-tab:hover {
+  background: var(--bg-tertiary);
+  border-radius: 6px 6px 0 0;
+}
+
+.orderable-widget:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Smooth transitions */
+.orderable-tab,
+.orderable-widget {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.orderable-tab.dragging,
+.orderable-widget.dragging {
+  transition: none;
+}
+
+/* ==============================================
+   DARK THEME ORDERABLE ADJUSTMENTS
+   ============================================== */
+
+[data-theme="dark"] .orderable-tab.drag-over-left::before,
+[data-theme="dark"] .orderable-tab.drag-over-right::after {
+  background: var(--primary-color);
+}
+
+[data-theme="dark"] .orderable-widget.drag-over {
+  border-color: var(--primary-color);
+  background: rgba(129, 140, 248, 0.1);
+}
+
+[data-theme="dark"] .tab-drag-handle:hover,
+[data-theme="dark"] .widget-drag-handle:hover {
+  color: var(--primary-color);
+  background: rgba(129, 140, 248, 0.15);
+}
+
+/* ==============================================
+   RESPONSIVE ORDERABLE DESIGN
+   ============================================== */
+
+@media (max-width: 768px) {
+  .tab-drag-handle,
+  .widget-drag-handle {
+    opacity: 1; /* Always visible on mobile */
+  }
+  
+  .orderable-tab,
+  .orderable-widget {
+    touch-action: none; /* Better touch handling */
+  }
+  
+  .tab-drag-handle {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .widget-drag-handle {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/* ==============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================== */
+
+.tab-drag-handle:focus,
+.widget-drag-handle:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.orderable-tab[aria-grabbed="true"],
+.orderable-widget[aria-grabbed="true"] {
+  opacity: 0.5;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .orderable-tab.drag-over-left::before,
+  .orderable-tab.drag-over-right::after {
+    background: #000;
+    width: 6px;
+  }
+  
+  .orderable-widget.drag-over {
+    border-width: 3px;
+    border-color: #000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .orderable-tab,
+  .orderable-widget,
+  .tab-drag-handle,
+  .widget-drag-handle {
+    transition: none;
+  }
+  
+  .orderable-tab.dragging,
+  .orderable-widget.dragging {
+    animation: none;
+    transform: none;
+  }
+}

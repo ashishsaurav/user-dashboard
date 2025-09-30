@@ -262,6 +262,43 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     console.log("Widget removed, navigation should update immediately");
   };
 
+  const handleReorderReports = (newReportOrder: string[]) => {
+    if (!selectedView) return;
+
+    const updatedView = {
+      ...selectedView,
+      reportIds: newReportOrder,
+    };
+
+    const updatedViews = views.map((v) =>
+      v.id === selectedView.id ? updatedView : v
+    );
+
+    handleUpdateViews(updatedViews);
+    setSelectedView(updatedView);
+
+    console.log("Reports reordered:", newReportOrder);
+  };
+
+  // NEW: Widget reordering handler
+  const handleReorderWidgets = (newWidgetOrder: string[]) => {
+    if (!selectedView) return;
+
+    const updatedView = {
+      ...selectedView,
+      widgetIds: newWidgetOrder,
+    };
+
+    const updatedViews = views.map((v) =>
+      v.id === selectedView.id ? updatedView : v
+    );
+
+    handleUpdateViews(updatedViews);
+    setSelectedView(updatedView);
+
+    console.log("Widgets reordered:", newWidgetOrder);
+  };
+
   // Get accessible reports and widgets
   const getUserAccessibleReports = (): Report[] => {
     const savedReports = sessionStorage.getItem("reports");
@@ -487,6 +524,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       widgets={[]}
       onRemoveReport={handleRemoveReportFromView}
       onRemoveWidget={() => {}}
+      onReorderReports={handleReorderReports} // NEW
     />
   );
 
@@ -498,6 +536,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       widgets={getUserAccessibleWidgets()}
       onRemoveReport={() => {}}
       onRemoveWidget={handleRemoveWidgetFromView}
+      onReorderWidgets={handleReorderWidgets} // NEW
     />
   );
 
@@ -524,7 +563,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                 }}
                 title="Manage Navigation"
               >
-                <ManageIcon />
+                <SettingsIcon />
               </button>
               {user.role === "admin" && (
                 <button
