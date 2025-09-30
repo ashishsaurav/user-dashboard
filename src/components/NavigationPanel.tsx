@@ -889,10 +889,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
               updatedSettings
             );
             onUpdateNavSettings(updatedSettings);
-            showSuccess(
-              "Visibility Updated",
-              "View visibility settings have been saved."
-            );
           }}
         />
       )}
