@@ -1498,3 +1498,823 @@
   transform: translateY(-2px);
   box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
 }
+
+/* ==============================================
+   SHOW SECTION BUTTONS IN NAVIGATION HEADER
+   ============================================== */
+
+.show-section-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.show-section-btn:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+  transform: scale(1.05);
+}
+
+.show-section-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* Enhanced navigation tab header for more buttons */
+.navigation-tab-header .tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ==============================================
+   DYNAMIC LAYOUT ADJUSTMENTS
+   ============================================== */
+
+/* Full width navigation when no view selected */
+.dock-layout .navigation-only {
+  min-width: 100%;
+}
+
+/* Single section layouts */
+.dock-layout .single-section {
+  display: flex;
+  width: 100%;
+}
+
+.dock-layout .single-section .dock-panel {
+  flex: 1;
+}
+
+/* Responsive adjustments for different section combinations */
+@media (max-width: 1200px) {
+  .show-section-btn {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .show-section-btn svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navigation-tab-header .tab-actions {
+    gap: 2px;
+  }
+  
+  .show-section-btn {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .show-section-btn svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+/* ==============================================
+   DARK THEME SHOW SECTION BUTTONS
+   ============================================== */
+
+[data-theme="dark"] .show-section-btn {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .show-section-btn:hover {
+  background: var(--primary-color);
+  border-color: var(--primary-color);
+  color: white;
+}
+
+/* ==============================================
+   LAYOUT TRANSITION ANIMATIONS
+   ============================================== */
+
+.dock-layout .dock-panel {
+  transition: width 0.3s ease, opacity 0.2s ease;
+}
+
+.dock-layout .dock-panel.closing {
+  opacity: 0;
+  width: 0 !important;
+  overflow: hidden;
+}
+
+.dock-layout .dock-panel.opening {
+  opacity: 0;
+  animation: panelSlideIn 0.3s ease forwards;
+}
+
+@keyframes panelSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Prevent layout shift during transitions */
+.dock-layout .dock-divider {
+  transition: all 0.3s ease;
+}
+
+/* ==============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================== */
+
+.show-section-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .show-section-btn {
+    border-width: 2px;
+  }
+  
+  .show-section-btn:hover {
+    border-width: 2px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .dock-layout .dock-panel,
+  .dock-layout .dock-divider,
+  .show-section-btn {
+    transition: none;
+  }
+  
+  .dock-layout .dock-panel.opening {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  
+  @keyframes panelSlideIn {
+    from, to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* ==============================================
+   WELCOME DOCK SECTION
+   ============================================== */
+
+.welcome-dock-section {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-primary);
+  padding: 40px;
+}
+
+.welcome-content {
+  text-align: center;
+  max-width: 500px;
+  padding: 40px;
+  border-radius: 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-lg);
+}
+
+.welcome-icon-large {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  color: white;
+  box-shadow: var(--shadow-md);
+}
+
+.welcome-content h2 {
+  margin: 0 0 16px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-primary);
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-hover) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.welcome-content p {
+  margin: 0 0 32px 0;
+  font-size: 16px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.welcome-features {
+  display: flex;
+  justify-content: center;
+  gap: 32px;
+  margin-bottom: 32px;
+}
+
+.feature-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  min-width: 120px;
+  transition: all 0.2s ease;
+}
+
+.feature-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+  border-color: var(--primary-color);
+}
+
+.feature-item svg {
+  width: 24px;
+  height: 24px;
+  color: var(--primary-color);
+}
+
+.feature-item span {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.welcome-hint {
+  padding: 12px 20px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  margin-top: 24px;
+}
+
+.welcome-hint small {
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+/* Welcome actions for when sections are closed */
+.welcome-actions {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.welcome-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.welcome-action-btn.reports-btn {
+  background: var(--primary-color);
+  color: white;
+}
+
+.welcome-action-btn.reports-btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.welcome-action-btn.widgets-btn {
+  background: var(--success-color);
+  color: white;
+}
+
+.welcome-action-btn.widgets-btn:hover {
+  background: var(--success-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.welcome-action-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Welcome tab header */
+.welcome-tab-header {
+  background: transparent;
+}
+
+.welcome-tab-header .tab-title {
+  color: var(--text-secondary);
+}
+
+/* ==============================================
+   DARK THEME WELCOME SECTION
+   ============================================== */
+
+[data-theme="dark"] .welcome-dock-section {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .welcome-content {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .welcome-content h2 {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+[data-theme="dark"] .welcome-icon-large {
+  background: linear-gradient(135deg, var(--primary-color) 0%, #818cf8 100%);
+}
+
+[data-theme="dark"] .feature-item {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .feature-item:hover {
+  border-color: var(--primary-color);
+}
+
+[data-theme="dark"] .welcome-hint {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .welcome-action-btn.reports-btn {
+  background: var(--primary-color);
+}
+
+[data-theme="dark"] .welcome-action-btn.widgets-btn {
+  background: var(--success-color);
+}
+
+/* ==============================================
+   RESPONSIVE WELCOME SECTION
+   ============================================== */
+
+@media (max-width: 1024px) {
+  .welcome-content {
+    max-width: 400px;
+    padding: 32px;
+  }
+  
+  .welcome-features {
+    gap: 24px;
+  }
+  
+  .feature-item {
+    min-width: 100px;
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome-dock-section {
+    padding: 20px;
+  }
+  
+  .welcome-content {
+    max-width: 100%;
+    padding: 24px;
+  }
+  
+  .welcome-content h2 {
+    font-size: 24px;
+  }
+  
+  .welcome-content p {
+    font-size: 14px;
+  }
+  
+  .welcome-features {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .feature-item {
+    min-width: auto;
+    width: 100%;
+  }
+  
+  .welcome-actions {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .welcome-action-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .welcome-icon-large {
+    width: 60px;
+    height: 60px;
+  }
+}
+
+/* ==============================================
+   WELCOME ANIMATIONS
+   ============================================== */
+
+@keyframes welcomeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes welcomeIconSpin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.welcome-content {
+  animation: welcomeFadeIn 0.5s ease-out;
+}
+
+.welcome-icon-large {
+  animation: welcomeIconSpin 2s ease-in-out infinite alternate;
+}
+
+.feature-item {
+  animation: welcomeFadeIn 0.6s ease-out;
+  animation-delay: 0.1s;
+  animation-fill-mode: both;
+}
+
+.feature-item:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+/* ==============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================== */
+
+.welcome-action-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .welcome-content {
+    border-width: 2px;
+  }
+  
+  .feature-item {
+    border-width: 2px;
+  }
+  
+  .welcome-action-btn {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .welcome-content,
+  .feature-item,
+  .welcome-icon-large,
+  .welcome-action-btn {
+    animation: none;
+    transition: none;
+  }
+}
+
+/* ==============================================
+   NAVIGATION PANEL NON-RESIZABLE
+   ============================================== */
+
+/* Hide resize divider for navigation panel */
+.dock-layout .dock-box > .dock-divider:first-of-type {
+  display: none !important;
+  width: 0 !important;
+  cursor: default !important;
+}
+
+/* Make navigation panel non-interactive for resizing */
+.dock-layout .dock-panel:first-child {
+  position: relative;
+}
+
+.dock-layout .dock-panel:first-child::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--border-color);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ensure navigation panel stays fixed width */
+.dock-layout .dock-panel:first-child .dock-panel-content {
+  width: 320px !important;
+  min-width: 320px !important;
+  max-width: 320px !important;
+}
+
+/* ==============================================
+   TAB HEADER CLOSE BUTTONS (BETTER POSITIONING)
+   ============================================== */
+
+.dock-tab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 8px;
+  position: relative;
+}
+
+.tab-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+/* Enhanced close button styling */
+.tab-action-btn.close-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border-color);
+  border-radius: 3px;
+  background: var(--bg-secondary);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 4px;
+}
+
+.tab-action-btn.close-btn:hover {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+  color: white;
+  transform: scale(1.1);
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+.tab-action-btn.close-btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Position close button near the right edge (where resize handle usually is) */
+.reports-tab-header,
+.widgets-tab-header {
+  position: relative;
+}
+
+.reports-tab-header .tab-actions,
+.widgets-tab-header .tab-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--bg-primary);
+  padding: 2px 4px;
+  border-radius: 4px;
+  box-shadow: var(--shadow-sm);
+}
+
+/* Ensure tab title doesn't overlap with actions */
+.reports-tab-header .tab-title,
+.widgets-tab-header .tab-title {
+  padding-right: 80px; /* Make space for buttons */
+}
+
+/* ==============================================
+   IMPROVED DOCK LAYOUT STYLING
+   ============================================== */
+
+/* Remove default RC-Dock close button since we're using custom ones */
+.dock-layout .dock-tab-btn-close {
+  display: none !important;
+}
+
+/* Enhanced tab styling */
+.dock-layout .dock-tab {
+  position: relative;
+  min-width: 120px;
+  max-width: 200px;
+}
+
+.dock-layout .dock-tab-active {
+  background: var(--bg-primary) !important;
+  border-bottom: 2px solid var(--primary-color) !important;
+}
+
+/* Better divider styling */
+.dock-layout .dock-divider {
+  background: var(--border-color) !important;
+  width: 4px !important;
+  cursor: ew-resize !important;
+  transition: background-color 0.2s ease;
+}
+
+.dock-layout .dock-divider:hover {
+  background: var(--primary-color) !important;
+}
+
+/* Navigation panel specific styling */
+.navigation-tab-header {
+  background: transparent;
+}
+
+.navigation-tab-header .tab-actions {
+  position: static;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  transform: none;
+}
+
+.navigation-tab-header .tab-title {
+  padding-right: 0;
+}
+
+/* Welcome section tab styling */
+.welcome-tab-header {
+  background: transparent;
+}
+
+.welcome-tab-header .tab-title {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+/* ==============================================
+   RESPONSIVE IMPROVEMENTS
+   ============================================== */
+
+@media (max-width: 1024px) {
+  .reports-tab-header .tab-title,
+  .widgets-tab-header .tab-title {
+    padding-right: 70px;
+  }
+  
+  .tab-action-btn.close-btn {
+    width: 18px;
+    height: 18px;
+  }
+  
+  .tab-action-btn.close-btn svg {
+    width: 10px;
+    height: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .dock-layout .dock-panel:first-child .dock-panel-content {
+    width: 280px !important;
+    min-width: 280px !important;
+    max-width: 280px !important;
+  }
+  
+  .reports-tab-header .tab-actions,
+  .widgets-tab-header .tab-actions {
+    right: 4px;
+  }
+  
+  .reports-tab-header .tab-title,
+  .widgets-tab-header .tab-title {
+    padding-right: 60px;
+  }
+  
+  .tab-action-btn {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .tab-action-btn svg {
+    width: 8px;
+    height: 8px;
+  }
+}
+
+/* ==============================================
+   DARK THEME ADJUSTMENTS
+   ============================================== */
+
+[data-theme="dark"] .dock-layout .dock-panel:first-child::after {
+  background: var(--border-color);
+}
+
+[data-theme="dark"] .dock-layout .dock-divider {
+  background: var(--border-color) !important;
+}
+
+[data-theme="dark"] .dock-layout .dock-divider:hover {
+  background: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .tab-action-btn.close-btn {
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+[data-theme="dark"] .tab-action-btn.close-btn:hover {
+  background: var(--danger-color);
+  border-color: var(--danger-color);
+  color: white;
+}
+
+[data-theme="dark"] .reports-tab-header .tab-actions,
+[data-theme="dark"] .widgets-tab-header .tab-actions {
+  background: var(--bg-primary);
+  box-shadow: var(--shadow-md);
+}
+
+/* ==============================================
+   ACCESSIBILITY ENHANCEMENTS
+   ============================================== */
+
+.tab-action-btn.close-btn:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .tab-action-btn.close-btn {
+    border-width: 2px;
+  }
+  
+  .dock-layout .dock-divider {
+    width: 6px !important;
+  }
+  
+  .dock-layout .dock-panel:first-child::after {
+    width: 6px;
+  }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .tab-action-btn.close-btn,
+  .dock-layout .dock-divider {
+    transition: none;
+  }
+}

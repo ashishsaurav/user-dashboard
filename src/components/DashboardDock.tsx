@@ -40,19 +40,22 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // NEW: Selected view state for dynamic content
   const [selectedView, setSelectedView] = useState<View | null>(null);
 
+  // NEW: Section visibility states
+  const [reportsVisible, setReportsVisible] = useState(true);
+  const [widgetsVisible, setWidgetsVisible] = useState(true);
+
   // FIXED: Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
 
   // RC-DOCK REF for updates
   const dockLayoutRef = useRef<DockLayout>(null);
 
-  // Navigation state management (keeping your original logic)
+  // ... (keep all existing state management - shortened for brevity)
   const [views, setViews] = useState<View[]>(() => {
     const savedViews = sessionStorage.getItem(`navigationViews_${user.name}`);
     if (savedViews) {
       return JSON.parse(savedViews);
     }
-
     const defaultData = getUserNavigationData(user.name);
     if (defaultData) {
       const defaultViews = defaultData.views;
@@ -62,7 +65,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       );
       return defaultViews;
     }
-
     const newUserData = initializeUserNavigationData(user.name);
     sessionStorage.setItem(
       `navigationViews_${user.name}`,
@@ -78,7 +80,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     if (savedGroups) {
       return JSON.parse(savedGroups);
     }
-
     const defaultData = getUserNavigationData(user.name);
     if (defaultData) {
       const defaultViewGroups = defaultData.viewGroups;
@@ -88,7 +89,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       );
       return defaultViewGroups;
     }
-
     const newUserData = initializeUserNavigationData(user.name);
     sessionStorage.setItem(
       `navigationViewGroups_${user.name}`,
@@ -104,7 +104,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     if (savedSettings) {
       return JSON.parse(savedSettings);
     }
-
     const defaultData = getUserNavigationData(user.name);
     if (defaultData) {
       const defaultSettings = defaultData.navigationSettings;
@@ -114,7 +113,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       );
       return defaultSettings;
     }
-
     const newUserData = initializeUserNavigationData(user.name);
     sessionStorage.setItem(
       `navigationSettings_${user.name}`,
@@ -123,7 +121,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return newUserData.navigationSettings;
   });
 
-  // FIXED: Enhanced state handlers with real-time updates
+  // Enhanced state handlers (keep existing logic)
   const handleUpdateViews = (updatedViews: View[]) => {
     const sortedViews = [...updatedViews].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
@@ -133,11 +131,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       `navigationViews_${user.name}`,
       JSON.stringify(sortedViews)
     );
-
-    // FIXED: Trigger navigation panel update
     setNavigationUpdateTrigger((prev) => prev + 1);
 
-    // FIXED: Update selected view if it was modified
     if (selectedView) {
       const updatedSelectedView = sortedViews.find(
         (v) => v.id === selectedView.id
@@ -157,8 +152,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       `navigationViewGroups_${user.name}`,
       JSON.stringify(sortedGroups)
     );
-
-    // FIXED: Trigger navigation panel update
     setNavigationUpdateTrigger((prev) => prev + 1);
   };
 
@@ -168,138 +161,119 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       `navigationSettings_${user.name}`,
       JSON.stringify(settings)
     );
-
-    // FIXED: Trigger navigation panel update
     setNavigationUpdateTrigger((prev) => prev + 1);
   };
 
-  // NEW: View selection handler
+  // NEW: Enhanced view selection handler - auto-show sections when view selected
   const handleViewSelect = (view: View) => {
     console.log("View selected:", view.name);
     setSelectedView(view);
+
+    // Auto-show both sections when a view is selected
+    setReportsVisible(true);
+    setWidgetsVisible(true);
   };
 
+  // NEW: Section close handlers
+  const handleCloseReports = () => {
+    setReportsVisible(false);
+  };
+
+  const handleCloseWidgets = () => {
+    setWidgetsVisible(false);
+  };
+
+  // NEW: Section reopen handlers
+  const handleReopenReports = () => {
+    if (selectedView) {
+      setReportsVisible(true);
+    }
+  };
+
+  const handleReopenWidgets = () => {
+    if (selectedView) {
+      setWidgetsVisible(true);
+    }
+  };
+
+  // Keep existing handlers for add/remove/reorder (shortened for brevity)
   const handleAddReportsToView = (reports: Report[]) => {
     if (!selectedView || reports.length === 0) return;
-
     const newReportIds = reports.map((r) => r.id);
     const updatedView = {
       ...selectedView,
       reportIds: [...selectedView.reportIds, ...newReportIds],
     };
-
     const updatedViews = views.map((v) =>
       v.id === selectedView.id ? updatedView : v
     );
-
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
     setShowAddReportModal(false);
-
-    console.log(
-      `Added ${reports.length} reports to view, navigation should update immediately`
-    );
   };
 
-  // UPDATED: Handle multiple widgets
   const handleAddWidgetsToView = (widgets: Widget[]) => {
     if (!selectedView || widgets.length === 0) return;
-
     const newWidgetIds = widgets.map((w) => w.id);
     const updatedView = {
       ...selectedView,
       widgetIds: [...selectedView.widgetIds, ...newWidgetIds],
     };
-
     const updatedViews = views.map((v) =>
       v.id === selectedView.id ? updatedView : v
     );
-
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
     setShowAddWidgetModal(false);
-
-    console.log(
-      `Added ${widgets.length} widgets to view, navigation should update immediately`
-    );
   };
 
   const handleRemoveReportFromView = (reportId: string) => {
     if (!selectedView) return;
-
     const updatedView = {
       ...selectedView,
       reportIds: selectedView.reportIds.filter((id) => id !== reportId),
     };
-
     const updatedViews = views.map((v) =>
       v.id === selectedView.id ? updatedView : v
     );
-
-    // Update all states immediately
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
-
-    console.log("Report removed, navigation should update immediately");
   };
 
   const handleRemoveWidgetFromView = (widgetId: string) => {
     if (!selectedView) return;
-
     const updatedView = {
       ...selectedView,
       widgetIds: selectedView.widgetIds.filter((id) => id !== widgetId),
     };
-
     const updatedViews = views.map((v) =>
       v.id === selectedView.id ? updatedView : v
     );
-
-    // Update all states immediately
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
-
-    console.log("Widget removed, navigation should update immediately");
   };
 
   const handleReorderReports = (newReportOrder: string[]) => {
     if (!selectedView) return;
-
-    const updatedView = {
-      ...selectedView,
-      reportIds: newReportOrder,
-    };
-
+    const updatedView = { ...selectedView, reportIds: newReportOrder };
     const updatedViews = views.map((v) =>
       v.id === selectedView.id ? updatedView : v
     );
-
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
-
-    console.log("Reports reordered:", newReportOrder);
   };
 
-  // NEW: Widget reordering handler
   const handleReorderWidgets = (newWidgetOrder: string[]) => {
     if (!selectedView) return;
-
-    const updatedView = {
-      ...selectedView,
-      widgetIds: newWidgetOrder,
-    };
-
+    const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
     const updatedViews = views.map((v) =>
       v.id === selectedView.id ? updatedView : v
     );
-
     handleUpdateViews(updatedViews);
     setSelectedView(updatedView);
-
-    console.log("Widgets reordered:", newWidgetOrder);
   };
 
-  // Get accessible reports and widgets
+  // Get accessible reports and widgets (keep existing)
   const getUserAccessibleReports = (): Report[] => {
     const savedReports = sessionStorage.getItem("reports");
     const systemReports: Report[] = savedReports
@@ -324,7 +298,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         );
   };
 
-  // Apply theme changes
+  // Apply theme changes (keep existing)
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
@@ -352,29 +326,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         dockLayoutElement.classList.add("dock-layout-light");
       }
     }
-
-    console.log(`Theme switched to: ${theme}`);
   }, [theme]);
 
-  // Icons (keeping existing)
-  const SettingsIcon = () => (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M12 20V10" />
-      <path d="M18 20V4" />
-      <path d="M6 20v-6" />
-    </svg>
-  );
-
+  // Icons
   const NavigationIcon = () => (
     <svg
       width="16"
@@ -450,6 +404,36 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     </svg>
   );
 
+  const CloseIcon = () => (
+    <svg
+      width="12"
+      height="12"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+
+  const DashboardIcon = () => (
+    <svg
+      width="32"
+      height="32"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+    >
+      <rect x="3" y="3" width="7" height="9" />
+      <rect x="14" y="3" width="7" height="5" />
+      <rect x="14" y="12" width="7" height="9" />
+      <rect x="3" y="16" width="7" height="5" />
+    </svg>
+  );
+
   const ThemeIconLight = () => (
     <svg
       width="24"
@@ -484,13 +468,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     </svg>
   );
 
-  // FIXED: Navigation content with forced updates using navigationUpdateTrigger
+  // Navigation content
   const createNavigationContent = useCallback(() => {
-    console.log(
-      "Creating navigation content, trigger:",
-      navigationUpdateTrigger
-    );
-
     return (
       <NavigationPanel
         user={user}
@@ -515,6 +494,34 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     navigationUpdateTrigger,
   ]);
 
+  // NEW: Welcome content for when no view is selected
+  const createWelcomeContent = () => (
+    <div className="welcome-dock-section">
+      <div className="welcome-content">
+        <div className="welcome-icon-large">
+          <DashboardIcon />
+        </div>
+        <h2>Welcome to Dashboard</h2>
+        <p>
+          Select a view from the Navigation panel to load reports and widgets.
+        </p>
+        <div className="welcome-features">
+          <div className="feature-item">
+            <ReportsIcon />
+            <span>View Reports</span>
+          </div>
+          <div className="feature-item">
+            <WidgetsIcon />
+            <span>Interactive Widgets</span>
+          </div>
+        </div>
+        <div className="welcome-hint">
+          <small>👈 Choose a view to get started</small>
+        </div>
+      </div>
+    </div>
+  );
+
   // Dynamic content panels
   const createReportsContent = () => (
     <ViewContentPanel
@@ -524,7 +531,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       widgets={[]}
       onRemoveReport={handleRemoveReportFromView}
       onRemoveWidget={() => {}}
-      onReorderReports={handleReorderReports} // NEW
+      onReorderReports={handleReorderReports}
     />
   );
 
@@ -536,235 +543,282 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       widgets={getUserAccessibleWidgets()}
       onRemoveReport={() => {}}
       onRemoveWidget={handleRemoveWidgetFromView}
-      onReorderWidgets={handleReorderWidgets} // NEW
+      onReorderWidgets={handleReorderWidgets}
     />
   );
 
-  // FIXED: Update dock layout when content changes - force update using updateTab
-  useEffect(() => {
-    console.log("Updating dock layout due to navigation changes");
+  // FIXED: Enhanced dynamic layout generation (removed groups)
+  const generateDynamicLayout = useCallback((): LayoutData => {
+    const children: any[] = [];
 
-    if (dockLayoutRef.current) {
-      // Force update navigation tab with new content
-      dockLayoutRef.current.updateTab("navigation", {
-        id: "navigation",
-        title: (
-          <div className="dock-tab-header navigation-tab-header">
-            <div className="tab-title">
-              <NavigationIcon />
-              <span>Navigation</span>
-            </div>
-            <div className="tab-actions">
+    // Navigation tab (non-resizable via CSS)
+    const navigationTab = {
+      id: "navigation",
+      title: (
+        <div className="dock-tab-header navigation-tab-header">
+          <div className="tab-title">
+            <NavigationIcon />
+            <span>Navigation</span>
+          </div>
+          <div className="tab-actions">
+            {/* Show/Hide buttons for closed sections */}
+            {selectedView && !reportsVisible && (
               <button
-                className="tab-action-btn manage-btn"
+                className="tab-action-btn show-section-btn"
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowNavigationModal(true);
+                  handleReopenReports();
                 }}
-                title="Manage Navigation"
+                title="Show Reports"
               >
-                <SettingsIcon />
+                <ReportsIcon />
               </button>
-              {user.role === "admin" && (
-                <button
-                  className="tab-action-btn settings-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowManageModal(true);
-                  }}
-                  title="System Settings"
-                >
-                  <ManageIcon />
-                </button>
-              )}
-            </div>
-          </div>
-        ),
-        content: createNavigationContent(),
-        closable: false,
-      });
-
-      dockLayoutRef.current.updateTab("reports", {
-        id: "reports",
-        title: (
-          <div className="dock-tab-header">
-            <div className="tab-title">
-              <ReportsIcon />
-              <span>Reports</span>
-            </div>
-            {selectedView && (
-              <div className="tab-actions">
-                <button
-                  className="tab-action-btn add-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAddReportModal(true);
-                  }}
-                  title="Add Report"
-                >
-                  <PlusIcon />
-                </button>
-              </div>
+            )}
+            {selectedView && !widgetsVisible && (
+              <button
+                className="tab-action-btn show-section-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleReopenWidgets();
+                }}
+                title="Show Widgets"
+              >
+                <WidgetsIcon />
+              </button>
+            )}
+            <button
+              className="tab-action-btn manage-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowNavigationModal(true);
+              }}
+              title="Manage Navigation"
+            >
+              <ManageIcon />
+            </button>
+            {user.role === "admin" && (
+              <button
+                className="tab-action-btn settings-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowManageModal(true);
+                }}
+                title="System Settings"
+              >
+                <ManageIcon />
+              </button>
             )}
           </div>
-        ),
-        content: createReportsContent(),
-        closable: false,
-      });
+        </div>
+      ),
+      content: createNavigationContent(),
+      closable: false,
+    };
 
-      dockLayoutRef.current.updateTab("widgets", {
-        id: "widgets",
-        title: (
-          <div className="dock-tab-header">
-            <div className="tab-title">
-              <WidgetsIcon />
-              <span>Widgets</span>
-            </div>
-            {selectedView && (
-              <div className="tab-actions">
-                <button
-                  className="tab-action-btn add-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAddWidgetModal(true);
-                  }}
-                  title="Add Widget"
-                >
-                  <PlusIcon />
-                </button>
-              </div>
-            )}
-          </div>
-        ),
-        content: createWidgetsContent(),
-        closable: false,
-      });
-    }
-  }, [selectedView, views, viewGroups, navSettings, navigationUpdateTrigger]);
+    // Navigation panel (fixed width controlled by CSS)
+    children.push({
+      tabs: [navigationTab],
+      size: 320,
+    });
 
-  const ThemeIcon = theme === "light" ? ThemeIconLight : ThemeIconDark;
-
-  // Dock layout configuration
-  const layout: LayoutData = {
-    dockbox: {
-      mode: "horizontal",
-      children: [
-        {
-          tabs: [
-            {
-              id: "navigation",
-              title: (
-                <div className="dock-tab-header navigation-tab-header">
-                  <div className="tab-title">
-                    <NavigationIcon />
-                    <span>Navigation</span>
-                  </div>
-                  <div className="tab-actions">
-                    <button
-                      className="tab-action-btn manage-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowNavigationModal(true);
-                      }}
-                      title="Manage Navigation"
-                    >
-                      <ManageIcon />
-                    </button>
-                    {user.role === "admin" && (
-                      <button
-                        className="tab-action-btn settings-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowManageModal(true);
-                        }}
-                        title="System Settings"
-                      >
-                        <ManageIcon />
-                      </button>
-                    )}
-                  </div>
+    // Show welcome section when no view is selected
+    if (!selectedView) {
+      children.push({
+        tabs: [
+          {
+            id: "welcome",
+            title: (
+              <div className="dock-tab-header welcome-tab-header">
+                <div className="tab-title">
+                  <DashboardIcon />
+                  <span>Dashboard</span>
                 </div>
-              ),
-              content: createNavigationContent(),
-              closable: false,
-            },
-          ],
-          size: 320,
-        },
-        {
+              </div>
+            ),
+            content: createWelcomeContent(),
+            closable: false,
+          },
+        ],
+        size: 880,
+      });
+    } else {
+      // Add reports section if view selected and visible
+      if (reportsVisible) {
+        children.push({
           tabs: [
             {
               id: "reports",
               title: (
-                <div className="dock-tab-header">
+                <div className="dock-tab-header reports-tab-header">
                   <div className="tab-title">
                     <ReportsIcon />
                     <span>Reports</span>
                   </div>
-                  {selectedView && (
-                    <div className="tab-actions">
-                      <button
-                        className="tab-action-btn add-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowAddReportModal(true);
-                        }}
-                        title="Add Report"
-                      >
-                        <PlusIcon />
-                      </button>
-                    </div>
-                  )}
+                  <div className="tab-actions">
+                    <button
+                      className="tab-action-btn add-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAddReportModal(true);
+                      }}
+                      title="Add Report"
+                    >
+                      <PlusIcon />
+                    </button>
+                    <button
+                      className="tab-action-btn close-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCloseReports();
+                      }}
+                      title="Close Reports"
+                    >
+                      <CloseIcon />
+                    </button>
+                  </div>
                 </div>
               ),
               content: createReportsContent(),
               closable: false,
             },
           ],
-          size: 480,
-        },
-        {
+          size: widgetsVisible ? 440 : 880,
+        });
+      }
+
+      // Add widgets section if view selected and visible
+      if (widgetsVisible) {
+        children.push({
           tabs: [
             {
               id: "widgets",
               title: (
-                <div className="dock-tab-header">
+                <div className="dock-tab-header widgets-tab-header">
                   <div className="tab-title">
                     <WidgetsIcon />
                     <span>Widgets</span>
                   </div>
-                  {selectedView && (
-                    <div className="tab-actions">
-                      <button
-                        className="tab-action-btn add-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowAddWidgetModal(true);
-                        }}
-                        title="Add Widget"
-                      >
-                        <PlusIcon />
-                      </button>
-                    </div>
-                  )}
+                  <div className="tab-actions">
+                    <button
+                      className="tab-action-btn add-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAddWidgetModal(true);
+                      }}
+                      title="Add Widget"
+                    >
+                      <PlusIcon />
+                    </button>
+                    <button
+                      className="tab-action-btn close-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCloseWidgets();
+                      }}
+                      title="Close Widgets"
+                    >
+                      <CloseIcon />
+                    </button>
+                  </div>
                 </div>
               ),
               content: createWidgetsContent(),
               closable: false,
             },
           ],
-          size: 380,
-        },
-      ],
-    },
-  };
+          size: reportsVisible ? 440 : 880,
+        });
+      }
+
+      // Show welcome when both sections are closed
+      if (!reportsVisible && !widgetsVisible) {
+        children.push({
+          tabs: [
+            {
+              id: "welcome-sections-closed",
+              title: (
+                <div className="dock-tab-header welcome-tab-header">
+                  <div className="tab-title">
+                    <DashboardIcon />
+                    <span>View: {selectedView.name}</span>
+                  </div>
+                </div>
+              ),
+              content: (
+                <div className="welcome-dock-section">
+                  <div className="welcome-content">
+                    <div className="welcome-icon-large">
+                      <DashboardIcon />
+                    </div>
+                    <h2>"{selectedView.name}" Selected</h2>
+                    <p>
+                      All sections are closed. Open Reports or Widgets to view
+                      content.
+                    </p>
+                    <div className="welcome-actions">
+                      <button
+                        className="welcome-action-btn reports-btn"
+                        onClick={handleReopenReports}
+                      >
+                        <ReportsIcon />
+                        <span>Open Reports</span>
+                      </button>
+                      <button
+                        className="welcome-action-btn widgets-btn"
+                        onClick={handleReopenWidgets}
+                      >
+                        <WidgetsIcon />
+                        <span>Open Widgets</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ),
+              closable: false,
+            },
+          ],
+          size: 880,
+        });
+      }
+    }
+
+    return {
+      dockbox: {
+        mode: "horizontal",
+        children,
+      },
+    };
+  }, [
+    selectedView,
+    reportsVisible,
+    widgetsVisible,
+    views,
+    viewGroups,
+    navSettings,
+    navigationUpdateTrigger,
+  ]);
+
+  // Update layout when dependencies change
+  useEffect(() => {
+    if (dockLayoutRef.current) {
+      const newLayout = generateDynamicLayout();
+      dockLayoutRef.current.loadLayout(newLayout);
+      console.log("Layout updated:", {
+        selectedView: selectedView?.name || "none",
+        reportsVisible,
+        widgetsVisible,
+      });
+    }
+  }, [selectedView, reportsVisible, widgetsVisible, navigationUpdateTrigger]);
+
+  const ThemeIcon = theme === "light" ? ThemeIconLight : ThemeIconDark;
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
       <div className="dock-container full-height">
         <DockLayout
           ref={dockLayoutRef}
-          defaultLayout={layout}
+          defaultLayout={generateDynamicLayout()}
           style={{
             position: "absolute",
             left: 0,
@@ -784,7 +838,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <ThemeIcon />
       </button>
 
-      {/* Modals */}
+      {/* Keep existing modals... */}
       {showManageModal && (
         <ManageModal onClose={() => setShowManageModal(false)} />
       )}
@@ -793,19 +847,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <NavigationManageModal
           user={user}
           onClose={() => setShowNavigationModal(false)}
-          onUpdateViews={(newViews) => {
-            handleUpdateViews(newViews);
-          }}
-          onUpdateViewGroups={(newViewGroups) => {
-            handleUpdateViewGroups(newViewGroups);
-          }}
-          onUpdateNavSettings={(newSettings) => {
-            handleUpdateNavSettings(newSettings);
-          }}
+          onUpdateViews={handleUpdateViews}
+          onUpdateViewGroups={handleUpdateViewGroups}
+          onUpdateNavSettings={handleUpdateNavSettings}
           onAddView={(newView, viewGroupIds) => {
             const updatedViews = [...views, newView];
             handleUpdateViews(updatedViews);
-
             if (viewGroupIds && viewGroupIds.length > 0) {
               const updatedViewGroups = viewGroups.map((vg) => {
                 if (viewGroupIds.includes(vg.id)) {
@@ -826,10 +873,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         />
       )}
 
-      {/* Add Report Modal */}
       {showAddReportModal && selectedView && (
         <AddReportModal
-          onAddReports={handleAddReportsToView} // CHANGED: onAddReports
+          onAddReports={handleAddReportsToView}
           onClose={() => setShowAddReportModal(false)}
           availableReports={getUserAccessibleReports().filter(
             (report) => !selectedView.reportIds.includes(report.id)
@@ -839,7 +885,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       {showAddWidgetModal && selectedView && (
         <AddWidgetModal
-          onAddWidgets={handleAddWidgetsToView} // CHANGED: onAddWidgets
+          onAddWidgets={handleAddWidgetsToView}
           onClose={() => setShowAddWidgetModal(false)}
           availableWidgets={getUserAccessibleWidgets().filter(
             (widget) => !selectedView.widgetIds.includes(widget.id)
