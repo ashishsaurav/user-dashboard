@@ -686,9 +686,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     // Navigation panel - always fixed at 320
     children.push({
       tabs: [navigationTab],
-      size: 320,
-      minSize: 320,
-      maxSize: 320,
+      size: 220,
+      minSize: 220,
+      maxSize: 220,
     });
 
     // Show welcome section when no view is selected
@@ -709,7 +709,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             closable: false,
           },
         ],
-        size: 880,
+        size: 980,
       });
     } else {
       // Add reports section if view selected and visible
@@ -752,7 +752,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               closable: false,
             },
           ],
-          size: widgetsVisible ? 440 : 880,
+          size: widgetsVisible ? 680 : 980,
           minSize: 250,
         });
       }
@@ -797,7 +797,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               closable: false,
             },
           ],
-          size: reportsVisible ? 440 : 880,
+          size: reportsVisible ? 300 : 980,
           minSize: 250,
         });
       }
@@ -849,7 +849,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               closable: false,
             },
           ],
-          size: 880,
+          size: 980,
         });
       }
     }
