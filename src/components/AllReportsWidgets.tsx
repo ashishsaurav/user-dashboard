@@ -159,14 +159,14 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
                   </div>
                   <div className="item-actions">
                     <button
-                      className="action-btn edit-action"
+                      className="edit-btn-compact"
                       onClick={() => handleEditReport(report)}
                       title="Edit Report"
                     >
                       <EditIcon />
                     </button>
                     <button
-                      className="action-btn delete-action"
+                      className="delete-btn-compact"
                       onClick={() =>
                         handleDeleteConfirm("report", report.id, report.name)
                       }
@@ -209,14 +209,14 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
                   </div>
                   <div className="item-actions">
                     <button
-                      className="action-btn edit-action"
+                      className="edit-btn-compact"
                       onClick={() => handleEditWidget(widget)}
                       title="Edit Widget"
                     >
                       <EditIcon />
                     </button>
                     <button
-                      className="action-btn delete-action"
+                      className="delete-btn-compact"
                       onClick={() =>
                         handleDeleteConfirm("widget", widget.id, widget.name)
                       }
