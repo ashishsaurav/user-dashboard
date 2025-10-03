@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { View, Report, Widget } from "../types";
-import "./ViewContentPanel.css";
+import { View, Report, Widget } from "../../types";
+import "./styles/ViewContentPanel.css";
 
 interface ViewContentPanelProps {
   type: "reports" | "widgets";

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import Login from "./components/Login";
-import DashboardDock from "./components/DashboardDock"; // Import the new dock
+import Login from "./components/auth/Login";
+import DashboardDock from "./components/dashboard/DashboardDock"; // Import the new dock
 import { User } from "./types";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { NotificationProvider } from "./components/NotificationProvider";

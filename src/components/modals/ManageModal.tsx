@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
-import AllReportsWidgets from "./AllReportsWidgets";
-import UserRolePermissions from "./UserRolePermissions";
-import AddReportWidget from "./AddReportWidget";
-import { testReports, testWidgets } from "../data/testData";
-import { Report, Widget } from "../types";
-import "./ManageModal.css";
+import AllReportsWidgets from "../AllReportsWidgets";
+import UserRolePermissions from "../UserRolePermissions";
+import AddReportWidget from "../AddReportWidget";
+import { testReports, testWidgets } from "../../data/testData";
+import { Report, Widget } from "../../types";
+import "./styles/ManageModal.css";
 
 interface ManageModalProps {
   onClose: () => void;

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { LoginProps, LoginFormData } from "../types";
-import { testUsers } from "../data/testData";
-import "./Login.css";
+import { LoginProps, LoginFormData } from "../../types";
+import { testUsers } from "../../data/testData";
+import "./styles/Login.css";
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [formData, setFormData] = useState<LoginFormData>({
