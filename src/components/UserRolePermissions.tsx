@@ -439,15 +439,15 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
               </div>
             </div>
 
-            <div className="modern-form-actions-fixed">
+            <div className="modern-modal-footer">
               <button
                 type="button"
-                className="modern-btn secondary"
+                className="modal-btn modal-btn-secondary"
                 onClick={onClose}
               >
                 Cancel
               </button>
-              <button type="submit" className="modern-btn primary">
+              <button type="submit" className="modal-btn modal-btn-primary">
                 Save Changes
               </button>
             </div>
