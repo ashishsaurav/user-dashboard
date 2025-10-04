@@ -162,18 +162,6 @@ const EditViewModal: React.FC<EditViewModalProps> = ({
                 Save Changes
               </button>
             </div>
-            {/* <div className="modern-form-actions-fixed">
-              <button
-                type="button"
-                className="modern-btn secondary"
-                onClick={onClose}
-              >
-                Cancel
-              </button>
-              <button type="submit" className="modern-btn primary">
-                Save Changes
-              </button>
-            </div> */}
           </form>
         </div>
       </div>
