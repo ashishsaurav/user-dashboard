@@ -18,7 +18,7 @@ interface ReportTabItemProps {
   onDrop: (e: React.DragEvent) => void;
 }
 
-export const ReportTabItem: React.FC<ReportTabItemProps> = ({
+const ReportTabItem: React.FC<ReportTabItemProps> = ({
   report,
   isActive,
   isDragging,
@@ -63,3 +63,5 @@ export const ReportTabItem: React.FC<ReportTabItemProps> = ({
     </div>
   );
 };
+
+export default ReportTabItem;

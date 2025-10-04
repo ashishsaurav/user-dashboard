@@ -24,7 +24,7 @@ interface NavigationViewItemProps {
   onDrop: (e: React.DragEvent) => void;
 }
 
-export const NavigationViewItem: React.FC<NavigationViewItemProps> = ({
+const NavigationViewItem: React.FC<NavigationViewItemProps> = ({
   view,
   isHidden,
   isSelected,
@@ -49,7 +49,9 @@ export const NavigationViewItem: React.FC<NavigationViewItemProps> = ({
       className={`nav-view-item ${isDragOver ? "drag-over" : ""} ${
         dragPosition ? `drag-${dragPosition}` : ""
       } ${isSelected ? "selected" : ""} ${
-        isHorizontalLayout ? "nav-view-item-horizontal" : "nav-view-item-vertical"
+        isHorizontalLayout
+          ? "nav-view-item-horizontal"
+          : "nav-view-item-vertical"
       }`}
       draggable
       onDragStart={onDragStart}
@@ -107,3 +109,5 @@ export const NavigationViewItem: React.FC<NavigationViewItemProps> = ({
     </div>
   );
 };
+
+export default NavigationViewItem;

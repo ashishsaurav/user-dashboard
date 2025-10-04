@@ -7,17 +7,17 @@ import {
   Report,
   Widget,
   UserNavigationData,
-} from "../types";
+} from "../../types";
 import {
   testReports,
   testWidgets,
   getUserNavigationData,
   initializeUserNavigationData,
-} from "../data/testData";
-import AllViewGroupsViews from "./AllViewGroupsViews";
-import CreateViewGroup from "./CreateViewGroup";
-import CreateView from "./CreateView";
-import "./NavigationManageModal.css";
+} from "../../data/testData";
+import AllViewGroupsViews from "../AllViewGroupsViews";
+import CreateViewGroup from "../CreateViewGroup";
+import CreateView from "../CreateView";
+import "./styles/NavigationManageModal.css";
 
 interface NavigationManageModalProps {
   user: User;

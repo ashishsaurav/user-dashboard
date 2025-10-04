@@ -20,7 +20,7 @@ interface NavigationHeaderProps {
   onDelete: () => void;
 }
 
-export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
+const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   viewGroup,
   isExpanded,
   isHidden,
@@ -96,3 +96,5 @@ export const NavigationHeader: React.FC<NavigationHeaderProps> = ({
     </div>
   );
 };
+
+export default NavigationHeader;

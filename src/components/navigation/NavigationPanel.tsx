@@ -6,11 +6,11 @@ import {
   UserNavigationSettings,
   Report,
   Widget,
-} from "../types";
-import EditViewModal from "./EditViewModal";
-import EditViewGroupModal from "./EditViewGroupModal";
-import DeleteConfirmationModal from "./DeleteConfirmationModal";
-import { useNotification } from "./NotificationProvider";
+} from "../../types";
+import EditViewModal from "../EditViewModal";
+import EditViewGroupModal from "../EditViewGroupModal";
+import DeleteConfirmationModal from "../DeleteConfirmationModal";
+import { useNotification } from "../NotificationProvider";
 
 interface NavigationPanelProps {
   user: User;
