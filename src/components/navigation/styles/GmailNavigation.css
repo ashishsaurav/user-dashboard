@@ -333,6 +333,19 @@
   max-width: 350px;
   overflow: hidden;
   z-index: 1000;
+  position: fixed;
+}
+
+/* Add connecting bridge to prevent gap issues */
+.view-group-hover-popup::before {
+  content: '';
+  position: absolute;
+  left: -5px;
+  top: 0;
+  bottom: 0;
+  width: 5px;
+  background: transparent;
+  z-index: -1;
 }
 
 .popup-header {

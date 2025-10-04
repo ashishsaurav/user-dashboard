@@ -19,7 +19,7 @@ import {
 import { useTheme } from "../../contexts/ThemeContext";
 import ManageModal from "../modals/ManageModal";
 import NavigationManageModal from "../modals/NavigationManageModal";
-import NavigationPanel from "../navigation/GmailNavigationPanel";
+import NavigationPanel from "../navigation/NavigationPanel";
 import CollapsedNavigationPanel from "../navigation/CollapsedNavigationPanel";
 import ViewContentPanel from "../panels/ViewContentPanel";
 import AddReportModal from "../modals/AddReportModal";
@@ -310,7 +310,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       );
     }
 
-    // Always use the full GmailNavigationPanel when expanded (not the inner collapsed functionality)
+    // Always use the original NavigationPanel when expanded (with full drag/drop, edit, delete functionality)
     return (
       <NavigationPanel
         user={user}
