@@ -474,7 +474,7 @@
   flex-direction: column;
   height: 100%;
   width: 100%;
-  padding: 8px 0;
+  padding: 12px 0;
   background: var(--nav-bg, #ffffff);
   overflow: hidden;
 }
@@ -483,7 +483,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   padding: 0 8px;
 }
 
@@ -497,23 +497,42 @@
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
   position: relative;
+  background: var(--nav-item-bg, #f8f9fa);
+  border: 1px solid var(--nav-border-light, #e9ecef);
 }
 
 .collapsed-view-group:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
+  background: var(--nav-hover-bg, #e3f2fd);
+  border-color: var(--primary-color, #1976d2);
   transform: scale(1.05);
 }
 
-.collapsed-view-group-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--nav-icon, #666);
-  transition: color 0.2s;
+.collapsed-view-group-text {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--nav-text, #333);
+  letter-spacing: 0.5px;
+  text-align: center;
+  line-height: 1;
 }
 
-.collapsed-view-group:hover .collapsed-view-group-icon {
-  color: var(--nav-text, #333);
+.collapsed-view-group:hover .collapsed-view-group-text {
+  color: var(--primary-color, #1976d2);
+}
+
+/* Dark theme for collapsed navigation */
+[data-theme="dark"] .collapsed-navigation-panel {
+  --nav-item-bg: #2a2a2a;
+  --nav-border-light: #444;
+}
+
+[data-theme="dark"] .collapsed-view-group:hover {
+  background: var(--nav-hover-bg, #1a365d);
+  border-color: var(--primary-color, #4dabf7);
+}
+
+[data-theme="dark"] .collapsed-view-group:hover .collapsed-view-group-text {
+  color: var(--primary-color, #4dabf7);
 }
 
 /* Animation for smooth transitions */

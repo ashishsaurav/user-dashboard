@@ -310,6 +310,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       );
     }
 
+    // Always use the full GmailNavigationPanel when expanded (not the inner collapsed functionality)
     return (
       <NavigationPanel
         user={user}

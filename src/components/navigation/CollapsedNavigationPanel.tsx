@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   User,
   View,
@@ -6,7 +6,6 @@ import {
   UserNavigationSettings,
 } from "../../types";
 import ViewGroupHoverPopup from "./ViewGroupHoverPopup";
-import { useGmailNavigation } from "./useGmailNavigation";
 import "./styles/GmailNavigation.css";
 
 interface CollapsedNavigationPanelProps {
@@ -26,10 +25,8 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   onViewSelect,
   selectedView,
 }) => {
-  const {
-    navState,
-    setHoveredViewGroup,
-  } = useGmailNavigation();
+  const [hoveredViewGroup, setHoveredViewGroup] = useState<string | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
 
   // Get ordered and visible view groups
   const orderedViewGroups = viewGroups
@@ -48,42 +45,68 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
       .sort((a, b) => (a!.order || 0) - (b!.order || 0)) as View[];
   };
 
-  // Handle view group hover
+  // Generate 3-letter abbreviation from view group name
+  const getViewGroupAbbreviation = (name: string) => {
+    // Remove common words and get meaningful parts
+    const meaningfulWords = name
+      .replace(/\b(the|and|or|of|in|on|at|to|for|with|by)\b/gi, '')
+      .trim()
+      .split(/\s+/)
+      .filter(word => word.length > 0);
+
+    if (meaningfulWords.length === 0) {
+      return name.substring(0, 3).toUpperCase();
+    }
+
+    if (meaningfulWords.length === 1) {
+      return meaningfulWords[0].substring(0, 3).toUpperCase();
+    }
+
+    // Take first letter of each meaningful word, up to 3 letters
+    let abbreviation = '';
+    for (let i = 0; i < meaningfulWords.length && abbreviation.length < 3; i++) {
+      abbreviation += meaningfulWords[i][0].toUpperCase();
+    }
+
+    // If still less than 3 letters, pad with letters from first word
+    if (abbreviation.length < 3 && meaningfulWords[0].length > 1) {
+      const firstWord = meaningfulWords[0].toUpperCase();
+      for (let i = 1; i < firstWord.length && abbreviation.length < 3; i++) {
+        abbreviation += firstWord[i];
+      }
+    }
+
+    return abbreviation.substring(0, 3);
+  };
+
+  // Handle view group hover with improved timing
   const handleViewGroupHover = (viewGroup: ViewGroup, event: React.MouseEvent) => {
     const rect = event.currentTarget.getBoundingClientRect();
     const position = {
-      x: rect.right,
+      x: rect.right + 5, // Reduced gap
       y: rect.top,
     };
 
-    setHoveredViewGroup(viewGroup.id, position);
+    setHoveredViewGroup(viewGroup.id);
+    setHoverPosition(position);
   };
 
   const handleViewGroupLeave = () => {
-    // Delay hiding to allow moving to popup
-    setTimeout(() => setHoveredViewGroup(null), 100);
+    // Longer delay to allow moving to popup
+    setTimeout(() => {
+      setHoveredViewGroup(null);
+      setHoverPosition(null);
+    }, 150);
   };
 
-  // Icons
-  const ViewGroupIcon = ({ viewGroup }: { viewGroup: ViewGroup }) => {
-    if (viewGroup.isDefault) {
-      return (
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <rect x="3" y="3" width="7" height="9" />
-          <rect x="14" y="3" width="7" height="5" />
-          <rect x="14" y="12" width="7" height="9" />
-          <rect x="3" y="16" width="7" height="5" />
-        </svg>
-      );
-    }
-    return (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-        <line x1="16" y1="2" x2="16" y2="6" />
-        <line x1="8" y1="2" x2="8" y2="6" />
-        <line x1="3" y1="10" x2="21" y2="10" />
-      </svg>
-    );
+  // Handle popup mouse events to keep it visible
+  const handlePopupMouseEnter = () => {
+    // Keep popup visible when hovering over it
+  };
+
+  const handlePopupMouseLeave = () => {
+    setHoveredViewGroup(null);
+    setHoverPosition(null);
   };
 
   return (
@@ -93,6 +116,8 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
           const groupViews = getViewsForGroup(viewGroup.id);
           if (groupViews.length === 0) return null;
 
+          const abbreviation = getViewGroupAbbreviation(viewGroup.name);
+
           return (
             <div
               key={viewGroup.id}
@@ -101,22 +126,24 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
               onMouseLeave={handleViewGroupLeave}
               title={viewGroup.name}
             >
-              <div className="collapsed-view-group-icon">
-                <ViewGroupIcon viewGroup={viewGroup} />
+              <div className="collapsed-view-group-text">
+                {abbreviation}
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* Hover Popup */}
-      {navState.hoveredViewGroup && navState.hoverPosition && (
+      {/* Hover Popup with improved positioning */}
+      {hoveredViewGroup && hoverPosition && (
         <ViewGroupHoverPopup
-          viewGroup={viewGroups.find(vg => vg.id === navState.hoveredViewGroup)!}
-          views={getViewsForGroup(navState.hoveredViewGroup)}
-          position={navState.hoverPosition}
+          viewGroup={viewGroups.find(vg => vg.id === hoveredViewGroup)!}
+          views={getViewsForGroup(hoveredViewGroup)}
+          position={hoverPosition}
           onViewSelect={onViewSelect}
           selectedView={selectedView}
+          onMouseEnter={handlePopupMouseEnter}
+          onMouseLeave={handlePopupMouseLeave}
         />
       )}
     </div>

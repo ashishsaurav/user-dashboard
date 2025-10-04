@@ -7,6 +7,8 @@ interface ViewGroupHoverPopupProps {
   position: { x: number; y: number };
   onViewSelect?: (view: View) => void;
   selectedView?: View | null;
+  onMouseEnter?: () => void;
+  onMouseLeave?: () => void;
 }
 
 const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
@@ -15,6 +17,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   position,
   onViewSelect,
   selectedView,
+  onMouseEnter,
+  onMouseLeave,
 }) => {
   const groupViews = views.filter(view => 
     viewGroup.viewIds.includes(view.id) && view.isVisible
@@ -27,10 +31,12 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
       className="view-group-hover-popup"
       style={{
         position: "fixed",
-        left: position.x + 10,
+        left: position.x,
         top: position.y,
         zIndex: 1000,
       }}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <div className="popup-header">
         <span className="popup-title">{viewGroup.name}</span>
