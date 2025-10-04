@@ -19,7 +19,7 @@ import {
 import { useTheme } from "../../contexts/ThemeContext";
 import ManageModal from "../modals/ManageModal";
 import NavigationManageModal from "../modals/NavigationManageModal";
-import NavigationPanel from "../navigation/NavigationPanel";
+import NavigationPanel from "../navigation/GmailNavigationPanel";
 import ViewContentPanel from "../panels/ViewContentPanel";
 import AddReportModal from "../modals/AddReportModal";
 import AddWidgetModal from "../modals/AddWidgetModal";
@@ -27,6 +27,7 @@ import WelcomeContent from "./WelcomeContent";
 import ThemeToggle from "./ThemeToggle";
 import { useDockLayoutManager } from "./DockLayoutManager";
 import "./styles/DashboardDock.css";
+import "./styles/GmailDockIntegration.css";
 
 interface DashboardDockProps {
   user: User;
@@ -48,6 +49,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Section visibility states
   const [reportsVisible, setReportsVisible] = useState(true);
   const [widgetsVisible, setWidgetsVisible] = useState(true);
+
+  // Navigation state
+  const [navCollapsed, setNavCollapsed] = useState(false);
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
@@ -354,6 +358,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     reportsVisible,
     widgetsVisible,
     isAdmin: user.role === "admin",
+    isNavCollapsed: navCollapsed,
     actions: {
       onNavigationManage: () => setShowNavigationModal(true),
       onSystemSettings: () => setShowManageModal(true),
@@ -453,7 +458,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log("Only content changed, updating content");
       updateLayoutContent();
     }
-  }, [selectedView, reportsVisible, widgetsVisible, navigationUpdateTrigger]);
+  }, [selectedView, reportsVisible, widgetsVisible, navCollapsed, navigationUpdateTrigger]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>

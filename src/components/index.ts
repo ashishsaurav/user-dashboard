@@ -8,8 +8,10 @@ export { default as ThemeToggle } from "./dashboard/ThemeToggle";
 
 // Navigation Components
 export { default as NavigationPanel } from "./navigation/NavigationPanel";
+export { default as GmailNavigationPanel } from "./navigation/GmailNavigationPanel";
 export { default as NavigationHeader } from "./navigation/NavigationHeader";
 export { default as NavigationViewItem } from "./navigation/NavigationViewItem";
+export { default as ViewGroupHoverPopup } from "./navigation/ViewGroupHoverPopup";
 
 // Panel Components
 export { default as ViewContentPanel } from "./panels/ViewContentPanel";
@@ -37,6 +39,7 @@ export { default as SuccessNotification } from "./SuccessNotification";
 
 // Hooks
 export { useDragAndDropList } from "./shared/useDragAndDropList";
+export { useGmailNavigation } from "./navigation/useGmailNavigation";
 
 // Legacy exports (for backward compatibility)
 export { default as AllReportsWidgets } from "./AllReportsWidgets";
