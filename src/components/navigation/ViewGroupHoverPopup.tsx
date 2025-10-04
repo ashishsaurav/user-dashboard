@@ -153,20 +153,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     setDeletingViewGroup(null);
   };
 
-  const handleDeleteView = (view: View) => {
-    if (!onUpdateViews || !onUpdateViewGroups) return;
-    
-    const updatedViews = allViews.filter((v) => v.id !== view.id);
-    const updatedViewGroups = allViewGroups.map((vg) => ({
-      ...vg,
-      viewIds: vg.viewIds.filter((vId) => vId !== view.id),
-    }));
-
-    onUpdateViews(updatedViews);
-    onUpdateViewGroups(updatedViewGroups);
-    showSuccess("View Deleted", `"${view.name}" has been removed successfully.`);
-  };
-
   const handleConfirmDeleteView = () => {
     if (!deletingView) return;
     handleDeleteView(deletingView);

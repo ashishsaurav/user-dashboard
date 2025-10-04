@@ -543,8 +543,6 @@
   height: 14px;
   stroke-width: 2.2;
 }
-  font-weight: 500;
-}
 
 .popup-view-item.selected .reports-count,
 .popup-view-item.selected .widgets-count {
