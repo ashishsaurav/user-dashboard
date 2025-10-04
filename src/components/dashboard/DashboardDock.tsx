@@ -50,8 +50,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const [reportsVisible, setReportsVisible] = useState(true);
   const [widgetsVisible, setWidgetsVisible] = useState(true);
 
-  // Navigation state
-  const [navCollapsed, setNavCollapsed] = useState(false);
+  // Navigation state - dock level collapse
+  const [isDockCollapsed, setIsDockCollapsed] = useState(false);
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
@@ -296,6 +296,19 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Content creators
   const createNavigationContent = useCallback(() => {
+    if (isDockCollapsed) {
+      return (
+        <CollapsedNavigationPanel
+          user={user}
+          views={views}
+          viewGroups={viewGroups}
+          userNavSettings={navSettings}
+          onViewSelect={handleViewSelect}
+          selectedView={selectedView}
+        />
+      );
+    }
+
     return (
       <NavigationPanel
         user={user}
@@ -312,6 +325,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       />
     );
   }, [
+    isDockCollapsed,
     user,
     views,
     viewGroups,
@@ -358,8 +372,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     reportsVisible,
     widgetsVisible,
     isAdmin: user.role === "admin",
-    isNavCollapsed: navCollapsed,
+    isDockCollapsed: isDockCollapsed,
     actions: {
+      onToggleCollapse: () => setIsDockCollapsed(prev => !prev),
       onNavigationManage: () => setShowNavigationModal(true),
       onSystemSettings: () => setShowManageModal(true),
       onReopenReports: handleReopenReports,
@@ -458,7 +473,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log("Only content changed, updating content");
       updateLayoutContent();
     }
-  }, [selectedView, reportsVisible, widgetsVisible, navCollapsed, navigationUpdateTrigger]);
+  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>

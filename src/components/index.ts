@@ -9,6 +9,7 @@ export { default as ThemeToggle } from "./dashboard/ThemeToggle";
 // Navigation Components
 export { default as NavigationPanel } from "./navigation/NavigationPanel";
 export { default as GmailNavigationPanel } from "./navigation/GmailNavigationPanel";
+export { default as CollapsedNavigationPanel } from "./navigation/CollapsedNavigationPanel";
 export { default as NavigationHeader } from "./navigation/NavigationHeader";
 export { default as NavigationViewItem } from "./navigation/NavigationViewItem";
 export { default as ViewGroupHoverPopup } from "./navigation/ViewGroupHoverPopup";

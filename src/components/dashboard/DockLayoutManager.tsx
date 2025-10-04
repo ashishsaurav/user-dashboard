@@ -8,8 +8,9 @@ interface DockLayoutManagerProps {
   reportsVisible: boolean;
   widgetsVisible: boolean;
   isAdmin: boolean;
-  isNavCollapsed?: boolean;
+  isDockCollapsed?: boolean;
   actions: {
+    onToggleCollapse: () => void;
     onNavigationManage: () => void;
     onSystemSettings: () => void;
     onReopenReports: () => void;
@@ -32,15 +33,15 @@ export function useDockLayoutManager({
   reportsVisible,
   widgetsVisible,
   isAdmin,
-  isNavCollapsed = false,
+  isDockCollapsed = false,
   actions,
   content,
 }: DockLayoutManagerProps) {
   const generateDynamicLayout = useCallback((): LayoutData => {
     const children: any[] = [];
 
-    // Navigation panel - adjust size based on collapsed state
-    const navSize = isNavCollapsed ? 60 : 250;
+    // Navigation panel - adjust size based on dock collapsed state
+    const navSize = isDockCollapsed ? 60 : 250;
     children.push({
       tabs: [
         DockTabFactory.createNavigationTab(
@@ -50,7 +51,7 @@ export function useDockLayoutManager({
           widgetsVisible,
           isAdmin,
           content.navigation,
-          isNavCollapsed
+          isDockCollapsed
         ),
       ],
       size: navSize,
@@ -114,6 +115,7 @@ export function useDockLayoutManager({
 
   const getCurrentLayoutStructure = useCallback(() => {
     const panels = [];
+    panels.push(`navigation-${isDockCollapsed ? 'collapsed' : 'expanded'}`);
     if (!selectedView) {
       panels.push("welcome");
     } else {
@@ -121,8 +123,8 @@ export function useDockLayoutManager({
       if (widgetsVisible) panels.push("widgets");
       if (!reportsVisible && !widgetsVisible) panels.push("welcome-closed");
     }
-    return `navigation,${panels.join(",")}`;
-  }, [selectedView, reportsVisible, widgetsVisible]);
+    return panels.join(",");
+  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed]);
 
   return {
     generateDynamicLayout,
