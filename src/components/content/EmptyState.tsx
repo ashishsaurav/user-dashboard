@@ -6,11 +6,7 @@ interface EmptyStateProps {
   message: string;
 }
 
-export const EmptyState: React.FC<EmptyStateProps> = ({
-  icon,
-  title,
-  message,
-}) => {
+const EmptyState: React.FC<EmptyStateProps> = ({ icon, title, message }) => {
   return (
     <div className="content-empty">
       <div className="empty-state">
@@ -21,3 +17,4 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     </div>
   );
 };
+export default EmptyState;

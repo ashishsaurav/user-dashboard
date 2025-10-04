@@ -15,7 +15,7 @@ interface WidgetCardProps {
   onDrop: (e: React.DragEvent) => void;
 }
 
-export const WidgetCard: React.FC<WidgetCardProps> = ({
+const WidgetCard: React.FC<WidgetCardProps> = ({
   widget,
   isDragging,
   isDragOver,
@@ -80,3 +80,5 @@ export const WidgetCard: React.FC<WidgetCardProps> = ({
     </div>
   );
 };
+
+export default WidgetCard;

@@ -102,7 +102,6 @@ export function AddItemModal<T>({
                     {getItemUrl && (
                       <p className="item-url">{getItemUrl(item)}</p>
                     )}
-                    {renderItemExtra && renderItemExtra(item)}
                   </div>
                 </div>
               ))
@@ -111,9 +110,9 @@ export function AddItemModal<T>({
         </div>
 
         <div className="modal-footer">
-          <button className="btn btn-secondary" onClick={onClose}>
+          {/* <button className="btn btn-secondary" onClick={onClose}>
             Cancel
-          </button>
+          </button> */}
           <button
             className="btn btn-primary"
             onClick={onConfirm}
