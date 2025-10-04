@@ -323,18 +323,18 @@
   font-size: 11px;
 }
 
-/* Hover Popup - Match Expanded Navigation Design */
+/* Hover Popup - Exact Replica of Expanded Navigation */
 .view-group-hover-popup {
   background: var(--nav-bg, #ffffff);
   border: 1px solid var(--nav-border, #e0e0e0);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 260px;
+  min-width: 280px;
   max-width: 320px;
   overflow: hidden;
   z-index: 1000;
   position: fixed;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  padding: 12px;
 }
 
 /* Add connecting bridge to prevent gap issues */
@@ -349,36 +349,112 @@
   z-index: -1;
 }
 
-/* Popup Header - Match View Group Header Design */
-.popup-header {
+/* Navigation popup content wrapper */
+.navigation-popup-content {
+  width: 100%;
+}
+
+/* Use existing gmail navigation styles directly in popup */
+.view-group-hover-popup .gmail-view-group {
+  margin-bottom: 0; /* Override default margin for popup */
+}
+
+.view-group-hover-popup .gmail-view-group-header {
   display: flex;
   align-items: center;
   padding: 8px 12px;
-  background: var(--nav-bg, #ffffff);
-  border-bottom: none;
-  min-height: auto;
-  cursor: default;
+  cursor: default; /* Don't make it clickable in popup */
+  border-radius: 8px;
   transition: background-color 0.2s;
+  position: relative;
 }
 
-.popup-title {
+.view-group-hover-popup .gmail-view-group-text {
+  flex: 1;
   font-weight: 500;
   font-size: 14px;
   color: var(--nav-text, #333);
-  flex: 1;
-  line-height: 1.3;
 }
 
-.popup-header-actions {
+.view-group-hover-popup .gmail-view-group-actions {
   display: flex;
   align-items: center;
   gap: 4px;
   margin-left: 12px;
+  opacity: 1; /* Always visible in popup */
+}
+
+.view-group-hover-popup .gmail-view-list {
+  padding-left: 32px;
+  margin-top: 4px;
+}
+
+.view-group-hover-popup .gmail-view-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  margin-bottom: 2px;
+}
+
+.view-group-hover-popup .gmail-view-item:hover {
+  background: var(--nav-hover-bg, #f0f0f0);
+}
+
+.view-group-hover-popup .gmail-view-item.selected {
+  background: var(--nav-selected-bg, #e3f2fd);
+  color: var(--nav-selected-text, #1976d2);
+  font-weight: 500;
+}
+
+.view-group-hover-popup .gmail-view-item-icon {
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  color: var(--nav-icon, #666);
   flex-shrink: 0;
 }
 
-/* Popup Action Buttons - Match Navigation Button Style */
-.popup-action-btn {
+.view-group-hover-popup .gmail-view-item.selected .gmail-view-item-icon {
+  color: inherit;
+}
+
+.view-group-hover-popup .gmail-view-item-text {
+  flex: 1;
+  font-size: 13px;
+  color: var(--nav-text-muted, #666);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.view-group-hover-popup .gmail-view-item.selected .gmail-view-item-text {
+  color: inherit;
+}
+
+.view-group-hover-popup .view-counts {
+  font-size: 11px;
+  opacity: 0.7;
+  margin-top: 1px;
+}
+
+.view-group-hover-popup .gmail-view-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  margin-left: 8px;
+}
+
+.view-group-hover-popup .gmail-view-item:hover .gmail-view-item-actions {
+  opacity: 1;
+}
+
+/* Action buttons styling */
+.view-group-hover-popup .action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -388,163 +464,32 @@
   border-radius: 4px;
   background: transparent;
   cursor: pointer;
-  transition: all 0.2s ease;
-  color: var(--nav-icon, #666);
-  position: relative;
-  flex-shrink: 0;
-}
-
-.popup-action-btn:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
-  color: var(--nav-text, #333);
-  transform: scale(1.05);
-}
-
-.popup-action-btn:active {
-  transform: scale(0.95);
-}
-
-.popup-action-btn svg {
-  width: 14px;
-  height: 14px;
-  stroke-width: 2;
-}
-
-.popup-action-btn.edit-btn:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
-  color: var(--nav-text, #333);
-}
-
-.popup-action-btn.hide-btn:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
-  color: var(--nav-text, #333);
-}
-
-.popup-action-btn.delete-btn:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
-  color: var(--nav-text, #333);
-}
-
-/* Popup Content - Match View List Design */
-.popup-content {
-  padding-left: 32px;
-  margin-top: 4px;
-  background: var(--nav-bg, #ffffff);
-}
-
-/* Popup View Items - Match Gmail View Item Design */
-.popup-view-item {
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  cursor: pointer;
-  border-radius: 6px;
   transition: background-color 0.2s;
-  margin-bottom: 2px;
-  gap: 8px;
-  position: relative;
-}
-
-.popup-view-item:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
-}
-
-.popup-view-item.selected {
-  background: var(--nav-selected-bg, #e3f2fd);
-  color: var(--nav-selected-text, #1976d2);
-  font-weight: 500;
-}
-
-/* View Icon - Match Navigation Icon Style */
-.view-icon {
-  width: 16px;
-  height: 16px;
   color: var(--nav-icon, #666);
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.view-icon svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2;
+.view-group-hover-popup .action-btn:hover {
+  background: var(--nav-hover-bg, #f0f0f0);
+  color: var(--nav-text, #333);
 }
 
-.popup-view-item.selected .view-icon {
-  color: inherit;
-}
-
-/* View Info - Match Navigation Text Style */
-.view-info {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  gap: 2px;
-  min-width: 0;
-}
-
-.view-name {
-  flex: 1;
-  font-size: 13px;
-  color: var(--nav-text-muted, #666);
-  line-height: 1.3;
-}
-
-.popup-view-item.selected .view-name {
-  color: inherit;
-}
-
-/* View Counts - Compact Design */
-.view-counts {
-  display: flex;
-  gap: 6px;
-  font-size: 11px;
-  color: var(--nav-text-muted, #999);
-  margin-top: 1px;
-}
-
-.popup-view-item.selected .view-counts {
-  color: inherit;
-  opacity: 0.8;
-}
-
-.reports-count,
-.widgets-count {
-  font-weight: 500;
-}
-
-/* View Actions - Match Navigation Style */
-.view-actions {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  position: absolute;
-  right: 8px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: var(--nav-bg, #ffffff);
-  border-radius: 4px;
-  padding: 1px;
-}
-
-.popup-view-item:hover .view-actions {
-  opacity: 1;
-}
-
-.view-actions .popup-action-btn {
+.view-group-hover-popup .gmail-view-item-actions .action-btn {
   width: 20px;
   height: 20px;
   border-radius: 3px;
 }
 
-.view-actions .popup-action-btn svg {
-  width: 12px;
-  height: 12px;
-  stroke-width: 2;
+/* Dark theme support */
+[data-theme="dark"] .view-group-hover-popup {
+  --nav-bg: #1a1a1a;
+  --nav-border: #333;
+  --nav-text: #fff;
+  --nav-text-muted: #aaa;
+  --nav-icon: #888;
+  --nav-hover-bg: #2a2a2a;
+  --nav-selected-bg: #1a365d;
+  --nav-selected-text: #4dabf7;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 .popup-view-item.selected .reports-count,
@@ -680,8 +625,8 @@
   color: var(--primary-color, #4dabf7);
 }
 
-/* Dark theme for hover popup - Match Navigation Theme */
-[data-theme="dark"] .view-group-hover-popup {
+/* Dark Theme */
+[data-theme="dark"] .gmail-navigation-panel {
   --nav-bg: #1a1a1a;
   --nav-border: #333;
   --nav-text: #fff;
@@ -692,25 +637,30 @@
   --nav-selected-text: #4dabf7;
 }
 
-[data-theme="dark"] .view-group-hover-popup {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+/* Scrollbar Styling */
+.gmail-nav-list::-webkit-scrollbar {
+  width: 6px;
 }
 
-[data-theme="dark"] .view-actions {
-  background: var(--nav-bg, #1a1a1a);
+.gmail-nav-list::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-/* Light theme for hover popup - Match Navigation Theme */
-[data-theme="light"] .view-group-hover-popup,
-.view-group-hover-popup {
-  --nav-bg: #ffffff;
-  --nav-border: #e0e0e0;
-  --nav-text: #333;
-  --nav-text-muted: #666;
-  --nav-icon: #666;
-  --nav-hover-bg: #f0f0f0;
-  --nav-selected-bg: #e3f2fd;
-  --nav-selected-text: #1976d2;
+.gmail-nav-list::-webkit-scrollbar-thumb {
+  background: var(--nav-scrollbar, #ccc);
+  border-radius: 3px;
+}
+
+.gmail-nav-list::-webkit-scrollbar-thumb:hover {
+  background: var(--nav-scrollbar-hover, #999);
+}
+
+[data-theme="dark"] .gmail-nav-list::-webkit-scrollbar-thumb {
+  background: #444;
+}
+
+[data-theme="dark"] .gmail-nav-list::-webkit-scrollbar-thumb:hover {
+  background: #666;
 }
 
 /* Light theme collapsed navigation */
