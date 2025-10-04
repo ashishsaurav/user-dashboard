@@ -168,7 +168,7 @@ export class DockTabFactory {
     };
   }
 
-  static createReportsTab(actions: TabActions, content: React.ReactNode) {
+  static createReportsTab(actions: DockTabActions, content: React.ReactNode) {
     return {
       id: "reports",
       title: (
@@ -206,7 +206,7 @@ export class DockTabFactory {
     };
   }
 
-  static createWidgetsTab(actions: TabActions, content: React.ReactNode) {
+  static createWidgetsTab(actions: DockTabActions, content: React.ReactNode) {
     return {
       id: "widgets",
       title: (
