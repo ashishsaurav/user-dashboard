@@ -42,12 +42,8 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
   onViewSelect,
   selectedView,
 }) => {
-  const {
-    navState,
-    containerRef,
-    toggleCollapsed,
-    setHoveredViewGroup,
-  } = useGmailNavigation();
+  const { navState, containerRef, toggleCollapsed, setHoveredViewGroup } =
+    useGmailNavigation();
 
   // Local state for expanded view groups
   const [expandedViewGroups, setExpandedViewGroups] = useState<{
@@ -56,8 +52,12 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
 
   // Modal states
   const [editingView, setEditingView] = useState<View | null>(null);
-  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(null);
-  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(null);
+  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(
+    null
+  );
+  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(
+    null
+  );
   const [deletingView, setDeletingView] = useState<View | null>(null);
 
   const { showSuccess, showWarning } = useNotification();
@@ -65,7 +65,10 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
   // Get ordered and visible view groups
   const orderedViewGroups = useMemo(() => {
     return viewGroups
-      .filter((vg) => vg.isVisible && !userNavSettings.hiddenViewGroups.includes(vg.id))
+      .filter(
+        (vg) =>
+          vg.isVisible && !userNavSettings.hiddenViewGroups.includes(vg.id)
+      )
       .sort((a, b) => (a.order || 0) - (b.order || 0));
   }, [viewGroups, userNavSettings.hiddenViewGroups]);
 
@@ -77,14 +80,17 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
     return viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean)
-      .filter((view) => view!.isVisible && !userNavSettings.hiddenViews.includes(view!.id))
+      .filter(
+        (view) =>
+          view!.isVisible && !userNavSettings.hiddenViews.includes(view!.id)
+      )
       .sort((a, b) => (a!.order || 0) - (b!.order || 0)) as View[];
   };
 
   // Handle view group toggle
   const toggleViewGroupExpansion = (viewGroupId: string) => {
     if (navState.isHorizontal || navState.isCollapsed) return; // Don't toggle in horizontal or collapsed mode
-    
+
     setExpandedViewGroups((prev) => ({
       ...prev,
       [viewGroupId]: !prev[viewGroupId],
@@ -92,7 +98,10 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
   };
 
   // Handle view group hover for collapsed mode
-  const handleViewGroupHover = (viewGroup: ViewGroup, event: React.MouseEvent) => {
+  const handleViewGroupHover = (
+    viewGroup: ViewGroup,
+    event: React.MouseEvent
+  ) => {
     if (!navState.isCollapsed) return;
 
     const rect = event.currentTarget.getBoundingClientRect();
@@ -113,20 +122,41 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
 
   // Icons
   const NavigationIcon = () => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
       <polyline points="9,22 9,12 15,12 15,22" />
     </svg>
   );
 
   const CollapseIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <polyline points="15,18 9,12 15,6" />
     </svg>
   );
 
   const ChevronIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <polyline points="9,18 15,12 9,6" />
     </svg>
   );
@@ -134,7 +164,14 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
   const ViewGroupIcon = ({ viewGroup }: { viewGroup: ViewGroup }) => {
     if (viewGroup.isDefault) {
       return (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        >
           <rect x="3" y="3" width="7" height="9" />
           <rect x="14" y="3" width="7" height="5" />
           <rect x="14" y="12" width="7" height="9" />
@@ -143,7 +180,14 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
       );
     }
     return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
         <line x1="16" y1="2" x2="16" y2="6" />
         <line x1="8" y1="2" x2="8" y2="6" />
@@ -153,7 +197,14 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
   };
 
   const ViewIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
       <line x1="9" y1="9" x2="15" y2="9" />
       <line x1="9" y1="13" x2="15" y2="13" />
@@ -162,7 +213,14 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
 
   // Action buttons (same as before but styled for Gmail)
   const ManageIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="16"
+      height="16"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <circle cx="12" cy="12" r="3" />
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
     </svg>
@@ -181,12 +239,14 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
           <NavigationIcon />
           <span className="nav-title-text">Navigation</span>
         </div>
-        
+
         <div className="gmail-nav-actions">
           <button
             className="gmail-collapse-toggle"
             onClick={toggleCollapsed}
-            title={navState.isCollapsed ? "Expand navigation" : "Collapse navigation"}
+            title={
+              navState.isCollapsed ? "Expand navigation" : "Collapse navigation"
+            }
           >
             <CollapseIcon />
           </button>
@@ -218,7 +278,8 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
         <div className="gmail-nav-list">
           {orderedViewGroups.map((viewGroup) => {
             const groupViews = getViewsForGroup(viewGroup.id);
-            const isExpanded = expandedViewGroups[viewGroup.id] || navState.isHorizontal;
+            const isExpanded =
+              expandedViewGroups[viewGroup.id] || navState.isHorizontal;
 
             return (
               <div
@@ -235,7 +296,9 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
                   <div className="gmail-view-group-icon">
                     <ViewGroupIcon viewGroup={viewGroup} />
                   </div>
-                  <span className="gmail-view-group-text">{viewGroup.name}</span>
+                  <span className="gmail-view-group-text">
+                    {viewGroup.name}
+                  </span>
                   {!navState.isHorizontal && (
                     <div className="gmail-view-group-chevron">
                       <ChevronIcon />
@@ -244,24 +307,27 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
                 </div>
 
                 {/* View List */}
-                {(isExpanded || navState.isHorizontal) && groupViews.length > 0 && (
-                  <div className="gmail-view-list">
-                    {groupViews.map((view) => (
-                      <div
-                        key={view.id}
-                        className={`gmail-view-item ${
-                          selectedView?.id === view.id ? "selected" : ""
-                        }`}
-                        onClick={() => onViewSelect?.(view)}
-                      >
-                        <div className="gmail-view-item-icon">
-                          <ViewIcon />
+                {(isExpanded || navState.isHorizontal) &&
+                  groupViews.length > 0 && (
+                    <div className="gmail-view-list">
+                      {groupViews.map((view) => (
+                        <div
+                          key={view.id}
+                          className={`gmail-view-item ${
+                            selectedView?.id === view.id ? "selected" : ""
+                          }`}
+                          onClick={() => onViewSelect?.(view)}
+                        >
+                          <div className="gmail-view-item-icon">
+                            <ViewIcon />
+                          </div>
+                          <span className="gmail-view-item-text">
+                            {view.name}
+                          </span>
                         </div>
-                        <span className="gmail-view-item-text">{view.name}</span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      ))}
+                    </div>
+                  )}
               </div>
             );
           })}
@@ -269,19 +335,24 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
       </div>
 
       {/* Hover Popup for Collapsed Mode */}
-      {navState.isCollapsed && navState.hoveredViewGroup && navState.hoverPosition && (
-        <ViewGroupHoverPopup
-          viewGroup={viewGroups.find(vg => vg.id === navState.hoveredViewGroup)!}
-          views={getViewsForGroup(navState.hoveredViewGroup)}
-          position={navState.hoverPosition}
-          onViewSelect={onViewSelect}
-          selectedView={selectedView}
-        />
-      )}
+      {navState.isCollapsed &&
+        navState.hoveredViewGroup &&
+        navState.hoverPosition && (
+          <ViewGroupHoverPopup
+            viewGroup={
+              viewGroups.find((vg) => vg.id === navState.hoveredViewGroup)!
+            }
+            views={getViewsForGroup(navState.hoveredViewGroup)}
+            position={navState.hoverPosition}
+            onViewSelect={onViewSelect}
+            selectedView={selectedView}
+          />
+        )}
 
       {/* Modals */}
       {editingView && (
         <EditViewModal
+          userRole={user.role}
           view={editingView}
           reports={reports}
           widgets={widgets}
@@ -326,7 +397,7 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
             setDeletingViewGroup(null);
             showSuccess("View group deleted successfully");
           }}
-          onClose={() => setDeletingViewGroup(null)}
+          onCancel={() => setDeletingViewGroup(null)}
         />
       )}
 
@@ -340,7 +411,7 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
             setDeletingView(null);
             showSuccess("View deleted successfully");
           }}
-          onClose={() => setDeletingView(null)}
+          onCancel={() => setDeletingView(null)}
         />
       )}
     </div>
