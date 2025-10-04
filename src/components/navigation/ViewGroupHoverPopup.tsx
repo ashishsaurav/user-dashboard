@@ -1,9 +1,17 @@
 import React, { useState } from "react";
-import { View, ViewGroup, User, UserNavigationSettings, Report, Widget } from "../../types";
+import {
+  View,
+  ViewGroup,
+  User,
+  UserNavigationSettings,
+  Report,
+  Widget,
+} from "../../types";
 import EditViewModal from "../EditViewModal";
 import EditViewGroupModal from "../EditViewGroupModal";
 import DeleteConfirmationModal from "../DeleteConfirmationModal";
 import { useNotification } from "../NotificationProvider";
+import { DeleteIcon, EditIcon, EyeIcon, ViewGroupIcon } from "../ui/Icons";
 
 interface ViewGroupHoverPopupProps {
   viewGroup: ViewGroup;
@@ -45,15 +53,19 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
 }) => {
   // Modal states
   const [editingView, setEditingView] = useState<View | null>(null);
-  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(null);
+  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(
+    null
+  );
   const [deletingView, setDeletingView] = useState<View | null>(null);
-  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(null);
+  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(
+    null
+  );
 
   const { showSuccess, showWarning } = useNotification();
 
-  const groupViews = views.filter(view => 
-    viewGroup.viewIds.includes(view.id) && view.isVisible
-  ).sort((a, b) => (a.order || 0) - (b.order || 0));
+  const groupViews = views
+    .filter((view) => viewGroup.viewIds.includes(view.id) && view.isVisible)
+    .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   if (groupViews.length === 0) return null;
 
@@ -116,12 +128,17 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   };
 
   // Delete handlers - matching AllViewGroupsViews.tsx pattern
-  const handleDeleteViewGroupConfirm = (action?: "group-only" | "group-and-views") => {
+  const handleDeleteViewGroupConfirm = (
+    action?: "group-only" | "group-and-views"
+  ) => {
     if (!deletingViewGroup || !action || !onUpdateViewGroups) return;
 
     const defaultGroup = allViewGroups.find((vg) => vg.isDefault);
     if (!defaultGroup && action === "group-only") {
-      showWarning("Error", "Default group not found. Cannot proceed with deletion.");
+      showWarning(
+        "Error",
+        "Default group not found. Cannot proceed with deletion."
+      );
       return;
     }
 
@@ -139,15 +156,25 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         .filter((vg) => vg.id !== deletingViewGroup.id);
 
       onUpdateViewGroups(updatedViewGroups);
-      showSuccess("View Group Deleted", `"${deletingViewGroup.name}" deleted. Views moved to Default group.`);
+      showSuccess(
+        "View Group Deleted",
+        `"${deletingViewGroup.name}" deleted. Views moved to Default group.`
+      );
     } else {
       const viewsToDelete = deletingViewGroup.viewIds;
-      const updatedViews = allViews.filter((v) => !viewsToDelete.includes(v.id));
-      const updatedViewGroups = allViewGroups.filter((vg) => vg.id !== deletingViewGroup.id);
+      const updatedViews = allViews.filter(
+        (v) => !viewsToDelete.includes(v.id)
+      );
+      const updatedViewGroups = allViewGroups.filter(
+        (vg) => vg.id !== deletingViewGroup.id
+      );
 
       if (onUpdateViews) onUpdateViews(updatedViews);
       onUpdateViewGroups(updatedViewGroups);
-      showSuccess("View Group and Views Deleted", `"${deletingViewGroup.name}" and all its views have been removed.`);
+      showSuccess(
+        "View Group and Views Deleted",
+        `"${deletingViewGroup.name}" and all its views have been removed.`
+      );
     }
 
     setDeletingViewGroup(null);
@@ -159,11 +186,11 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     setDeletingView(null);
   };
 
-  const canModify = user?.role === 'admin' || user?.role === 'user';
+  const canModify = user?.role === "admin" || user?.role === "user";
 
   return (
     <>
-      <div 
+      <div
         className="view-group-hover-popup"
         style={{
           position: "fixed",
@@ -240,7 +267,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
                       <div className="nav-view-content">
                         <div className="nav-view-title">{view.name}</div>
                         <div className="nav-view-meta">
-                          {viewReports.length} Reports, {viewWidgets.length} Widgets
+                          {viewReports.length} Reports, {viewWidgets.length}{" "}
+                          Widgets
                         </div>
                       </div>
                     </div>
@@ -364,7 +392,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         <EditViewGroupModal
           viewGroup={editingViewGroup}
           views={allViews}
-          userRole={user?.role || 'viewer'}
+          userRole={user?.role || "viewer"}
           onSave={handleSaveViewGroup}
           onClose={() => setEditingViewGroup(null)}
         />
@@ -375,7 +403,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
           view={editingView}
           reports={reports}
           widgets={widgets}
-          userRole={user?.role || 'viewer'}
+          userRole={user?.role || "viewer"}
           onSave={handleSaveView}
           onClose={() => setEditingView(null)}
         />
