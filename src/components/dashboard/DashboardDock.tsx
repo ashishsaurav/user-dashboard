@@ -306,6 +306,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           userNavSettings={navSettings}
           onViewSelect={handleViewSelect}
           selectedView={selectedView}
+          onUpdateViews={handleUpdateViews}
+          onUpdateViewGroups={handleUpdateViewGroups}
+          onUpdateNavSettings={handleUpdateNavSettings}
         />
       );
     }

@@ -15,6 +15,10 @@ interface CollapsedNavigationPanelProps {
   userNavSettings: UserNavigationSettings;
   onViewSelect?: (view: View) => void;
   selectedView?: View | null;
+  // Add callback props for popup actions
+  onUpdateViews?: (views: View[]) => void;
+  onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
+  onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
 }
 
 const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
@@ -24,9 +28,14 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   userNavSettings,
   onViewSelect,
   selectedView,
+  onUpdateViews,
+  onUpdateViewGroups,
+  onUpdateNavSettings,
 }) => {
   const [hoveredViewGroup, setHoveredViewGroup] = useState<string | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+  const [isPopupHovered, setIsPopupHovered] = useState(false);
+  const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Get ordered and visible view groups
   const orderedViewGroups = viewGroups
@@ -81,9 +90,15 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
 
   // Handle view group hover with improved timing
   const handleViewGroupHover = (viewGroup: ViewGroup, event: React.MouseEvent) => {
+    // Clear any existing timeout
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
+
     const rect = event.currentTarget.getBoundingClientRect();
     const position = {
-      x: rect.right + 5, // Reduced gap
+      x: rect.right - 2, // Eliminate gap completely
       y: rect.top,
     };
 
@@ -92,21 +107,34 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   };
 
   const handleViewGroupLeave = () => {
-    // Longer delay to allow moving to popup
-    setTimeout(() => {
-      setHoveredViewGroup(null);
-      setHoverPosition(null);
-    }, 150);
+    // Only hide if popup is not being hovered
+    if (!isPopupHovered) {
+      const timeout = setTimeout(() => {
+        if (!isPopupHovered) {
+          setHoveredViewGroup(null);
+          setHoverPosition(null);
+        }
+      }, 100);
+      setHoverTimeout(timeout);
+    }
   };
 
   // Handle popup mouse events to keep it visible
   const handlePopupMouseEnter = () => {
-    // Keep popup visible when hovering over it
+    setIsPopupHovered(true);
+    if (hoverTimeout) {
+      clearTimeout(hoverTimeout);
+      setHoverTimeout(null);
+    }
   };
 
   const handlePopupMouseLeave = () => {
-    setHoveredViewGroup(null);
-    setHoverPosition(null);
+    setIsPopupHovered(false);
+    const timeout = setTimeout(() => {
+      setHoveredViewGroup(null);
+      setHoverPosition(null);
+    }, 100);
+    setHoverTimeout(timeout);
   };
 
   return (
@@ -144,6 +172,13 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
           selectedView={selectedView}
           onMouseEnter={handlePopupMouseEnter}
           onMouseLeave={handlePopupMouseLeave}
+          user={user}
+          allViews={views}
+          allViewGroups={viewGroups}
+          userNavSettings={userNavSettings}
+          onUpdateViews={onUpdateViews}
+          onUpdateViewGroups={onUpdateViewGroups}
+          onUpdateNavSettings={onUpdateNavSettings}
         />
       )}
     </div>

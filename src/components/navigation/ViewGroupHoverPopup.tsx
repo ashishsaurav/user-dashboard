@@ -1,5 +1,9 @@
-import React from "react";
-import { View, ViewGroup } from "../../types";
+import React, { useState } from "react";
+import { View, ViewGroup, User, UserNavigationSettings } from "../../types";
+import EditViewModal from "../EditViewModal";
+import EditViewGroupModal from "../EditViewGroupModal";
+import DeleteConfirmationModal from "../DeleteConfirmationModal";
+import { useNotification } from "../NotificationProvider";
 
 interface ViewGroupHoverPopupProps {
   viewGroup: ViewGroup;
@@ -9,6 +13,14 @@ interface ViewGroupHoverPopupProps {
   selectedView?: View | null;
   onMouseEnter?: () => void;
   onMouseLeave?: () => void;
+  // New props for full functionality
+  user?: User;
+  allViews?: View[];
+  allViewGroups?: ViewGroup[];
+  userNavSettings?: UserNavigationSettings;
+  onUpdateViews?: (views: View[]) => void;
+  onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
+  onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
 }
 
 const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
@@ -19,53 +31,276 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   selectedView,
   onMouseEnter,
   onMouseLeave,
+  user,
+  allViews = [],
+  allViewGroups = [],
+  userNavSettings,
+  onUpdateViews,
+  onUpdateViewGroups,
+  onUpdateNavSettings,
 }) => {
+  // Modal states
+  const [editingView, setEditingView] = useState<View | null>(null);
+  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(null);
+  const [deletingView, setDeletingView] = useState<View | null>(null);
+  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(null);
+
+  const { showSuccess, showWarning } = useNotification();
+
   const groupViews = views.filter(view => 
     viewGroup.viewIds.includes(view.id) && view.isVisible
   ).sort((a, b) => (a.order || 0) - (b.order || 0));
 
   if (groupViews.length === 0) return null;
 
+  // Action handlers
+  const handleEditViewGroup = () => {
+    setEditingViewGroup(viewGroup);
+  };
+
+  const handleDeleteViewGroup = () => {
+    setDeletingViewGroup(viewGroup);
+  };
+
+  const handleHideViewGroup = () => {
+    if (!userNavSettings || !onUpdateNavSettings) return;
+    const updatedSettings = {
+      ...userNavSettings,
+      hiddenViewGroups: [...userNavSettings.hiddenViewGroups, viewGroup.id],
+    };
+    onUpdateNavSettings(updatedSettings);
+    showSuccess("View group hidden successfully");
+  };
+
+  const handleEditView = (view: View) => {
+    setEditingView(view);
+  };
+
+  const handleDeleteView = (view: View) => {
+    setDeletingView(view);
+  };
+
+  const handleHideView = (view: View) => {
+    if (!userNavSettings || !onUpdateNavSettings) return;
+    const updatedSettings = {
+      ...userNavSettings,
+      hiddenViews: [...userNavSettings.hiddenViews, view.id],
+    };
+    onUpdateNavSettings(updatedSettings);
+    showSuccess("View hidden successfully");
+  };
+
+  // Modal handlers
+  const handleSaveViewGroup = (updatedViewGroup: ViewGroup) => {
+    if (!onUpdateViewGroups) return;
+    const updated = allViewGroups.map((vg) =>
+      vg.id === updatedViewGroup.id ? updatedViewGroup : vg
+    );
+    onUpdateViewGroups(updated);
+    setEditingViewGroup(null);
+    showSuccess("View group updated successfully");
+  };
+
+  const handleSaveView = (updatedView: View) => {
+    if (!onUpdateViews) return;
+    const updated = allViews.map((v) =>
+      v.id === updatedView.id ? updatedView : v
+    );
+    onUpdateViews(updated);
+    setEditingView(null);
+    showSuccess("View updated successfully");
+  };
+
+  const handleConfirmDeleteViewGroup = () => {
+    if (!deletingViewGroup || !onUpdateViewGroups) return;
+    const updated = allViewGroups.filter((vg) => vg.id !== deletingViewGroup.id);
+    onUpdateViewGroups(updated);
+    setDeletingViewGroup(null);
+    showSuccess("View group deleted successfully");
+  };
+
+  const handleConfirmDeleteView = () => {
+    if (!deletingView || !onUpdateViews || !onUpdateViewGroups) return;
+    
+    // Remove view from all view groups
+    const updatedViewGroups = allViewGroups.map((vg) => ({
+      ...vg,
+      viewIds: vg.viewIds.filter((id) => id !== deletingView.id),
+    }));
+    
+    // Remove view from views array
+    const updatedViews = allViews.filter((v) => v.id !== deletingView.id);
+    
+    onUpdateViewGroups(updatedViewGroups);
+    onUpdateViews(updatedViews);
+    setDeletingView(null);
+    showSuccess("View deleted successfully");
+  };
+
+  const canModify = user?.role === 'admin' || user?.role === 'user';
+
   return (
-    <div 
-      className="view-group-hover-popup"
-      style={{
-        position: "fixed",
-        left: position.x,
-        top: position.y,
-        zIndex: 1000,
-      }}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-    >
-      <div className="popup-header">
-        <span className="popup-title">{viewGroup.name}</span>
-      </div>
-      <div className="popup-content">
-        {groupViews.map((view) => (
-          <div
-            key={view.id}
-            className={`popup-view-item ${
-              selectedView?.id === view.id ? "selected" : ""
-            }`}
-            onClick={() => onViewSelect?.(view)}
-          >
-            <div className="view-icon">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-                <line x1="9" y1="9" x2="15" y2="9"/>
-                <line x1="9" y1="13" x2="15" y2="13"/>
-              </svg>
+    <>
+      <div 
+        className="view-group-hover-popup"
+        style={{
+          position: "fixed",
+          left: position.x,
+          top: position.y,
+          zIndex: 1000,
+        }}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
+        <div className="popup-header">
+          <span className="popup-title">{viewGroup.name}</span>
+          {canModify && (
+            <div className="popup-header-actions">
+              <button
+                className="popup-action-btn edit-btn"
+                onClick={handleEditViewGroup}
+                title="Edit view group"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m18 2 4 4-14 14H4v-4z"/>
+                  <path d="m14.5 5.5 4 4"/>
+                </svg>
+              </button>
+              <button
+                className="popup-action-btn hide-btn"
+                onClick={handleHideViewGroup}
+                title="Hide view group"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                  <path d="m10.73 5.08 1.46.77c4.29 2.27 6.78 5.61 6.78 9.15-1.31 1.91-2.83 3.47-4.58 4.7"/>
+                  <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12c1.31 1.91 2.83 3.47 4.58 4.7"/>
+                  <line x1="2" y1="2" x2="22" y2="22"/>
+                </svg>
+              </button>
+              <button
+                className="popup-action-btn delete-btn"
+                onClick={handleDeleteViewGroup}
+                title="Delete view group"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="m3 6 18 0"/>
+                  <path d="m19 6 0 14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                  <path d="m8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                </svg>
+              </button>
             </div>
-            <span className="view-name">{view.name}</span>
-            <div className="view-counts">
-              <span className="reports-count">{view.reportIds.length}R</span>
-              <span className="widgets-count">{view.widgetIds.length}W</span>
+          )}
+        </div>
+        <div className="popup-content">
+          {groupViews.map((view) => (
+            <div
+              key={view.id}
+              className={`popup-view-item ${
+                selectedView?.id === view.id ? "selected" : ""
+              }`}
+              onClick={() => onViewSelect?.(view)}
+            >
+              <div className="view-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="9" y1="9" x2="15" y2="9"/>
+                  <line x1="9" y1="13" x2="15" y2="13"/>
+                </svg>
+              </div>
+              <div className="view-info">
+                <span className="view-name">{view.name}</span>
+                <div className="view-counts">
+                  <span className="reports-count">{view.reportIds.length}R</span>
+                  <span className="widgets-count">{view.widgetIds.length}W</span>
+                </div>
+              </div>
+              {canModify && (
+                <div className="view-actions">
+                  <button
+                    className="popup-action-btn edit-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleEditView(view);
+                    }}
+                    title="Edit view"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="m18 2 4 4-14 14H4v-4z"/>
+                      <path d="m14.5 5.5 4 4"/>
+                    </svg>
+                  </button>
+                  <button
+                    className="popup-action-btn hide-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleHideView(view);
+                    }}
+                    title="Hide view"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
+                      <path d="m10.73 5.08 1.46.77c4.29 2.27 6.78 5.61 6.78 9.15-1.31 1.91-2.83 3.47-4.58 4.7"/>
+                      <path d="M6.61 6.61A13.526 13.526 0 0 0 2 12c1.31 1.91 2.83 3.47 4.58 4.7"/>
+                      <line x1="2" y1="2" x2="22" y2="22"/>
+                    </svg>
+                  </button>
+                  <button
+                    className="popup-action-btn delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteView(view);
+                    }}
+                    title="Delete view"
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="m3 6 18 0"/>
+                      <path d="m19 6 0 14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/>
+                      <path d="m8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/>
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
-    </div>
+
+      {/* Modals */}
+      {editingViewGroup && (
+        <EditViewGroupModal
+          viewGroup={editingViewGroup}
+          onSave={handleSaveViewGroup}
+          onCancel={() => setEditingViewGroup(null)}
+        />
+      )}
+
+      {editingView && (
+        <EditViewModal
+          view={editingView}
+          onSave={handleSaveView}
+          onCancel={() => setEditingView(null)}
+        />
+      )}
+
+      {deletingViewGroup && (
+        <DeleteConfirmationModal
+          title="Delete View Group"
+          message={`Are you sure you want to delete "${deletingViewGroup.name}"? This action cannot be undone.`}
+          onConfirm={handleConfirmDeleteViewGroup}
+          onCancel={() => setDeletingViewGroup(null)}
+        />
+      )}
+
+      {deletingView && (
+        <DeleteConfirmationModal
+          title="Delete View"
+          message={`Are you sure you want to delete "${deletingView.name}"? This action cannot be undone.`}
+          onConfirm={handleConfirmDeleteView}
+          onCancel={() => setDeletingView(null)}
+        />
+      )}
+    </>
   );
 };
 

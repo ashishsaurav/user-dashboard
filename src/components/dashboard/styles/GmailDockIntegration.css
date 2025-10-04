@@ -1,32 +1,33 @@
 /* Gmail-style dock tab integration */
 .dock-tab-header.dock-collapsible-header {
-  padding: 12px 16px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--nav-bg, #ffffff);
   border-bottom: 1px solid var(--nav-border, #e0e0e0);
-  min-height: 56px; /* Increased from 44px */
+  min-height: 64px; /* Increased from 56px */
   box-sizing: border-box;
 }
 
 .dock-tab-header.dock-collapsible-header .tab-title {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   font-weight: 500;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--nav-text, #333);
   flex: 1;
-  min-height: 32px; /* Ensure minimum height for content */
+  min-height: 36px; /* Ensure minimum height for content */
 }
 
 .dock-tab-header.dock-collapsible-header .tab-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-shrink: 0;
-  min-height: 32px; /* Ensure minimum height for buttons */
+  min-height: 36px; /* Ensure minimum height for buttons */
+  margin-left: 16px; /* Add margin to separate from title */
 }
 
 /* Dock Header Action Buttons */
@@ -34,10 +35,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px; /* Increased from 32px */
-  height: 36px; /* Increased from 32px */
+  width: 40px; /* Increased from 36px */
+  height: 40px; /* Increased from 36px */
   border: none;
-  border-radius: 8px; /* Increased border radius */
+  border-radius: 10px; /* Increased border radius */
   background: transparent;
   cursor: pointer;
   transition: background-color 0.2s, transform 0.1s;
@@ -96,7 +97,7 @@
 /* Collapsed state adjustments */
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header {
   justify-content: center;
-  padding: 12px;
+  padding: 16px;
 }
 
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-title span {
@@ -105,7 +106,7 @@
 
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-actions {
   position: absolute;
-  right: 12px; /* Increased margin */
+  right: 16px; /* Increased margin */
   top: 50%;
   transform: translateY(-50%);
 }

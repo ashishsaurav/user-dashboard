@@ -352,12 +352,58 @@
   padding: 12px 16px;
   background: var(--popup-header-bg, #f8f9fa);
   border-bottom: 1px solid var(--popup-border, #e0e0e0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 .popup-title {
   font-weight: 600;
   font-size: 14px;
   color: var(--popup-title-color, #333);
+  flex: 1;
+}
+
+.popup-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 12px;
+}
+
+.popup-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, transform 0.1s;
+  color: var(--popup-action-color, #666);
+}
+
+.popup-action-btn:hover {
+  background: var(--popup-action-hover-bg, #e9ecef);
+  color: var(--popup-action-hover-color, #333);
+  transform: scale(1.05);
+}
+
+.popup-action-btn.edit-btn:hover {
+  background: var(--edit-hover-bg, #e3f2fd);
+  color: var(--edit-color, #1976d2);
+}
+
+.popup-action-btn.hide-btn:hover {
+  background: var(--hide-hover-bg, #fff3e0);
+  color: var(--hide-color, #f57c00);
+}
+
+.popup-action-btn.delete-btn:hover {
+  background: var(--delete-hover-bg, #ffebee);
+  color: var(--delete-color, #d32f2f);
 }
 
 .popup-content {
@@ -371,6 +417,7 @@
   padding: 12px 16px;
   cursor: pointer;
   transition: background-color 0.2s;
+  gap: 12px;
   border-bottom: 1px solid var(--popup-item-border, #f0f0f0);
 }
 
@@ -379,52 +426,81 @@
 }
 
 .popup-view-item:hover {
-  background: var(--popup-hover-bg, #f8f9fa);
+  background: var(--popup-item-hover-bg, #f8f9fa);
 }
 
 .popup-view-item.selected {
-  background: var(--nav-selected-bg, #e3f2fd);
-  color: var(--nav-selected-text, #1976d2);
+  background: var(--popup-item-selected-bg, #e3f2fd);
+  border-left: 3px solid var(--primary-color, #1976d2);
 }
 
 .view-icon {
-  margin-right: 12px;
-  color: var(--popup-icon, #666);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--popup-icon-color, #666);
   flex-shrink: 0;
 }
 
-.popup-view-item.selected .view-icon {
-  color: inherit;
+.view-info {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: 4px;
 }
 
 .view-name {
-  flex: 1;
   font-size: 14px;
   font-weight: 500;
-  color: var(--popup-text, #333);
-}
-
-.popup-view-item.selected .view-name {
-  color: inherit;
+  color: var(--popup-text-color, #333);
 }
 
 .view-counts {
   display: flex;
   gap: 8px;
-  font-size: 11px;
-  color: var(--popup-counts, #999);
-}
-
-.popup-view-item.selected .view-counts {
-  color: inherit;
-  opacity: 0.8;
 }
 
 .reports-count,
 .widgets-count {
+  font-size: 11px;
+  font-weight: 500;
   padding: 2px 6px;
-  background: var(--popup-count-bg, #f0f0f0);
   border-radius: 10px;
+  background: var(--count-bg, #e9ecef);
+  color: var(--count-color, #495057);
+}
+
+.reports-count {
+  background: var(--reports-bg, #e8f5e8);
+  color: var(--reports-color, #2e7d2e);
+}
+
+.widgets-count {
+  background: var(--widgets-bg, #e3f2fd);
+  color: var(--widgets-color, #1976d2);
+}
+
+.view-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.popup-view-item:hover .view-actions {
+  opacity: 1;
+}
+
+.view-actions .popup-action-btn {
+  width: 24px;
+  height: 24px;
+}
+
+.view-actions .popup-action-btn svg {
+  width: 10px;
+  height: 10px;
+}
   font-weight: 500;
 }
 
@@ -546,6 +622,34 @@
 
 [data-theme="dark"] .collapsed-view-group:hover .collapsed-view-group-text {
   color: var(--primary-color, #4dabf7);
+}
+
+/* Dark theme for hover popup */
+[data-theme="dark"] .view-group-hover-popup {
+  --popup-bg: #2a2a2a;
+  --popup-border: #444;
+  --popup-header-bg: #333;
+  --popup-title-color: #fff;
+  --popup-item-border: #444;
+  --popup-item-hover-bg: #3a3a3a;
+  --popup-item-selected-bg: #1a365d;
+  --popup-icon-color: #aaa;
+  --popup-text-color: #fff;
+  --popup-action-color: #aaa;
+  --popup-action-hover-bg: #444;
+  --popup-action-hover-color: #fff;
+  --edit-hover-bg: #1a365d;
+  --edit-color: #4dabf7;
+  --hide-hover-bg: #3e2723;
+  --hide-color: #ffb74d;
+  --delete-hover-bg: #3e1723;
+  --delete-color: #f48fb1;
+  --count-bg: #444;
+  --count-color: #aaa;
+  --reports-bg: #2e3e2e;
+  --reports-color: #66bb6a;
+  --widgets-bg: #1a365d;
+  --widgets-color: #4dabf7;
 }
 
 /* Animation for smooth transitions */
