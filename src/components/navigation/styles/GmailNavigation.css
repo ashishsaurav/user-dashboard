@@ -323,18 +323,18 @@
   font-size: 11px;
 }
 
-/* Hover Popup - Exact Replica of Expanded Navigation */
+/* Hover Popup - Exact Replica of NavigationPanel */
 .view-group-hover-popup {
   background: var(--nav-bg, #ffffff);
   border: 1px solid var(--nav-border, #e0e0e0);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  min-width: 280px;
-  max-width: 320px;
+  min-width: 300px;
+  max-width: 400px;
   overflow: hidden;
   z-index: 1000;
   position: fixed;
-  padding: 12px;
+  padding: 16px;
 }
 
 /* Add connecting bridge to prevent gap issues */
@@ -354,129 +354,157 @@
   width: 100%;
 }
 
-/* Use existing gmail navigation styles directly in popup */
-.view-group-hover-popup .gmail-view-group {
+/* Use NavigationPanel CSS classes directly in popup */
+.view-group-hover-popup .nav-group {
   margin-bottom: 0; /* Override default margin for popup */
 }
 
-.view-group-hover-popup .gmail-view-group-header {
+.view-group-hover-popup .nav-group-header {
   display: flex;
   align-items: center;
-  padding: 8px 12px;
+  justify-content: space-between;
+  padding: 12px 16px;
   cursor: default; /* Don't make it clickable in popup */
   border-radius: 8px;
+  background: var(--nav-group-bg, #f8f9fa);
+  border: 1px solid var(--nav-border-light, #e9ecef);
+  margin-bottom: 8px;
   transition: background-color 0.2s;
-  position: relative;
 }
 
-.view-group-hover-popup .gmail-view-group-text {
+.view-group-hover-popup .nav-group-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex: 1;
-  font-weight: 500;
-  font-size: 14px;
-  color: var(--nav-text, #333);
 }
 
-.view-group-hover-popup .gmail-view-group-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  margin-left: 12px;
-  opacity: 1; /* Always visible in popup */
-}
-
-.view-group-hover-popup .gmail-view-list {
-  padding-left: 32px;
-  margin-top: 4px;
-}
-
-.view-group-hover-popup .gmail-view-item {
-  display: flex;
-  align-items: center;
-  padding: 6px 12px;
-  cursor: pointer;
-  border-radius: 6px;
-  transition: background-color 0.2s;
-  margin-bottom: 2px;
-}
-
-.view-group-hover-popup .gmail-view-item:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
-}
-
-.view-group-hover-popup .gmail-view-item.selected {
-  background: var(--nav-selected-bg, #e3f2fd);
-  color: var(--nav-selected-text, #1976d2);
-  font-weight: 500;
-}
-
-.view-group-hover-popup .gmail-view-item-icon {
-  width: 16px;
-  height: 16px;
-  margin-right: 8px;
+.view-group-hover-popup .nav-group-icon {
   color: var(--nav-icon, #666);
   flex-shrink: 0;
 }
 
-.view-group-hover-popup .gmail-view-item.selected .gmail-view-item-icon {
-  color: inherit;
-}
-
-.view-group-hover-popup .gmail-view-item-text {
+.view-group-hover-popup .nav-group-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--nav-text, #333);
   flex: 1;
-  font-size: 13px;
-  color: var(--nav-text-muted, #666);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
 }
 
-.view-group-hover-popup .gmail-view-item.selected .gmail-view-item-text {
-  color: inherit;
+.view-group-hover-popup .default-badge {
+  background: var(--success-color, #28a745);
+  color: white;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
 }
 
-.view-group-hover-popup .view-counts {
-  font-size: 11px;
-  opacity: 0.7;
-  margin-top: 1px;
-}
-
-.view-group-hover-popup .gmail-view-item-actions {
+.view-group-hover-popup .nav-group-actions {
   display: flex;
   align-items: center;
-  gap: 2px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  margin-left: 8px;
+  gap: 4px;
+  opacity: 1; /* Always visible in popup */
 }
 
-.view-group-hover-popup .gmail-view-item:hover .gmail-view-item-actions {
+.view-group-hover-popup .nav-group-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.view-group-hover-popup .nav-view-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: all 0.2s ease;
+  background: var(--nav-item-bg, #ffffff);
+}
+
+.view-group-hover-popup .nav-view-item:hover {
+  background: var(--nav-hover-bg, #f0f7ff);
+  border-color: var(--primary-color-light, #e3f2fd);
+}
+
+.view-group-hover-popup .nav-view-item.selected {
+  background: var(--nav-selected-bg, #e3f2fd);
+  border-color: var(--primary-color, #1976d2);
+  font-weight: 500;
+}
+
+.view-group-hover-popup .nav-view-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.view-group-hover-popup .nav-view-content {
+  flex: 1;
+}
+
+.view-group-hover-popup .nav-view-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nav-text, #333);
+  margin-bottom: 2px;
+}
+
+.view-group-hover-popup .nav-view-meta {
+  font-size: 12px;
+  color: var(--nav-text-muted, #666);
+}
+
+.view-group-hover-popup .nav-view-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.view-group-hover-popup .nav-view-item:hover .nav-view-actions {
   opacity: 1;
 }
 
-/* Action buttons styling */
-.view-group-hover-popup .action-btn {
+/* Action buttons styling - Match NavigationPanel exactly */
+.view-group-hover-popup .nav-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 4px;
+  border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
   color: var(--nav-icon, #666);
 }
 
-.view-group-hover-popup .action-btn:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
+.view-group-hover-popup .nav-action-btn:hover {
+  background: var(--nav-button-hover-bg, #f0f0f0);
   color: var(--nav-text, #333);
+  transform: scale(1.05);
 }
 
-.view-group-hover-popup .gmail-view-item-actions .action-btn {
-  width: 20px;
-  height: 20px;
-  border-radius: 3px;
+.view-group-hover-popup .nav-action-btn.visibility-btn:hover {
+  background: var(--warning-light, #fff3cd);
+  color: var(--warning-color, #856404);
+}
+
+.view-group-hover-popup .nav-action-btn.edit-btn:hover {
+  background: var(--info-light, #d1ecf1);
+  color: var(--info-color, #0c5460);
+}
+
+.view-group-hover-popup .nav-action-btn.delete-btn:hover {
+  background: var(--danger-light, #f8d7da);
+  color: var(--danger-color, #721c24);
 }
 
 /* Dark theme support */
@@ -486,9 +514,14 @@
   --nav-text: #fff;
   --nav-text-muted: #aaa;
   --nav-icon: #888;
+  --nav-group-bg: #2a2a2a;
+  --nav-border-light: #444;
+  --nav-item-bg: #1e1e1e;
   --nav-hover-bg: #2a2a2a;
   --nav-selected-bg: #1a365d;
-  --nav-selected-text: #4dabf7;
+  --nav-button-hover-bg: #333;
+  --primary-color: #4dabf7;
+  --primary-color-light: #1a365d;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
