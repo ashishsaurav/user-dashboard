@@ -8,6 +8,7 @@ interface DockLayoutManagerProps {
   reportsVisible: boolean;
   widgetsVisible: boolean;
   isAdmin: boolean;
+  isNavCollapsed?: boolean;
   actions: {
     onNavigationManage: () => void;
     onSystemSettings: () => void;
@@ -31,13 +32,15 @@ export function useDockLayoutManager({
   reportsVisible,
   widgetsVisible,
   isAdmin,
+  isNavCollapsed = false,
   actions,
   content,
 }: DockLayoutManagerProps) {
   const generateDynamicLayout = useCallback((): LayoutData => {
     const children: any[] = [];
 
-    // Navigation panel - always fixed at 250px
+    // Navigation panel - adjust size based on collapsed state
+    const navSize = isNavCollapsed ? 60 : 250;
     children.push({
       tabs: [
         DockTabFactory.createNavigationTab(
@@ -46,26 +49,27 @@ export function useDockLayoutManager({
           reportsVisible,
           widgetsVisible,
           isAdmin,
-          content.navigation
+          content.navigation,
+          isNavCollapsed
         ),
       ],
-      size: 250,
-      minSize: 250,
-      maxSize: 250,
+      size: navSize,
+      minSize: navSize,
+      maxSize: navSize,
     });
 
     // Show welcome section when no view is selected
     if (!selectedView) {
       children.push({
         tabs: [DockTabFactory.createWelcomeTab(content.welcome)],
-        size: 1050,
+        size: 1300 - navSize,
       });
     } else {
       // Add reports section if view selected and visible
       if (reportsVisible) {
         children.push({
           tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
-          size: widgetsVisible ? 700 : 1050,
+          size: widgetsVisible ? 700 : (1300 - navSize),
           minSize: 250,
         });
       }
@@ -74,7 +78,7 @@ export function useDockLayoutManager({
       if (widgetsVisible) {
         children.push({
           tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
-          size: reportsVisible ? 350 : 1050,
+          size: reportsVisible ? 350 : (1300 - navSize),
           minSize: 250,
         });
       }
@@ -88,7 +92,7 @@ export function useDockLayoutManager({
               selectedView.name
             ),
           ],
-          size: 1050,
+          size: 1300 - navSize,
         });
       }
     }

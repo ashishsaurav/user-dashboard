@@ -1,0 +1,103 @@
+/* Gmail-style dock tab integration */
+.dock-tab-header.gmail-style {
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--nav-bg, #ffffff);
+  border-bottom: 1px solid var(--nav-border, #e0e0e0);
+}
+
+.dock-tab-header.gmail-style .tab-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--nav-text, #333);
+}
+
+.dock-tab-header.gmail-style .tab-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.tab-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  color: var(--nav-icon, #666);
+}
+
+.tab-action-btn:hover {
+  background: var(--nav-hover-bg, #f0f0f0);
+  color: var(--nav-text, #333);
+}
+
+.tab-action-btn.show-section-btn {
+  color: var(--primary-color, #1976d2);
+}
+
+.tab-action-btn.show-section-btn:hover {
+  background: var(--primary-hover-bg, #e3f2fd);
+}
+
+/* Dark theme for dock integration */
+[data-theme="dark"] .dock-tab-header.gmail-style {
+  --nav-bg: #1a1a1a;
+  --nav-border: #333;
+  --nav-text: #fff;
+  --nav-icon: #888;
+  --nav-hover-bg: #2a2a2a;
+  --primary-color: #4dabf7;
+  --primary-hover-bg: #1a365d;
+}
+
+/* Dock layout adjustments for Gmail style */
+.dock-layout .dock-panel.gmail-nav-panel {
+  background: var(--nav-bg, #ffffff);
+}
+
+.dock-layout .dock-panel.gmail-nav-panel .dock-tab {
+  background: transparent;
+}
+
+.dock-layout .dock-panel.gmail-nav-panel .dock-tab-cache {
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Horizontal dock adjustments */
+.dock-layout[data-dockmode="horizontal"] .gmail-navigation-panel {
+  border-right: none;
+  border-bottom: 1px solid var(--nav-border, #e0e0e0);
+}
+
+/* Collapsed navigation adjustments */
+.dock-panel[data-nav-collapsed="true"] {
+  min-width: 60px !important;
+  max-width: 60px !important;
+}
+
+.dock-panel[data-nav-collapsed="true"] .dock-tab-header.gmail-style .tab-title span {
+  display: none;
+}
+
+.dock-panel[data-nav-collapsed="true"] .dock-tab-header.gmail-style .tab-actions {
+  display: none;
+}
+
+/* Smooth transitions */
+.dock-panel {
+  transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
+              min-width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
+              max-width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}

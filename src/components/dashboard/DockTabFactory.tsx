@@ -90,18 +90,19 @@ export class DockTabFactory {
     reportsVisible: boolean,
     widgetsVisible: boolean,
     isAdmin: boolean,
-    content: React.ReactNode
+    content: React.ReactNode,
+    isCollapsed: boolean = false
   ) {
     return {
       id: "navigation",
       title: (
-        <div className="dock-tab-header navigation-tab-header">
+        <div className="dock-tab-header navigation-tab-header gmail-style">
           <div className="tab-title">
             <NavigationIcon />
-            <span>Navigation</span>
+            {!isCollapsed && <span>Navigation</span>}
           </div>
           <div className="tab-actions">
-            {selectedView && !reportsVisible && (
+            {selectedView && !reportsVisible && !isCollapsed && (
               <button
                 className="tab-action-btn show-section-btn"
                 onClick={(e) => {
@@ -113,7 +114,7 @@ export class DockTabFactory {
                 <ReportsIcon />
               </button>
             )}
-            {selectedView && !widgetsVisible && (
+            {selectedView && !widgetsVisible && !isCollapsed && (
               <button
                 className="tab-action-btn show-section-btn"
                 onClick={(e) => {
@@ -123,28 +124,6 @@ export class DockTabFactory {
                 title="Show Widgets"
               >
                 <WidgetsIcon />
-              </button>
-            )}
-            <button
-              className="tab-action-btn manage-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                actions.onNavigationManage();
-              }}
-              title="Manage Navigation"
-            >
-              <ManageIcon />
-            </button>
-            {isAdmin && (
-              <button
-                className="tab-action-btn settings-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  actions.onSystemSettings();
-                }}
-                title="System Settings"
-              >
-                <ManageIcon />
               </button>
             )}
           </div>
