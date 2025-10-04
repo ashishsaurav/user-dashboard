@@ -578,7 +578,7 @@
   background: #666;
 }
 
-/* Collapsed Navigation Panel */
+/* Collapsed Navigation Panel - Match NavigationPanel Background */
 .collapsed-navigation-panel {
   display: flex;
   flex-direction: column;
@@ -586,6 +586,7 @@
   width: 100%;
   padding: 12px 0;
   background: var(--nav-bg, #ffffff);
+  border-right: 1px solid var(--nav-border, #e0e0e0);
   overflow: hidden;
   transition: background-color 0.3s ease;
 }
@@ -634,9 +635,10 @@
   color: var(--primary-color, #1976d2);
 }
 
-/* Enhanced dark theme for collapsed navigation */
+/* Enhanced dark theme for collapsed navigation - Match NavigationPanel */
 [data-theme="dark"] .collapsed-navigation-panel {
   --nav-bg: #1a1a1a;
+  --nav-border: #333;
   --nav-item-bg: #2a2a2a;
   --nav-border-light: #444;
   --nav-hover-bg: #1a365d;
@@ -696,10 +698,11 @@
   background: #666;
 }
 
-/* Light theme collapsed navigation */
+/* Light theme collapsed navigation - Match NavigationPanel */
 [data-theme="light"] .collapsed-navigation-panel,
 .collapsed-navigation-panel {
   --nav-bg: #ffffff;
+  --nav-border: #e0e0e0;
   --nav-item-bg: #f8f9fa;
   --nav-border-light: #e9ecef;
   --nav-hover-bg: #e3f2fd;

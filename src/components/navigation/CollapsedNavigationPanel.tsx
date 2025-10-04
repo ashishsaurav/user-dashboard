@@ -112,14 +112,14 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   };
 
   const handleViewGroupLeave = () => {
-    // Only hide if popup is not being hovered
+    // Only start hide timer if popup is not being hovered
     if (!isPopupHovered) {
       const timeout = setTimeout(() => {
         if (!isPopupHovered) {
           setHoveredViewGroup(null);
           setHoverPosition(null);
         }
-      }, 100);
+      }, 300); // Increased delay for better UX
       setHoverTimeout(timeout);
     }
   };
@@ -127,6 +127,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   // Handle popup mouse events to keep it visible
   const handlePopupMouseEnter = () => {
     setIsPopupHovered(true);
+    // Clear any pending hide timeout
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
       setHoverTimeout(null);
@@ -135,12 +136,22 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
 
   const handlePopupMouseLeave = () => {
     setIsPopupHovered(false);
+    // Start hide timer when leaving popup
     const timeout = setTimeout(() => {
       setHoveredViewGroup(null);
       setHoverPosition(null);
-    }, 100);
+    }, 200); // Shorter delay when leaving popup
     setHoverTimeout(timeout);
   };
+
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (hoverTimeout) {
+        clearTimeout(hoverTimeout);
+      }
+    };
+  }, [hoverTimeout]);
 
   return (
     <div className="collapsed-navigation-panel">
