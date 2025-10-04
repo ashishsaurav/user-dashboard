@@ -20,6 +20,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import ManageModal from "../modals/ManageModal";
 import NavigationManageModal from "../modals/NavigationManageModal";
 import NavigationPanel from "../navigation/GmailNavigationPanel";
+import CollapsedNavigationPanel from "../navigation/CollapsedNavigationPanel";
 import ViewContentPanel from "../panels/ViewContentPanel";
 import AddReportModal from "../modals/AddReportModal";
 import AddWidgetModal from "../modals/AddWidgetModal";
