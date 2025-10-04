@@ -323,14 +323,14 @@
   font-size: 11px;
 }
 
-/* Hover Popup */
+/* Hover Popup - Match Expanded Navigation Design */
 .view-group-hover-popup {
-  background: var(--popup-bg, #ffffff);
-  border: 1px solid var(--popup-border, #e0e0e0);
-  border-radius: 12px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-  min-width: 280px;
-  max-width: 380px;
+  background: var(--nav-bg, #ffffff);
+  border: 1px solid var(--nav-border, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 260px;
+  max-width: 320px;
   overflow: hidden;
   z-index: 1000;
   position: fixed;
@@ -349,52 +349,55 @@
   z-index: -1;
 }
 
+/* Popup Header - Match View Group Header Design */
 .popup-header {
-  padding: 16px 20px;
-  background: var(--popup-header-bg, #f8f9fa);
-  border-bottom: 1px solid var(--popup-border, #e0e0e0);
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  min-height: 48px;
+  padding: 8px 12px;
+  background: var(--nav-bg, #ffffff);
+  border-bottom: none;
+  min-height: auto;
+  cursor: default;
+  transition: background-color 0.2s;
 }
 
 .popup-title {
-  font-weight: 600;
-  font-size: 15px;
-  color: var(--popup-title-color, #333);
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--nav-text, #333);
   flex: 1;
-  line-height: 1.4;
+  line-height: 1.3;
 }
 
 .popup-header-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: 16px;
+  gap: 4px;
+  margin-left: 12px;
   flex-shrink: 0;
 }
 
+/* Popup Action Buttons - Match Navigation Button Style */
 .popup-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 24px;
+  height: 24px;
   border: none;
-  border-radius: 8px;
+  border-radius: 4px;
   background: transparent;
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--popup-action-color, #666);
+  color: var(--nav-icon, #666);
   position: relative;
   flex-shrink: 0;
 }
 
 .popup-action-btn:hover {
-  background: var(--popup-action-hover-bg, #e9ecef);
-  color: var(--popup-action-hover-color, #333);
-  transform: scale(1.08);
+  background: var(--nav-hover-bg, #f0f0f0);
+  color: var(--nav-text, #333);
+  transform: scale(1.05);
 }
 
 .popup-action-btn:active {
@@ -402,130 +405,130 @@
 }
 
 .popup-action-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2.2;
-}
-
-.popup-action-btn.edit-btn:hover {
-  background: var(--edit-hover-bg, #e3f2fd);
-  color: var(--edit-color, #1976d2);
-}
-
-.popup-action-btn.hide-btn:hover {
-  background: var(--hide-hover-bg, #fff3e0);
-  color: var(--hide-color, #f57c00);
-}
-
-.popup-action-btn.delete-btn:hover {
-  background: var(--delete-hover-bg, #ffebee);
-  color: var(--delete-color, #d32f2f);
-}
-
-.popup-content {
-  max-height: 320px;
-  overflow-y: auto;
-  padding: 8px 0;
-}
-
-.popup-view-item {
-  display: flex;
-  align-items: center;
-  padding: 14px 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  gap: 14px;
-  border-bottom: 1px solid var(--popup-item-border, #f0f0f0);
-  position: relative;
-  min-height: 52px;
-}
-
-.popup-view-item:last-child {
-  border-bottom: none;
-}
-
-.popup-view-item:hover {
-  background: var(--popup-item-hover-bg, #f8f9fa);
-}
-
-.popup-view-item.selected {
-  background: var(--popup-item-selected-bg, #e3f2fd);
-  border-left: 4px solid var(--primary-color, #1976d2);
-}
-
-.view-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--popup-icon-color, #666);
-  flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-}
-
-.view-icon svg {
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   stroke-width: 2;
 }
 
+.popup-action-btn.edit-btn:hover {
+  background: var(--nav-hover-bg, #f0f0f0);
+  color: var(--nav-text, #333);
+}
+
+.popup-action-btn.hide-btn:hover {
+  background: var(--nav-hover-bg, #f0f0f0);
+  color: var(--nav-text, #333);
+}
+
+.popup-action-btn.delete-btn:hover {
+  background: var(--nav-hover-bg, #f0f0f0);
+  color: var(--nav-text, #333);
+}
+
+/* Popup Content - Match View List Design */
+.popup-content {
+  padding-left: 32px;
+  margin-top: 4px;
+  background: var(--nav-bg, #ffffff);
+}
+
+/* Popup View Items - Match Gmail View Item Design */
+.popup-view-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+  margin-bottom: 2px;
+  gap: 8px;
+  position: relative;
+}
+
+.popup-view-item:hover {
+  background: var(--nav-hover-bg, #f0f0f0);
+}
+
+.popup-view-item.selected {
+  background: var(--nav-selected-bg, #e3f2fd);
+  color: var(--nav-selected-text, #1976d2);
+  font-weight: 500;
+}
+
+/* View Icon - Match Navigation Icon Style */
+.view-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--nav-icon, #666);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.view-icon svg {
+  width: 16px;
+  height: 16px;
+  stroke-width: 2;
+}
+
+.popup-view-item.selected .view-icon {
+  color: inherit;
+}
+
+/* View Info - Match Navigation Text Style */
 .view-info {
   display: flex;
   flex-direction: column;
   flex: 1;
-  gap: 6px;
-  min-width: 0; /* Allows text truncation */
+  gap: 2px;
+  min-width: 0;
 }
 
 .view-name {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--popup-text-color, #333);
+  flex: 1;
+  font-size: 13px;
+  color: var(--nav-text-muted, #666);
   line-height: 1.3;
-  word-break: break-word;
 }
 
+.popup-view-item.selected .view-name {
+  color: inherit;
+}
+
+/* View Counts - Compact Design */
 .view-counts {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--nav-text-muted, #999);
+  margin-top: 1px;
+}
+
+.popup-view-item.selected .view-counts {
+  color: inherit;
+  opacity: 0.8;
 }
 
 .reports-count,
 .widgets-count {
-  font-size: 11px;
-  font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 12px;
-  background: var(--count-bg, #e9ecef);
-  color: var(--count-color, #495057);
-  line-height: 1.2;
+  font-weight: 500;
 }
 
-.reports-count {
-  background: var(--reports-bg, #e8f5e8);
-  color: var(--reports-color, #2e7d2e);
-}
-
-.widgets-count {
-  background: var(--widgets-bg, #e3f2fd);
-  color: var(--widgets-color, #1976d2);
-}
-
+/* View Actions - Match Navigation Style */
 .view-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
   opacity: 0;
   transition: opacity 0.2s ease;
   position: absolute;
-  right: 12px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  background: var(--popup-bg, #ffffff);
-  border-radius: 8px;
-  padding: 2px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  background: var(--nav-bg, #ffffff);
+  border-radius: 4px;
+  padding: 1px;
 }
 
 .popup-view-item:hover .view-actions {
@@ -533,15 +536,15 @@
 }
 
 .view-actions .popup-action-btn {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
 }
 
 .view-actions .popup-action-btn svg {
-  width: 14px;
-  height: 14px;
-  stroke-width: 2.2;
+  width: 12px;
+  height: 12px;
+  stroke-width: 2;
 }
 
 .popup-view-item.selected .reports-count,
@@ -677,70 +680,37 @@
   color: var(--primary-color, #4dabf7);
 }
 
-/* Enhanced dark theme for hover popup */
+/* Dark theme for hover popup - Match Navigation Theme */
 [data-theme="dark"] .view-group-hover-popup {
-  --popup-bg: #2a2a2a;
-  --popup-border: #444;
-  --popup-header-bg: #333;
-  --popup-title-color: #fff;
-  --popup-item-border: #444;
-  --popup-item-hover-bg: #3a3a3a;
-  --popup-item-selected-bg: #1a365d;
-  --popup-icon-color: #aaa;
-  --popup-text-color: #fff;
-  --popup-action-color: #aaa;
-  --popup-action-hover-bg: #444;
-  --popup-action-hover-color: #fff;
-  --edit-hover-bg: #1a365d;
-  --edit-color: #4dabf7;
-  --hide-hover-bg: #3e2723;
-  --hide-color: #ffb74d;
-  --delete-hover-bg: #3e1723;
-  --delete-color: #f48fb1;
-  --count-bg: #444;
-  --count-color: #aaa;
-  --reports-bg: #2e3e2e;
-  --reports-color: #66bb6a;
-  --widgets-bg: #1a365d;
-  --widgets-color: #4dabf7;
+  --nav-bg: #1a1a1a;
+  --nav-border: #333;
+  --nav-text: #fff;
+  --nav-text-muted: #aaa;
+  --nav-icon: #888;
+  --nav-hover-bg: #2a2a2a;
+  --nav-selected-bg: #1a365d;
+  --nav-selected-text: #4dabf7;
 }
 
 [data-theme="dark"] .view-group-hover-popup {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
 }
 
 [data-theme="dark"] .view-actions {
-  background: var(--popup-bg, #2a2a2a);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  background: var(--nav-bg, #1a1a1a);
 }
 
-/* Light theme enhanced variables */
+/* Light theme for hover popup - Match Navigation Theme */
 [data-theme="light"] .view-group-hover-popup,
 .view-group-hover-popup {
-  --popup-bg: #ffffff;
-  --popup-border: #e0e0e0;
-  --popup-header-bg: #f8f9fa;
-  --popup-title-color: #333;
-  --popup-item-border: #f0f0f0;
-  --popup-item-hover-bg: #f8f9fa;
-  --popup-item-selected-bg: #e3f2fd;
-  --popup-icon-color: #666;
-  --popup-text-color: #333;
-  --popup-action-color: #666;
-  --popup-action-hover-bg: #e9ecef;
-  --popup-action-hover-color: #333;
-  --edit-hover-bg: #e3f2fd;
-  --edit-color: #1976d2;
-  --hide-hover-bg: #fff3e0;
-  --hide-color: #f57c00;
-  --delete-hover-bg: #ffebee;
-  --delete-color: #d32f2f;
-  --count-bg: #e9ecef;
-  --count-color: #495057;
-  --reports-bg: #e8f5e8;
-  --reports-color: #2e7d2e;
-  --widgets-bg: #e3f2fd;
-  --widgets-color: #1976d2;
+  --nav-bg: #ffffff;
+  --nav-border: #e0e0e0;
+  --nav-text: #333;
+  --nav-text-muted: #666;
+  --nav-icon: #666;
+  --nav-hover-bg: #f0f0f0;
+  --nav-selected-bg: #e3f2fd;
+  --nav-selected-text: #1976d2;
 }
 
 /* Light theme collapsed navigation */
