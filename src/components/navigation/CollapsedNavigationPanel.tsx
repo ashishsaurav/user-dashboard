@@ -19,6 +19,9 @@ interface CollapsedNavigationPanelProps {
   onUpdateViews?: (views: View[]) => void;
   onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
   onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
+  // Add reports and widgets for modals
+  reports?: any[];
+  widgets?: any[];
 }
 
 const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
@@ -31,6 +34,8 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
+  reports = [],
+  widgets = [],
 }) => {
   const [hoveredViewGroup, setHoveredViewGroup] = useState<string | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
@@ -176,6 +181,8 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
           allViews={views}
           allViewGroups={viewGroups}
           userNavSettings={userNavSettings}
+          reports={reports}
+          widgets={widgets}
           onUpdateViews={onUpdateViews}
           onUpdateViewGroups={onUpdateViewGroups}
           onUpdateNavSettings={onUpdateNavSettings}

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, ViewGroup, User, UserNavigationSettings } from "../../types";
+import { View, ViewGroup, User, UserNavigationSettings, Report, Widget } from "../../types";
 import EditViewModal from "../EditViewModal";
 import EditViewGroupModal from "../EditViewGroupModal";
 import DeleteConfirmationModal from "../DeleteConfirmationModal";
@@ -18,6 +18,8 @@ interface ViewGroupHoverPopupProps {
   allViews?: View[];
   allViewGroups?: ViewGroup[];
   userNavSettings?: UserNavigationSettings;
+  reports?: Report[];
+  widgets?: Widget[];
   onUpdateViews?: (views: View[]) => void;
   onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
   onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
@@ -35,6 +37,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   allViews = [],
   allViewGroups = [],
   userNavSettings,
+  reports = [],
+  widgets = [],
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
@@ -90,7 +94,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     showSuccess("View hidden successfully");
   };
 
-  // Modal handlers
+  // Modal handlers - based on AllViewGroupsViews.tsx patterns
   const handleSaveViewGroup = (updatedViewGroup: ViewGroup) => {
     if (!onUpdateViewGroups) return;
     const updated = allViewGroups.map((vg) =>
@@ -111,30 +115,62 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     showSuccess("View updated successfully");
   };
 
-  const handleConfirmDeleteViewGroup = () => {
-    if (!deletingViewGroup || !onUpdateViewGroups) return;
-    const updated = allViewGroups.filter((vg) => vg.id !== deletingViewGroup.id);
-    onUpdateViewGroups(updated);
+  // Delete handlers - matching AllViewGroupsViews.tsx pattern
+  const handleDeleteViewGroupConfirm = (action?: "group-only" | "group-and-views") => {
+    if (!deletingViewGroup || !action || !onUpdateViewGroups) return;
+
+    const defaultGroup = allViewGroups.find((vg) => vg.isDefault);
+    if (!defaultGroup && action === "group-only") {
+      showWarning("Error", "Default group not found. Cannot proceed with deletion.");
+      return;
+    }
+
+    if (action === "group-only") {
+      const updatedViewGroups = allViewGroups
+        .map((vg) => {
+          if (vg.isDefault) {
+            return {
+              ...vg,
+              viewIds: [...vg.viewIds, ...deletingViewGroup.viewIds],
+            };
+          }
+          return vg;
+        })
+        .filter((vg) => vg.id !== deletingViewGroup.id);
+
+      onUpdateViewGroups(updatedViewGroups);
+      showSuccess("View Group Deleted", `"${deletingViewGroup.name}" deleted. Views moved to Default group.`);
+    } else {
+      const viewsToDelete = deletingViewGroup.viewIds;
+      const updatedViews = allViews.filter((v) => !viewsToDelete.includes(v.id));
+      const updatedViewGroups = allViewGroups.filter((vg) => vg.id !== deletingViewGroup.id);
+
+      if (onUpdateViews) onUpdateViews(updatedViews);
+      onUpdateViewGroups(updatedViewGroups);
+      showSuccess("View Group and Views Deleted", `"${deletingViewGroup.name}" and all its views have been removed.`);
+    }
+
     setDeletingViewGroup(null);
-    showSuccess("View group deleted successfully");
+  };
+
+  const handleDeleteView = (view: View) => {
+    if (!onUpdateViews || !onUpdateViewGroups) return;
+    
+    const updatedViews = allViews.filter((v) => v.id !== view.id);
+    const updatedViewGroups = allViewGroups.map((vg) => ({
+      ...vg,
+      viewIds: vg.viewIds.filter((vId) => vId !== view.id),
+    }));
+
+    onUpdateViews(updatedViews);
+    onUpdateViewGroups(updatedViewGroups);
+    showSuccess("View Deleted", `"${view.name}" has been removed successfully.`);
   };
 
   const handleConfirmDeleteView = () => {
-    if (!deletingView || !onUpdateViews || !onUpdateViewGroups) return;
-    
-    // Remove view from all view groups
-    const updatedViewGroups = allViewGroups.map((vg) => ({
-      ...vg,
-      viewIds: vg.viewIds.filter((id) => id !== deletingView.id),
-    }));
-    
-    // Remove view from views array
-    const updatedViews = allViews.filter((v) => v.id !== deletingView.id);
-    
-    onUpdateViewGroups(updatedViewGroups);
-    onUpdateViews(updatedViews);
+    if (!deletingView) return;
+    handleDeleteView(deletingView);
     setDeletingView(null);
-    showSuccess("View deleted successfully");
   };
 
   const canModify = user?.role === 'admin' || user?.role === 'user';
@@ -266,36 +302,41 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         </div>
       </div>
 
-      {/* Modals */}
+      {/* Modals - using correct props based on AllViewGroupsViews.tsx */}
       {editingViewGroup && (
         <EditViewGroupModal
           viewGroup={editingViewGroup}
+          views={allViews}
+          userRole={user?.role || 'viewer'}
           onSave={handleSaveViewGroup}
-          onCancel={() => setEditingViewGroup(null)}
+          onClose={() => setEditingViewGroup(null)}
         />
       )}
 
       {editingView && (
         <EditViewModal
           view={editingView}
+          reports={reports}
+          widgets={widgets}
+          userRole={user?.role || 'viewer'}
           onSave={handleSaveView}
-          onCancel={() => setEditingView(null)}
+          onClose={() => setEditingView(null)}
         />
       )}
 
       {deletingViewGroup && (
         <DeleteConfirmationModal
-          title="Delete View Group"
-          message={`Are you sure you want to delete "${deletingViewGroup.name}"? This action cannot be undone.`}
-          onConfirm={handleConfirmDeleteViewGroup}
+          type="viewgroup"
+          item={deletingViewGroup}
+          onConfirm={handleDeleteViewGroupConfirm}
           onCancel={() => setDeletingViewGroup(null)}
         />
       )}
 
       {deletingView && (
         <DeleteConfirmationModal
-          title="Delete View"
-          message={`Are you sure you want to delete "${deletingView.name}"? This action cannot be undone.`}
+          type="view"
+          item={deletingView}
           onConfirm={handleConfirmDeleteView}
           onCancel={() => setDeletingView(null)}
         />
