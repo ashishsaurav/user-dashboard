@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import * as FlexLayout from "flexlayout-react";
-import "flexlayout-react/style/light.css";
+import DockLayout, { LayoutData } from "rc-dock";
+import "rc-dock/dist/rc-dock.css";
+import "rc-dock/dist/rc-dock-dark.css";
 import {
   User,
   View,
@@ -25,11 +26,10 @@ import AddReportModal from "../modals/AddReportModal";
 import AddWidgetModal from "../modals/AddWidgetModal";
 import WelcomeContent from "./WelcomeContent";
 import ThemeToggle from "./ThemeToggle";
-import { useFlexLayoutManager } from "./FlexLayoutManager";
+import { useDockLayoutManager } from "./DockLayoutManager";
 import { LAYOUT_SIZES } from "../../constants/layout";
 import "./styles/DashboardDock.css";
 import "./styles/GmailDockIntegration.css";
-import "./styles/FlexLayoutCustom.css";
 
 interface DashboardDockProps {
   user: User;
@@ -58,11 +58,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
 
-  // FlexLayout model ref
-  const [model, setModel] = useState<FlexLayout.Model | null>(null);
-  const layoutRef = useRef<FlexLayout.Layout>(null);
+  // Track layout structure to detect when we need full reload
+  const [layoutStructure, setLayoutStructure] = useState<string>("");
 
-  // Resize observer ref for navigation panel
+  // RC-DOCK REF for updates
+  const dockLayoutRef = useRef<DockLayout>(null);
+  
+  // Resize observer ref for navigation panel width detection
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const isManualToggleRef = useRef<boolean>(false);
 
@@ -298,140 +300,225 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         );
   };
 
+  // Content creators
+  const createNavigationContent = useCallback(() => {
+    if (isDockCollapsed) {
+      return (
+        <CollapsedNavigationPanel
+          user={user}
+          views={views}
+          viewGroups={viewGroups}
+          userNavSettings={navSettings}
+          onViewSelect={handleViewSelect}
+          selectedView={selectedView}
+          onUpdateViews={handleUpdateViews}
+          onUpdateViewGroups={handleUpdateViewGroups}
+          onUpdateNavSettings={handleUpdateNavSettings}
+          reports={getUserAccessibleReports()}
+          widgets={getUserAccessibleWidgets()}
+        />
+      );
+    }
+
+    // Always use the original NavigationPanel when expanded (with full drag/drop, edit, delete functionality)
+    return (
+      <NavigationPanel
+        user={user}
+        views={views}
+        viewGroups={viewGroups}
+        userNavSettings={navSettings}
+        reports={getUserAccessibleReports()}
+        widgets={getUserAccessibleWidgets()}
+        onUpdateViews={handleUpdateViews}
+        onUpdateViewGroups={handleUpdateViewGroups}
+        onUpdateNavSettings={handleUpdateNavSettings}
+        onViewSelect={handleViewSelect}
+        selectedView={selectedView}
+      />
+    );
+  }, [
+    isDockCollapsed,
+    user,
+    views,
+    viewGroups,
+    navSettings,
+    selectedView,
+    navigationUpdateTrigger,
+  ]);
+
+  const createReportsContent = () => (
+    <ViewContentPanel
+      type="reports"
+      selectedView={selectedView}
+      reports={getUserAccessibleReports()}
+      widgets={[]}
+      onRemoveReport={handleRemoveReportFromView}
+      onRemoveWidget={() => {}}
+      onReorderReports={handleReorderReports}
+    />
+  );
+
+  const createWidgetsContent = () => (
+    <ViewContentPanel
+      type="widgets"
+      selectedView={selectedView}
+      reports={[]}
+      widgets={getUserAccessibleWidgets()}
+      onRemoveReport={() => {}}
+      onRemoveWidget={handleRemoveWidgetFromView}
+      onReorderWidgets={handleReorderWidgets}
+    />
+  );
+
+  const createWelcomeContent = () => (
+    <WelcomeContent
+      selectedView={selectedView}
+      onReopenReports={handleReopenReports}
+      onReopenWidgets={handleReopenWidgets}
+    />
+  );
+
   // Handle manual toggle (button click)
   const handleToggleCollapse = useCallback(() => {
     isManualToggleRef.current = true;
     setIsDockCollapsed(prev => !prev);
   }, []);
 
-  // FlexLayout factory to render components
-  const factory = (node: FlexLayout.TabNode) => {
-    const component = node.getComponent();
-    const config = node.getConfig();
-
-    switch (component) {
-      case "navigation":
-        if (isDockCollapsed) {
-          return (
-            <CollapsedNavigationPanel
-              user={user}
-              views={views}
-              viewGroups={viewGroups}
-              userNavSettings={navSettings}
-              onViewSelect={handleViewSelect}
-              selectedView={selectedView}
-              onUpdateViews={handleUpdateViews}
-              onUpdateViewGroups={handleUpdateViewGroups}
-              onUpdateNavSettings={handleUpdateNavSettings}
-              reports={getUserAccessibleReports()}
-              widgets={getUserAccessibleWidgets()}
-            />
-          );
-        }
-        return (
-          <NavigationPanel
-            user={user}
-            views={views}
-            viewGroups={viewGroups}
-            userNavSettings={navSettings}
-            reports={getUserAccessibleReports()}
-            widgets={getUserAccessibleWidgets()}
-            onUpdateViews={handleUpdateViews}
-            onUpdateViewGroups={handleUpdateViewGroups}
-            onUpdateNavSettings={handleUpdateNavSettings}
-            onViewSelect={handleViewSelect}
-            selectedView={selectedView}
-          />
-        );
-
-      case "reports":
-        return (
-          <ViewContentPanel
-            type="reports"
-            selectedView={selectedView}
-            reports={getUserAccessibleReports()}
-            widgets={[]}
-            onRemoveReport={handleRemoveReportFromView}
-            onRemoveWidget={() => {}}
-            onReorderReports={handleReorderReports}
-          />
-        );
-
-      case "widgets":
-        return (
-          <ViewContentPanel
-            type="widgets"
-            selectedView={selectedView}
-            reports={[]}
-            widgets={getUserAccessibleWidgets()}
-            onRemoveReport={() => {}}
-            onRemoveWidget={handleRemoveWidgetFromView}
-            onReorderWidgets={handleReorderWidgets}
-          />
-        );
-
-      case "welcome":
-        return (
-          <WelcomeContent
-            selectedView={selectedView}
-            onReopenReports={handleReopenReports}
-            onReopenWidgets={handleReopenWidgets}
-          />
-        );
-
-      default:
-        return <div>Unknown component: {component}</div>;
-    }
-  };
-
-  // FlexLayout manager
-  const { generateLayout } = useFlexLayoutManager({
+  // Dock layout manager
+  const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
     selectedView,
     reportsVisible,
     widgetsVisible,
     isAdmin: user.role === "admin",
-    isDockCollapsed,
+    isDockCollapsed: isDockCollapsed,
+    actions: {
+      onToggleCollapse: handleToggleCollapse,
+      onNavigationManage: () => setShowNavigationModal(true),
+      onSystemSettings: () => setShowManageModal(true),
+      onReopenReports: handleReopenReports,
+      onReopenWidgets: handleReopenWidgets,
+      onAddReport: () => setShowAddReportModal(true),
+      onAddWidget: () => setShowAddWidgetModal(true),
+      onCloseReports: handleCloseReports,
+      onCloseWidgets: handleCloseWidgets,
+    },
+    content: {
+      navigation: createNavigationContent(),
+      reports: createReportsContent(),
+      widgets: createWidgetsContent(),
+      welcome: createWelcomeContent(),
+    },
   });
 
-  // Initialize and update model
-  useEffect(() => {
-    const newModel = generateLayout();
-    setModel(newModel);
-  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
+  // Smart update that preserves RC-Dock internal state
+  const updateLayoutContent = useCallback(() => {
+    if (!dockLayoutRef.current) return;
+
+    try {
+      const currentLayout = dockLayoutRef.current.getLayout();
+
+      if (currentLayout?.dockbox?.children) {
+        currentLayout.dockbox.children.forEach((panel: any) => {
+          if (panel.tabs && panel.tabs[0]) {
+            const tabId = panel.tabs[0].id;
+
+            if (tabId === "navigation") {
+              panel.tabs[0].content = createNavigationContent();
+            } else if (tabId === "reports") {
+              panel.tabs[0].content = createReportsContent();
+            } else if (tabId === "widgets") {
+              panel.tabs[0].content = createWidgetsContent();
+            } else if (tabId.startsWith("welcome")) {
+              panel.tabs[0].content = createWelcomeContent();
+            }
+          }
+        });
+
+        dockLayoutRef.current.loadLayout(currentLayout);
+      }
+    } catch (error) {
+      console.warn("Error updating content, falling back to full reload:", error);
+      const newLayout = generateDynamicLayout();
+      dockLayoutRef.current.loadLayout(newLayout);
+    }
+  }, [
+    createNavigationContent,
+    createReportsContent,
+    createWidgetsContent,
+    createWelcomeContent,
+    generateDynamicLayout,
+  ]);
 
   // Apply theme changes
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
+
+    const dockContainer = document.querySelector(".dock-container");
+    const dockLayoutElement = document.querySelector(".dock-layout");
+
+    if (dockContainer) {
+      dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
+      if (theme === "dark") {
+        dockContainer.classList.add("dock-layout-dark");
+      } else {
+        dockContainer.classList.add("dock-layout-light");
+      }
+    }
+
+    if (dockLayoutElement) {
+      dockLayoutElement.classList.remove("dock-layout-dark", "dock-layout-light");
+      if (theme === "dark") {
+        dockLayoutElement.classList.add("dock-layout-dark");
+      } else {
+        dockLayoutElement.classList.add("dock-layout-light");
+      }
+    }
   }, [theme]);
 
-  // Setup ResizeObserver for auto expand/collapse based on panel size
+  // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
     const setupResizeObserver = () => {
-      const navTabset = document.querySelector('.flexlayout__tabset[data-layout-path*="/0"]');
+      // Find the navigation panel - it's always the first panel in our horizontal layout
+      const dockbox = document.querySelector('.dock-box');
       
-      if (!navTabset) {
-        console.log('Navigation tabset not found, retrying...');
+      if (!dockbox) {
+        console.log('Dockbox not found, retrying...');
         return;
       }
 
-      console.log('Found navigation tabset, setting up resize observer');
+      // Get the first panel (navigation is always first in our layout)
+      const navigationPanel = dockbox.querySelector('.dock-panel');
+      
+      if (!navigationPanel) {
+        console.log('Navigation panel not found, retrying...');
+        return;
+      }
 
+      console.log('Found navigation panel, setting up resize observer');
+
+      // Clean up existing observer
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       }
 
+      // Create new resize observer
       resizeObserverRef.current = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const width = entry.contentRect.width;
           const height = entry.contentRect.height;
           
+          // Detect if panel is in vertical layout (height > width means horizontal bar)
           const isVerticalStacked = height < width;
+          const dimensionToCheck = isVerticalStacked ? height : width;
           
           console.log(`Navigation panel - Width: ${width}px, Height: ${height}px, Vertical: ${isVerticalStacked}, Collapsed: ${isDockCollapsed}`);
           
+          // Only auto-toggle if this isn't from a manual button toggle
           if (!isManualToggleRef.current) {
+            // For vertical stacking, use height; for horizontal sidebar, use width
             if (!isVerticalStacked) {
+              // Horizontal sidebar mode - check width
               if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
                 console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
                 setIsDockCollapsed(true);
@@ -441,6 +528,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                 setIsDockCollapsed(false);
               }
             } else {
+              // Vertical stacked mode - check height
               const heightCollapseThreshold = 100;
               const heightExpandThreshold = 150;
               
@@ -453,8 +541,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                 setIsDockCollapsed(false);
               }
             }
+          } else {
+            console.log('Manual toggle active, skipping auto-toggle');
           }
           
+          // Reset manual toggle flag after a short delay
           if (isManualToggleRef.current) {
             setTimeout(() => {
               isManualToggleRef.current = false;
@@ -464,10 +555,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }
       });
 
-      resizeObserverRef.current.observe(navTabset);
+      resizeObserverRef.current.observe(navigationPanel);
       console.log('ResizeObserver attached successfully');
     };
 
+    // Setup observer with retries to ensure DOM is ready
     const timer = setTimeout(setupResizeObserver, 200);
     const retryTimer = setTimeout(setupResizeObserver, 600);
     const finalRetry = setTimeout(setupResizeObserver, 1000);
@@ -482,17 +574,67 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     };
   }, [isDockCollapsed]);
 
-  if (!model) {
-    return <div>Loading...</div>;
-  }
+  // Apply collapsed state to navigation panel
+  useEffect(() => {
+    // Find the navigation panel - it's always the first panel
+    const dockbox = document.querySelector('.dock-box');
+    if (dockbox) {
+      const navigationPanel = dockbox.querySelector('.dock-panel');
+      if (navigationPanel) {
+        if (isDockCollapsed) {
+          navigationPanel.setAttribute('data-collapsed', 'true');
+        } else {
+          navigationPanel.removeAttribute('data-collapsed');
+        }
+      }
+    }
+  }, [isDockCollapsed]);
+
+  // Smart layout management
+  useEffect(() => {
+    if (!dockLayoutRef.current) return;
+
+    const newStructure = getCurrentLayoutStructure();
+
+    if (newStructure !== layoutStructure) {
+      console.log("Layout structure changed:", layoutStructure, "->", newStructure);
+      const newLayout = generateDynamicLayout();
+      dockLayoutRef.current.loadLayout(newLayout);
+      setLayoutStructure(newStructure);
+      
+      // Apply collapsed state after layout loads
+      setTimeout(() => {
+        const dockbox = document.querySelector('.dock-box');
+        if (dockbox) {
+          const navigationPanel = dockbox.querySelector('.dock-panel');
+          if (navigationPanel) {
+            if (isDockCollapsed) {
+              navigationPanel.setAttribute('data-collapsed', 'true');
+            } else {
+              navigationPanel.removeAttribute('data-collapsed');
+            }
+          }
+        }
+      }, 0);
+    } else {
+      console.log("Only content changed, updating content");
+      updateLayoutContent();
+    }
+  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
-      <div className="flex-layout-container" style={{ height: '100vh' }}>
-        <FlexLayout.Layout
-          ref={layoutRef}
-          model={model}
-          factory={factory}
+      <div className="dock-container full-height">
+        <DockLayout
+          ref={dockLayoutRef}
+          defaultLayout={generateDynamicLayout()}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            right: 0,
+            bottom: 0,
+          }}
         />
       </div>
 
