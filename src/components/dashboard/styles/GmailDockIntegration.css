@@ -1,12 +1,12 @@
-/* Gmail-style dock tab integration */
+/* Gmail-style dock tab integration - Match Navigation Panel */
 .dock-tab-header.dock-collapsible-header {
-  padding: 16px 20px;
+  padding: 12px 16px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: var(--nav-bg, #ffffff);
-  border-bottom: 1px solid var(--nav-border, #e0e0e0);
-  min-height: 64px; /* Increased from 56px */
+  background: var(--bg-primary, #ffffff);
+  border-bottom: 1px solid var(--border-color, #e2e8f0);
+  min-height: 56px;
   box-sizing: border-box;
 }
 
@@ -14,41 +14,49 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  font-weight: 500;
-  font-size: 15px;
-  color: var(--nav-text, #333);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--text-primary, #1e293b);
   flex: 1;
-  min-height: 36px; /* Ensure minimum height for content */
+  min-height: 32px;
 }
 
 .dock-tab-header.dock-collapsible-header .tab-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
-  min-height: 36px; /* Ensure minimum height for buttons */
-  margin-left: 16px; /* Add margin to separate from title */
+  min-height: 32px;
+  margin-left: 12px;
 }
 
-/* Dock Header Action Buttons */
+/* Dock Header Action Buttons - Match Navigation Panel Style */
 .tab-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px; /* Increased from 36px */
-  height: 40px; /* Increased from 36px */
+  width: 32px;
+  height: 32px;
   border: none;
-  border-radius: 10px; /* Increased border radius */
+  border-radius: 6px;
   background: transparent;
   cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
-  color: var(--nav-icon, #666);
+  transition: all 0.2s ease;
+  color: var(--text-muted, #94a3b8);
   flex-shrink: 0;
 }
 
+.tab-action-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+}
+
 .tab-action-btn:hover {
-  background: var(--nav-hover-bg, #f0f0f0);
-  color: var(--nav-text, #333);
+  background: var(--bg-tertiary, #f1f5f9);
+  color: var(--text-primary, #1e293b);
   transform: scale(1.05);
 }
 
@@ -58,31 +66,36 @@
 
 /* Specific button styles */
 .tab-action-btn.collapse-toggle-btn {
-  color: var(--primary-color, #1976d2);
-  font-weight: 600;
+  color: var(--text-secondary, #475569);
 }
 
 .tab-action-btn.collapse-toggle-btn:hover {
-  background: var(--primary-hover-bg, #e3f2fd);
-  color: var(--primary-color, #1976d2);
+  background: var(--bg-tertiary, #f1f5f9);
+  color: var(--text-primary, #1e293b);
 }
 
 .tab-action-btn.show-section-btn {
-  color: var(--primary-color, #1976d2);
+  color: var(--text-secondary, #475569);
 }
 
 .tab-action-btn.show-section-btn:hover {
-  background: var(--primary-hover-bg, #e3f2fd);
+  background: var(--bg-tertiary, #f1f5f9);
+  color: var(--text-primary, #1e293b);
 }
 
 .tab-action-btn.manage-btn,
 .tab-action-btn.settings-btn {
-  color: var(--nav-icon, #666);
+  color: var(--text-secondary, #475569);
 }
 
-.tab-action-btn.manage-btn:hover,
+.tab-action-btn.manage-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success-color, #10b981);
+}
+
 .tab-action-btn.settings-btn:hover {
-  color: var(--nav-text, #333);
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--primary-color, #4f46e5);
 }
 
 /* Collapse icon animation */
@@ -118,27 +131,64 @@
 
 /* Dark theme for dock integration */
 [data-theme="dark"] .dock-tab-header.dock-collapsible-header {
-  --nav-bg: #1a1a1a;
-  --nav-border: #333;
-  --nav-text: #fff;
-  --nav-icon: #888;
-  --nav-hover-bg: #2a2a2a;
-  --primary-color: #4dabf7;
-  --primary-hover-bg: #1a365d;
+  background: var(--bg-primary, #0f172a);
+  border-bottom-color: var(--border-color, #334155);
+  color: var(--text-primary, #f8fafc);
+}
+
+[data-theme="dark"] .dock-tab-header.dock-collapsible-header .tab-title {
+  color: var(--text-primary, #f8fafc);
+}
+
+[data-theme="dark"] .tab-action-btn {
+  color: var(--text-muted, #64748b);
+}
+
+[data-theme="dark"] .tab-action-btn:hover {
+  background: var(--bg-tertiary, #334155);
+  color: var(--text-primary, #f8fafc);
+}
+
+[data-theme="dark"] .tab-action-btn.manage-btn:hover {
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--success-color, #34d399);
+}
+
+[data-theme="dark"] .tab-action-btn.settings-btn:hover {
+  background: rgba(129, 140, 248, 0.15);
+  color: var(--primary-color, #818cf8);
 }
 
 /* Dock layout adjustments for Gmail style */
 .dock-layout .dock-panel.gmail-nav-panel {
-  background: var(--nav-bg, #ffffff);
+  background: var(--bg-primary, #ffffff) !important;
 }
 
 .dock-layout .dock-panel.gmail-nav-panel .dock-tab {
-  background: transparent;
+  background: transparent !important;
 }
 
 .dock-layout .dock-panel.gmail-nav-panel .dock-tab-cache {
-  padding: 0;
-  overflow: hidden;
+  padding: 0 !important;
+  overflow: hidden !important;
+  background: var(--bg-primary, #ffffff) !important;
+}
+
+/* Navigation panel specific styling in dock */
+.dock-panel[data-dock-id="navigation"] {
+  background: var(--bg-primary, #ffffff) !important;
+}
+
+.dock-panel[data-dock-id="navigation"] .dock-tab-pane {
+  background: var(--bg-primary, #ffffff) !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
+  background: var(--bg-primary, #0f172a) !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
+  background: var(--bg-primary, #0f172a) !important;
 }
 
 /* Horizontal dock adjustments */
