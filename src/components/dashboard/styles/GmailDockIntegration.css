@@ -217,9 +217,11 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
-/* When collapsed, override width to 48px */
+/* When collapsed, override width to 48px - AGGRESSIVE */
 .dock-panel[data-dock-id="navigation"][data-collapsed="true"],
-.dock-panel[data-dock-id="navigation"].collapsed {
+.dock-panel[data-dock-id="navigation"].collapsed,
+.dock-box > .dock-panel[data-dock-id="navigation"][style*="48"],
+.dock-layout .dock-box > .dock-panel:first-child[style*="48"] {
   width: 48px !important;
   min-width: 48px !important;
   max-width: 48px !important;
@@ -227,8 +229,21 @@
 }
 
 .dock-panel[data-dock-id="navigation"][data-collapsed="true"] .dock-tab-pane,
-.dock-panel[data-dock-id="navigation"].collapsed .dock-tab-pane {
+.dock-panel[data-dock-id="navigation"].collapsed .dock-tab-pane,
+.dock-box > .dock-panel[data-dock-id="navigation"][style*="48"] .dock-tab-pane,
+.dock-layout .dock-box > .dock-panel:first-child[style*="48"] .dock-tab-pane {
   width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+}
+
+.dock-panel[data-dock-id="navigation"][data-collapsed="true"] .dock-panel-content,
+.dock-panel[data-dock-id="navigation"].collapsed .dock-panel-content,
+.dock-box > .dock-panel[data-dock-id="navigation"][style*="48"] .dock-panel-content,
+.dock-layout .dock-box > .dock-panel:first-child[style*="48"] .dock-panel-content {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] {

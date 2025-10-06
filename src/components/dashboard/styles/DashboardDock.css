@@ -1336,7 +1336,9 @@
 
 /* When collapsed, strict 48px width */
 .dock-layout .dock-panel:first-child[data-collapsed="true"],
-.dock-layout .dock-panel:first-child.collapsed {
+.dock-layout .dock-panel:first-child.collapsed,
+.dock-layout > .dock-box > .dock-panel:first-child[style*="width: 48px"],
+.dock-layout > .dock-box > .dock-panel:first-child[style*="flex: 0 0 48px"] {
   width: 48px !important;
   min-width: 48px !important;
   max-width: 48px !important;
@@ -1345,7 +1347,9 @@
 }
 
 .dock-layout .dock-panel:first-child[data-collapsed="true"] .dock-panel-content,
-.dock-layout .dock-panel:first-child.collapsed .dock-panel-content {
+.dock-layout .dock-panel:first-child.collapsed .dock-panel-content,
+.dock-layout > .dock-box > .dock-panel:first-child[style*="width: 48px"] .dock-panel-content,
+.dock-layout > .dock-box > .dock-panel:first-child[style*="flex: 0 0 48px"] .dock-panel-content {
   width: 48px !important;
   min-width: 48px !important;
   max-width: 48px !important;
