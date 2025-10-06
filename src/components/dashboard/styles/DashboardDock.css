@@ -1342,11 +1342,10 @@
   opacity: 1;
 }
 
-/* Navigation panel - allow flexible resizing */
+/* Navigation panel - allow flexible resizing and maximize/minimize */
 .dock-layout .dock-panel:first-child {
   position: relative;
-  flex-shrink: 0 !important;
-  flex-grow: 0 !important;
+  /* Removed flex-shrink and flex-grow !important to allow rc-dock maximize/minimize */
 }
 
 .dock-layout .dock-panel:first-child .dock-panel-content {
