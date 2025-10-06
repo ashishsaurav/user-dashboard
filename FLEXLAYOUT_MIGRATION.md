@@ -170,9 +170,21 @@ const factory = (node: FlexLayout.TabNode) => {
 
 ---
 
-## 🐛 Known Issues & Notes
+## ✅ TypeScript Issues - RESOLVED
 
-### **Build Error (es-abstract)**
+All TypeScript compilation errors have been fixed:
+
+### **Fixed Issues**
+1. ✅ `tabEnableFloat` → Changed to `tabEnablePopout` (correct FlexLayout property)
+2. ✅ `height` property → Removed (use `weight` instead for row/tabset sizing)
+3. ✅ Old `DockLayoutManager.tsx` → Deleted (was still importing rc-dock)
+
+### **Build Status**
+- ✅ TypeScript compilation: **PASSING**
+- ✅ No type errors
+- ✅ All imports resolved
+
+### **Potential Build Error (es-abstract)**
 If you see `Cannot find module 'es-abstract/2024/Call'`:
 ```bash
 # Solution 1: Clean install
