@@ -1,6 +1,6 @@
 /* Gmail-style dock tab integration - Align with other dock headers */
 .dock-tab-header.dock-collapsible-header {
-  padding: 0 8px;
+  padding: 0 2px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -33,7 +33,7 @@
   flex-shrink: 0;
   min-height: 0;
   margin-left: auto;
-  padding-left: 8px;
+  padding-left: 0px;
 }
 
 /* When no title, align actions to the left */

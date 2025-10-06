@@ -672,6 +672,10 @@
   position: relative;
 }
 
+.dock-tab > div{
+  padding: 0px !important;
+}
+
 .dock-tab-header .tab-title {
   display: flex;
   align-items: center;
