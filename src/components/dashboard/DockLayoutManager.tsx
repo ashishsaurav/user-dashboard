@@ -55,8 +55,8 @@ export function useDockLayoutManager({
         ),
       ],
       size: navSize,
-      minSize: isDockCollapsed ? 50 : 200,  // Allow resize when expanded
-      maxSize: isDockCollapsed ? 50 : 400,  // Lock when collapsed, flexible when expanded
+      minSize: navSize,  // Lock to exact size
+      maxSize: navSize,  // Lock to exact size
     });
 
     // Show welcome section when no view is selected
@@ -109,6 +109,7 @@ export function useDockLayoutManager({
     reportsVisible,
     widgetsVisible,
     isAdmin,
+    isDockCollapsed,
     actions,
     content,
   ]);

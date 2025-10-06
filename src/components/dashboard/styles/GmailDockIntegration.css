@@ -198,24 +198,20 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
-/* Navigation panel specific styling in dock - Allow resizing */
-.dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) {
+/* Navigation panel specific styling in dock */
+.dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #ffffff) !important;
-  width: 250px !important;  /* Force 250px when expanded */
-  min-width: 200px;
-  max-width: 400px;
-  flex: 0 0 250px !important;
 }
 
-.dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-panel-content {
-  width: 100% !important;
-  min-width: 200px;
-  max-width: 400px;
+.dock-panel[data-dock-id="navigation"] .dock-panel-content {
+  width: 100%;
+  height: 100%;
 }
 
-.dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-tab-pane {
+.dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #ffffff) !important;
-  width: 100% !important;
+  width: 100%;
+  height: 100%;
 }
 
 /* Collapsed navigation panel in dock */
@@ -223,68 +219,28 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
-/* When collapsed, override width to 50px - AGGRESSIVE */
-.dock-panel[data-dock-id="navigation"][data-collapsed="true"],
-.dock-panel[data-dock-id="navigation"].collapsed,
-.dock-box > .dock-panel[data-dock-id="navigation"][style*="50"],
-.dock-layout .dock-box > .dock-panel:first-child[style*="50"] {
-  width: 50px !important;
-  min-width: 50px !important;
-  max-width: 50px !important;
-  flex: 0 0 50px !important;
-}
+/* Keep collapsed header styling */
 
-.dock-panel[data-dock-id="navigation"][data-collapsed="true"] .dock-tab-pane,
-.dock-panel[data-dock-id="navigation"].collapsed .dock-tab-pane,
-.dock-box > .dock-panel[data-dock-id="navigation"][style*="50"] .dock-tab-pane,
-.dock-layout .dock-box > .dock-panel:first-child[style*="50"] .dock-tab-pane {
-  width: 50px !important;
-  min-width: 50px !important;
-  max-width: 50px !important;
-}
-
-.dock-panel[data-dock-id="navigation"][data-collapsed="true"] .dock-panel-content,
-.dock-panel[data-dock-id="navigation"].collapsed .dock-panel-content,
-.dock-box > .dock-panel[data-dock-id="navigation"][style*="50"] .dock-panel-content,
-.dock-layout .dock-box > .dock-panel:first-child[style*="50"] .dock-panel-content {
-  width: 50px !important;
-  min-width: 50px !important;
-  max-width: 50px !important;
-}
-
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) {
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #0f172a) !important;
-  width: 250px !important;  /* Force 250px when expanded */
-  min-width: 200px;
-  max-width: 400px;
-  flex: 0 0 250px !important;
 }
 
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-panel-content {
-  width: 100% !important;
-  min-width: 200px;
-  max-width: 400px;
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-panel-content {
+  width: 100%;
+  height: 100%;
 }
 
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-tab-pane {
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #0f172a) !important;
-  width: 100% !important;
+  width: 100%;
+  height: 100%;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {
   background: var(--bg-primary, #0f172a) !important;
 }
 
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"][data-collapsed="true"],
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"].collapsed {
-  width: 50px !important;
-  max-width: 50px !important;
-}
-
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"][data-collapsed="true"] .dock-tab-pane,
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"].collapsed .dock-tab-pane {
-  width: 50px !important;
-}
+/* Dark theme collapsed styling handled by layout manager */
 
 /* Horizontal dock adjustments */
 .dock-layout[data-dockmode="horizontal"] .gmail-navigation-panel {
