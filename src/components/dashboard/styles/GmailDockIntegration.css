@@ -120,8 +120,11 @@
 
 /* Collapsed state adjustments */
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header {
-  justify-content: flex-end;
-  padding: 0 8px;
+  justify-content: center;
+  padding: 0 4px;
+  width: 48px;
+  min-width: 48px;
+  max-width: 48px;
 }
 
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-title {
@@ -131,6 +134,18 @@
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-actions {
   margin-left: 0;
   padding-left: 0;
+  width: 100%;
+  justify-content: center;
+}
+
+/* Hide all buttons except collapse button when collapsed */
+.dock-panel[data-collapsed="true"] .tab-action-btn:not(.collapse-toggle-btn) {
+  display: none !important;
+}
+
+/* Ensure collapse button is centered and visible */
+.dock-panel[data-collapsed="true"] .tab-action-btn.collapse-toggle-btn {
+  margin: 0;
 }
 
 /* Dark theme for dock integration */

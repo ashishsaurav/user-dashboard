@@ -41,7 +41,7 @@ export function useDockLayoutManager({
     const children: any[] = [];
 
     // Navigation panel - adjust size based on dock collapsed state
-    const navSize = isDockCollapsed ? 60 : 250;
+    const navSize = isDockCollapsed ? 48 : 250;
     children.push({
       tabs: [
         DockTabFactory.createNavigationTab(
