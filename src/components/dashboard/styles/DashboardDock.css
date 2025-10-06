@@ -722,6 +722,19 @@
   color: var(--text-secondary);
 }
 
+/* Ensure consistent icon sizing in navigation header */
+.navigation-tab-header .tab-action-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+}
+
+.navigation-tab-header .tab-action-btn svg {
+  width: 16px !important;
+  height: 16px !important;
+}
+
 .tab-action-btn:hover {
   background: var(--bg-quaternary);
   border-color: var(--border-hover);
@@ -952,6 +965,19 @@
   color: var(--text-primary);
   font-family: inherit;
   overflow-y: auto;
+}
+
+/* Navigation dock panel specific background fix */
+.dock-panel[data-dock-id*="navigation"] .dock-tab-pane,
+.dock-panel[data-dock-id*="navigation"] .dock-tab-cache,
+.dock-panel[data-dock-id*="navigation"] {
+  background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id*="navigation"] .dock-tab-pane,
+[data-theme="dark"] .dock-panel[data-dock-id*="navigation"] .dock-tab-cache,
+[data-theme="dark"] .dock-panel[data-dock-id*="navigation"] {
+  background: var(--bg-primary) !important;
 }
 
 .nav-menu {
