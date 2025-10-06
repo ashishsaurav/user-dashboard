@@ -39,14 +39,12 @@ export function useDockLayoutManager({
   content,
 }: DockLayoutManagerProps) {
   const generateDynamicLayout = useCallback((): LayoutData => {
-    const children: any[] = [];
-
-    // Navigation panel - adjust size based on dock collapsed state
     const navSize = isDockCollapsed 
       ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH 
       : LAYOUT_SIZES.NAVIGATION_PANEL_WIDTH;
     
-    children.push({
+    // Navigation panel (left side)
+    const navigationPanel = {
       tabs: [
         DockTabFactory.createNavigationTab(
           actions,
@@ -61,48 +59,61 @@ export function useDockLayoutManager({
       size: navSize,
       minSize: LAYOUT_SIZES.NAVIGATION_PANEL_MIN_WIDTH,
       maxSize: LAYOUT_SIZES.NAVIGATION_PANEL_MAX_WIDTH,
-    });
+    };
 
-    // Show welcome section when no view is selected
+    // Build content area (right side) - can be vertical or single panel
+    let contentArea: any;
+
     if (!selectedView) {
-      children.push({
+      // No view selected - show welcome
+      contentArea = {
         tabs: [DockTabFactory.createWelcomeTab(content.welcome)],
         size: 1300 - navSize,
-      });
+      };
+    } else if (reportsVisible && widgetsVisible) {
+      // Both visible - create vertical layout for stacking
+      contentArea = {
+        mode: "vertical",
+        children: [
+          {
+            tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
+            size: 400,
+            minSize: 200,
+          },
+          {
+            tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
+            size: 300,
+            minSize: 200,
+          },
+        ],
+        size: 1300 - navSize,
+      };
+    } else if (reportsVisible) {
+      // Only reports visible
+      contentArea = {
+        tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
+        size: 1300 - navSize,
+      };
+    } else if (widgetsVisible) {
+      // Only widgets visible
+      contentArea = {
+        tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
+        size: 1300 - navSize,
+      };
     } else {
-      // Add reports section if view selected and visible
-      if (reportsVisible) {
-        children.push({
-          tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
-          size: widgetsVisible ? 700 : 1300 - navSize,
-          minSize: 250,
-        });
-      }
-
-      // Add widgets section if view selected and visible
-      if (widgetsVisible) {
-        children.push({
-          tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
-          size: reportsVisible ? 350 : 1300 - navSize,
-          minSize: 250,
-        });
-      }
-
-      // Show welcome when both sections are closed
-      if (!reportsVisible && !widgetsVisible) {
-        children.push({
-          tabs: [
-            DockTabFactory.createWelcomeTab(content.welcome, selectedView.name),
-          ],
-          size: 1300 - navSize,
-        });
-      }
+      // View selected but both sections closed
+      contentArea = {
+        tabs: [
+          DockTabFactory.createWelcomeTab(content.welcome, selectedView.name),
+        ],
+        size: 1300 - navSize,
+      };
     }
 
     return {
       dockbox: {
         mode: "horizontal",
-        children,
+        children: [navigationPanel, contentArea],
       },
     };
   }, [
