@@ -192,11 +192,20 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
+/* Collapsed navigation panel in dock */
+.dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {
+  background: var(--bg-primary, #ffffff) !important;
+}
+
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #0f172a) !important;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
+  background: var(--bg-primary, #0f172a) !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {
   background: var(--bg-primary, #0f172a) !important;
 }
 
