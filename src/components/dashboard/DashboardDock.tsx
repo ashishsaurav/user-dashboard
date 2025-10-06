@@ -585,7 +585,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   };
 
   // FlexLayout manager
-  const { generateLayout } = useFlexLayoutManager({
+  const { generateLayout, getCurrentLayoutStructure } = useFlexLayoutManager({
     selectedView,
     reportsVisible,
     widgetsVisible,
