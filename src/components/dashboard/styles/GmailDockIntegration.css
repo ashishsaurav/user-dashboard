@@ -201,12 +201,20 @@
 /* Navigation panel specific styling in dock - Allow resizing */
 .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #ffffff) !important;
+  width: 250px;  /* Default width */
+  min-width: 200px;
+  max-width: 400px;
+}
+
+.dock-panel[data-dock-id="navigation"] .dock-panel-content {
+  width: 100%;
   min-width: 200px;
   max-width: 400px;
 }
 
 .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #ffffff) !important;
+  width: 100%;
 }
 
 /* Collapsed navigation panel in dock */
@@ -245,12 +253,20 @@
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #0f172a) !important;
+  width: 250px;  /* Default width */
+  min-width: 200px;
+  max-width: 400px;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-panel-content {
+  width: 100%;
   min-width: 200px;
   max-width: 400px;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #0f172a) !important;
+  width: 100%;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {
