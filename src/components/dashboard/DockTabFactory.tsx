@@ -92,9 +92,7 @@ export class DockTabFactory {
       id: "navigation",
       title: (
         <div className="dock-tab-header navigation-tab-header dock-collapsible-header">
-          <div className="tab-title">
-            {!isCollapsed && <span>Navigation</span>}
-          </div>
+          <div className="tab-title"></div>
           <div className="tab-actions">
             {/* Collapse/Expand Toggle - Always visible */}
             <button

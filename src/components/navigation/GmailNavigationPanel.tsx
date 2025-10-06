@@ -346,6 +346,15 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
             position={navState.hoverPosition}
             onViewSelect={onViewSelect}
             selectedView={selectedView}
+            user={user}
+            allViews={views}
+            allViewGroups={viewGroups}
+            userNavSettings={userNavSettings}
+            reports={reports}
+            widgets={widgets}
+            onUpdateViews={onUpdateViews}
+            onUpdateViewGroups={onUpdateViewGroups}
+            onUpdateNavSettings={onUpdateNavSettings}
           />
         )}
 
