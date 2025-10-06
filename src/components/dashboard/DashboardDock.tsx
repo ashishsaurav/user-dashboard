@@ -672,7 +672,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
-      <div className={`dock-container full-height ${theme === 'dark' ? 'dock-theme-dark' : ''}`}>
+      <div className={`dock-container full-height ${theme === 'dark' ? 'dock-theme-dark' : 'dock-theme-light'}`}>
         <DockLayout
           ref={dockLayoutRef}
           defaultLayout={generateDynamicLayout()}

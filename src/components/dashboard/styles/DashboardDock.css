@@ -79,9 +79,10 @@
   position: absolute;
 }
 
-/* Use rc-dock's built-in theme classes - just add our custom variables on top */
-.dock-container,
-.dock-container:not(.dock-theme-dark) {
+/* Use rc-dock's built-in theme classes - add our custom variables on top */
+
+/* Light theme - using rc-dock's dock-theme-light class */
+.dock-container.dock-theme-light {
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
@@ -95,6 +96,7 @@
   --primary-hover: #4338ca;
 }
 
+/* Dark theme - using rc-dock's dock-theme-dark class */
 .dock-container.dock-theme-dark {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
