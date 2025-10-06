@@ -722,18 +722,7 @@
   color: var(--text-secondary);
 }
 
-/* Ensure consistent icon sizing in navigation header */
-.navigation-tab-header .tab-action-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-}
-
-.navigation-tab-header .tab-action-btn svg {
-  width: 16px !important;
-  height: 16px !important;
-}
+/* Navigation header button styling is handled in GmailDockIntegration.css */
 
 .tab-action-btn:hover {
   background: var(--bg-quaternary);
