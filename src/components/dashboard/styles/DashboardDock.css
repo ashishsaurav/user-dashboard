@@ -676,6 +676,10 @@
   padding: 0px !important;
 }
 
+.dock-top .dock-bar{
+  padding-left: 0px !important;
+}
+
 .dock-tab-header .tab-title {
   display: flex;
   align-items: center;
