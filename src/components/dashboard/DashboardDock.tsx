@@ -498,10 +498,18 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     generateDynamicLayout,
   ]);
 
-  // Apply theme changes
+  // Apply theme changes - also add rc-dock theme class to body for floating panels
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
+    
+    // Apply rc-dock theme class to body for floating/dragged panels
+    document.body.classList.remove('dock-theme-light', 'dock-theme-dark');
+    if (theme === 'dark') {
+      document.body.classList.add('dock-theme-dark');
+    } else {
+      document.body.classList.add('dock-theme-light');
+    }
   }, [theme]);
 
   // Setup ResizeObserver for auto expand/collapse based on width
@@ -671,8 +679,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   }, [selectedView, reportsVisible, widgetsVisible, layoutMode, navigationUpdateTrigger]);
 
   return (
-    <div className="dashboard-dock modern" data-theme={theme}>
-      <div className={`dock-container full-height ${theme === 'dark' ? 'dock-theme-dark' : 'dock-theme-light'}`}>
+    <div className={`dashboard-dock modern ${theme === 'dark' ? 'dock-theme-dark' : 'dock-theme-light'}`} data-theme={theme}>
+      <div className="dock-container full-height">
         <DockLayout
           ref={dockLayoutRef}
           defaultLayout={generateDynamicLayout()}
