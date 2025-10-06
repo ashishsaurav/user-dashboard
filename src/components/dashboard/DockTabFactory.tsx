@@ -58,7 +58,14 @@ const CloseIcon = () => (
   </svg>
 );
 
-interface TabActions {
+const CollapseIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="15,18 9,12 15,6" />
+  </svg>
+);
+
+interface DockTabActions {
+  onToggleCollapse: () => void;
   onNavigationManage: () => void;
   onSystemSettings: () => void;
   onReopenReports: () => void;
@@ -69,83 +76,89 @@ interface TabActions {
   onCloseWidgets: () => void;
 }
 
-interface DockTabFactoryProps {
-  selectedView: View | null;
-  reportsVisible: boolean;
-  widgetsVisible: boolean;
-  isAdmin: boolean;
-  actions: TabActions;
-  content: {
-    navigation: React.ReactNode;
-    reports: React.ReactNode;
-    widgets: React.ReactNode;
-    welcome: React.ReactNode;
-  };
-}
-
 export class DockTabFactory {
   static createNavigationTab(
-    actions: TabActions,
+    actions: DockTabActions,
     selectedView: View | null,
     reportsVisible: boolean,
     widgetsVisible: boolean,
     isAdmin: boolean,
-    content: React.ReactNode
+    content: React.ReactNode,
+    isCollapsed: boolean = false
   ) {
     return {
       id: "navigation",
       title: (
-        <div className="dock-tab-header navigation-tab-header">
+        <div className="dock-tab-header navigation-tab-header dock-collapsible-header">
           <div className="tab-title">
             <NavigationIcon />
-            <span>Navigation</span>
+            {!isCollapsed && <span>Navigation</span>}
           </div>
           <div className="tab-actions">
-            {selectedView && !reportsVisible && (
-              <button
-                className="tab-action-btn show-section-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  actions.onReopenReports();
-                }}
-                title="Show Reports"
-              >
-                <ReportsIcon />
-              </button>
-            )}
-            {selectedView && !widgetsVisible && (
-              <button
-                className="tab-action-btn show-section-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  actions.onReopenWidgets();
-                }}
-                title="Show Widgets"
-              >
-                <WidgetsIcon />
-              </button>
-            )}
+            {/* Collapse/Expand Toggle - Always visible */}
             <button
-              className="tab-action-btn manage-btn"
+              className="tab-action-btn collapse-toggle-btn"
               onClick={(e) => {
                 e.stopPropagation();
-                actions.onNavigationManage();
+                actions.onToggleCollapse();
               }}
-              title="Manage Navigation"
+              title={isCollapsed ? "Expand navigation" : "Collapse navigation"}
             >
-              <ManageIcon />
+              <CollapseIcon />
             </button>
-            {isAdmin && (
-              <button
-                className="tab-action-btn settings-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  actions.onSystemSettings();
-                }}
-                title="System Settings"
-              >
-                <ManageIcon />
-              </button>
+            
+            {!isCollapsed && (
+              <>
+                {/* Quick Action Buttons - Show only when not collapsed */}
+                {selectedView && !reportsVisible && (
+                  <button
+                    className="tab-action-btn show-section-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      actions.onReopenReports();
+                    }}
+                    title="Show Reports"
+                  >
+                    <ReportsIcon />
+                  </button>
+                )}
+                {selectedView && !widgetsVisible && (
+                  <button
+                    className="tab-action-btn show-section-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      actions.onReopenWidgets();
+                    }}
+                    title="Show Widgets"
+                  >
+                    <WidgetsIcon />
+                  </button>
+                )}
+                
+                {/* Management Buttons */}
+                <button
+                  className="tab-action-btn manage-btn"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    actions.onNavigationManage();
+                  }}
+                  title="Manage Navigation"
+                >
+                  <ManageIcon />
+                </button>
+                {isAdmin && (
+                  <button
+                    className="tab-action-btn settings-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      actions.onSystemSettings();
+                    }}
+                    title="System Settings"
+                  >
+                    <ManageIcon />
+                  </button>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -155,7 +168,7 @@ export class DockTabFactory {
     };
   }
 
-  static createReportsTab(actions: TabActions, content: React.ReactNode) {
+  static createReportsTab(actions: DockTabActions, content: React.ReactNode) {
     return {
       id: "reports",
       title: (
@@ -193,7 +206,7 @@ export class DockTabFactory {
     };
   }
 
-  static createWidgetsTab(actions: TabActions, content: React.ReactNode) {
+  static createWidgetsTab(actions: DockTabActions, content: React.ReactNode) {
     return {
       id: "widgets",
       title: (

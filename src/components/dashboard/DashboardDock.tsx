@@ -20,6 +20,7 @@ import { useTheme } from "../../contexts/ThemeContext";
 import ManageModal from "../modals/ManageModal";
 import NavigationManageModal from "../modals/NavigationManageModal";
 import NavigationPanel from "../navigation/NavigationPanel";
+import CollapsedNavigationPanel from "../navigation/CollapsedNavigationPanel";
 import ViewContentPanel from "../panels/ViewContentPanel";
 import AddReportModal from "../modals/AddReportModal";
 import AddWidgetModal from "../modals/AddWidgetModal";
@@ -27,6 +28,7 @@ import WelcomeContent from "./WelcomeContent";
 import ThemeToggle from "./ThemeToggle";
 import { useDockLayoutManager } from "./DockLayoutManager";
 import "./styles/DashboardDock.css";
+import "./styles/GmailDockIntegration.css";
 
 interface DashboardDockProps {
   user: User;
@@ -48,6 +50,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Section visibility states
   const [reportsVisible, setReportsVisible] = useState(true);
   const [widgetsVisible, setWidgetsVisible] = useState(true);
+
+  // Navigation state - dock level collapse
+  const [isDockCollapsed, setIsDockCollapsed] = useState(false);
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
@@ -292,6 +297,25 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Content creators
   const createNavigationContent = useCallback(() => {
+    if (isDockCollapsed) {
+      return (
+        <CollapsedNavigationPanel
+          user={user}
+          views={views}
+          viewGroups={viewGroups}
+          userNavSettings={navSettings}
+          onViewSelect={handleViewSelect}
+          selectedView={selectedView}
+          onUpdateViews={handleUpdateViews}
+          onUpdateViewGroups={handleUpdateViewGroups}
+          onUpdateNavSettings={handleUpdateNavSettings}
+          reports={getUserAccessibleReports()}
+          widgets={getUserAccessibleWidgets()}
+        />
+      );
+    }
+
+    // Always use the original NavigationPanel when expanded (with full drag/drop, edit, delete functionality)
     return (
       <NavigationPanel
         user={user}
@@ -308,6 +332,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       />
     );
   }, [
+    isDockCollapsed,
     user,
     views,
     viewGroups,
@@ -354,7 +379,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     reportsVisible,
     widgetsVisible,
     isAdmin: user.role === "admin",
+    isDockCollapsed: isDockCollapsed,
     actions: {
+      onToggleCollapse: () => setIsDockCollapsed(prev => !prev),
       onNavigationManage: () => setShowNavigationModal(true),
       onSystemSettings: () => setShowManageModal(true),
       onReopenReports: handleReopenReports,
@@ -453,7 +480,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log("Only content changed, updating content");
       updateLayoutContent();
     }
-  }, [selectedView, reportsVisible, widgetsVisible, navigationUpdateTrigger]);
+  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
