@@ -1317,42 +1317,38 @@
   z-index: 1;
 }
 
-/* Ensure navigation panel stays fixed width - STRICT */
-.dock-layout .dock-panel:first-child,
+/* Navigation panel width - allow resizing when expanded */
+.dock-layout .dock-panel:first-child {
+  min-width: 200px;
+  max-width: 400px;
+  flex: 0 0 250px;
+}
+
 .dock-layout .dock-panel:first-child .dock-panel-content,
 .dock-layout .dock-panel:first-child .dock-tab-pane {
-  width: 250px !important;
-  min-width: 250px !important;
-  max-width: 250px !important;
-  flex: 0 0 250px !important;
+  min-width: inherit;
+  max-width: inherit;
 }
 
-/* Prevent any flex grow/shrink */
-.dock-layout .dock-panel:first-child {
-  flex-grow: 0 !important;
-  flex-shrink: 0 !important;
-  flex-basis: 250px !important;
-}
-
-/* When collapsed, strict 48px width */
+/* When collapsed, strict 50px width */
 .dock-layout .dock-panel:first-child[data-collapsed="true"],
 .dock-layout .dock-panel:first-child.collapsed,
-.dock-layout > .dock-box > .dock-panel:first-child[style*="width: 48px"],
-.dock-layout > .dock-box > .dock-panel:first-child[style*="flex: 0 0 48px"] {
-  width: 48px !important;
-  min-width: 48px !important;
-  max-width: 48px !important;
-  flex: 0 0 48px !important;
-  flex-basis: 48px !important;
+.dock-layout > .dock-box > .dock-panel:first-child[style*="width: 50px"],
+.dock-layout > .dock-box > .dock-panel:first-child[style*="flex: 0 0 50px"] {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
+  flex: 0 0 50px !important;
+  flex-basis: 50px !important;
 }
 
 .dock-layout .dock-panel:first-child[data-collapsed="true"] .dock-panel-content,
 .dock-layout .dock-panel:first-child.collapsed .dock-panel-content,
-.dock-layout > .dock-box > .dock-panel:first-child[style*="width: 48px"] .dock-panel-content,
-.dock-layout > .dock-box > .dock-panel:first-child[style*="flex: 0 0 48px"] .dock-panel-content {
-  width: 48px !important;
-  min-width: 48px !important;
-  max-width: 48px !important;
+.dock-layout > .dock-box > .dock-panel:first-child[style*="width: 50px"] .dock-panel-content,
+.dock-layout > .dock-box > .dock-panel:first-child[style*="flex: 0 0 50px"] .dock-panel-content {
+  width: 50px !important;
+  min-width: 50px !important;
+  max-width: 50px !important;
 }
 
 /* ==============================================
@@ -2089,10 +2085,10 @@
   /* Collapsed state on mobile */
   .dock-layout .dock-panel:first-child[data-collapsed="true"] .dock-panel-content,
   .dock-layout .dock-panel:first-child.collapsed .dock-panel-content {
-    width: 48px !important;
-    min-width: 48px !important;
-    max-width: 48px !important;
-    flex: 0 0 48px !important;
+    width: 50px !important;
+    min-width: 50px !important;
+    max-width: 50px !important;
+    flex: 0 0 50px !important;
   }
   
   .reports-tab-header .tab-actions,
