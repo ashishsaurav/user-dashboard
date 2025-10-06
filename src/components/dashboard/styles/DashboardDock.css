@@ -79,7 +79,9 @@
   position: absolute;
 }
 
-.dock-container.dock-layout-light {
+/* Use rc-dock's built-in theme classes - just add our custom variables on top */
+.dock-container,
+.dock-container:not(.dock-theme-dark) {
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
@@ -93,7 +95,7 @@
   --primary-hover: #4338ca;
 }
 
-.dock-container.dock-layout-dark {
+.dock-container.dock-theme-dark {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
@@ -105,37 +107,6 @@
   --border-hover: #475569;
   --primary-color: #818cf8;
   --primary-hover: #6366f1;
-}
-
-/* Dock Layout Theme Classes with CSS Variables */
-.dock-layout-light {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-quaternary: #e2e8f0;
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #94a3b8;
-  --border-color: #e2e8f0;
-  --border-hover: #cbd5e1;
-  --primary-color: #4f46e5;
-  --primary-hover: #4338ca;
-  background-color: #ffffff;
-}
-
-.dock-layout-dark {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-quaternary: #475569;
-  --text-primary: #f8fafc;
-  --text-secondary: #cbd5e1;
-  --text-muted: #64748b;
-  --border-color: #334155;
-  --border-hover: #475569;
-  --primary-color: #818cf8;
-  --primary-hover: #6366f1;
-  background-color: #1e1e1e;
 }
 
 /* ==============================================
@@ -1252,38 +1223,41 @@
   overflow: hidden !important;
 }
 
+/* Light theme overrides for rc-dock (default) */
 .dock-layout .dock-bar {
-  background: var(--bg-secondary) !important;
-  border-bottom: 1px solid var(--border-color) !important;
-  min-height: 40px !important;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border-color);
+  min-height: 40px;
 }
 
 .dock-layout .dock-tab {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  min-height: 40px !important;
-  height: 40px !important;
-  transition: all 0.2s ease !important;
-  font-weight: 500 !important;
-  border: none !important;
-  border-radius: 0 !important;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  min-height: 40px;
+  height: 40px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  border: none;
+  border-radius: 0;
   position: relative;
   min-width: 120px;
   max-width: 200px;
 }
 
 .dock-layout .dock-tab:hover {
-  background: var(--bg-tertiary) !important;
-  color: var(--text-primary) !important;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
 }
 
 .dock-layout .dock-tab.dock-tab-active,
 .dock-layout .dock-tab-active {
-  color: var(--primary-color) !important;
-  font-weight: 600 !important;
-  background: var(--bg-primary) !important;
-  border-bottom: 2px solid var(--primary-color) !important;
+  color: var(--primary-color);
+  font-weight: 600;
+  background: var(--bg-primary);
+  border-bottom: 2px solid var(--primary-color);
 }
+
+/* rc-dock dark theme uses .dock-theme-dark class - no need for [data-theme="dark"] overrides */
 
 .dock-layout .dock-tab-content {
   height: calc(100% - 40px) !important;

@@ -502,27 +502,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
-
-    const dockContainer = document.querySelector(".dock-container");
-    const dockLayoutElement = document.querySelector(".dock-layout");
-
-    if (dockContainer) {
-      dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
-      if (theme === "dark") {
-        dockContainer.classList.add("dock-layout-dark");
-      } else {
-        dockContainer.classList.add("dock-layout-light");
-      }
-    }
-
-    if (dockLayoutElement) {
-      dockLayoutElement.classList.remove("dock-layout-dark", "dock-layout-light");
-      if (theme === "dark") {
-        dockLayoutElement.classList.add("dock-layout-dark");
-      } else {
-        dockLayoutElement.classList.add("dock-layout-light");
-      }
-    }
   }, [theme]);
 
   // Setup ResizeObserver for auto expand/collapse based on width
@@ -693,7 +672,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
-      <div className="dock-container full-height">
+      <div className={`dock-container full-height ${theme === 'dark' ? 'dock-theme-dark' : ''}`}>
         <DockLayout
           ref={dockLayoutRef}
           defaultLayout={generateDynamicLayout()}
