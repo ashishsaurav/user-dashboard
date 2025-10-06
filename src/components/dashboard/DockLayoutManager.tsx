@@ -63,6 +63,7 @@ export function useDockLayoutManager({
       size: navSize,
       minSize: isDockCollapsed ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH : LAYOUT_SIZES.NAVIGATION_PANEL_MIN_WIDTH,
       maxSize: LAYOUT_SIZES.NAVIGATION_PANEL_MAX_WIDTH,
+      group: 'main', // Enable maximize/minimize
     });
 
     // Show welcome section when no view is selected
@@ -70,6 +71,7 @@ export function useDockLayoutManager({
       children.push({
         tabs: [DockTabFactory.createWelcomeTab(content.welcome)],
         size: 1300 - navSize,
+        group: 'main', // Enable maximize/minimize
       });
     } else {
       // Add content panels based on layout mode
@@ -80,6 +82,7 @@ export function useDockLayoutManager({
             tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
             size: widgetsVisible ? 700 : 1300 - navSize,
             minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+            group: 'main', // Enable maximize/minimize
           });
         }
 
@@ -88,6 +91,7 @@ export function useDockLayoutManager({
             tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
             size: reportsVisible ? 350 : 1300 - navSize,
             minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+            group: 'main', // Enable maximize/minimize
           });
         }
       } else {
@@ -99,6 +103,7 @@ export function useDockLayoutManager({
             tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
             size: widgetsVisible ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT : 800,
             minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
+            group: 'main', // Enable maximize/minimize
           });
         }
 
@@ -107,6 +112,7 @@ export function useDockLayoutManager({
             tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
             size: reportsVisible ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT : 800,
             minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
+            group: 'main', // Enable maximize/minimize
           });
         }
 
@@ -128,6 +134,7 @@ export function useDockLayoutManager({
             DockTabFactory.createWelcomeTab(content.welcome, selectedView.name),
           ],
           size: 1300 - navSize,
+          group: 'main', // Enable maximize/minimize
         });
       }
     }
