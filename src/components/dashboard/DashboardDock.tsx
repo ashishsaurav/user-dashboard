@@ -465,6 +465,18 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [theme]);
 
+  // Apply collapsed state to navigation panel
+  useEffect(() => {
+    const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
+    if (navigationPanel) {
+      if (isDockCollapsed) {
+        navigationPanel.setAttribute('data-collapsed', 'true');
+      } else {
+        navigationPanel.removeAttribute('data-collapsed');
+      }
+    }
+  }, [isDockCollapsed]);
+
   // Smart layout management
   useEffect(() => {
     if (!dockLayoutRef.current) return;
@@ -476,6 +488,18 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       const newLayout = generateDynamicLayout();
       dockLayoutRef.current.loadLayout(newLayout);
       setLayoutStructure(newStructure);
+      
+      // Apply collapsed state after layout loads
+      setTimeout(() => {
+        const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
+        if (navigationPanel) {
+          if (isDockCollapsed) {
+            navigationPanel.setAttribute('data-collapsed', 'true');
+          } else {
+            navigationPanel.removeAttribute('data-collapsed');
+          }
+        }
+      }, 0);
     } else {
       console.log("Only content changed, updating content");
       updateLayoutContent();
