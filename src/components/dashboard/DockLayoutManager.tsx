@@ -115,9 +115,10 @@ export function useDockLayoutManager({
         // Add vertical content box
         if (contentChildren.length > 0) {
           children.push({
-            mode: 'vertical',
+            mode: 'vertical' as const,
             children: contentChildren,
             size: 1300 - navSize,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
           });
         }
       }

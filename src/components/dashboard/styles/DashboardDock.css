@@ -1367,7 +1367,30 @@
   cursor: ew-resize !important;
   transition: all 0.2s ease !important;
   flex: 0 0 auto !important;
-  position: relative;
+  position: relative !important;
+}
+
+/* Ensure dividers in horizontal boxes stay vertical */
+.dock-layout .dock-hbox > .dock-divider,
+.dock-layout .dock-box:not(.dock-vbox) > .dock-divider {
+  width: 4px !important;
+  height: 100% !important;
+  cursor: ew-resize !important;
+}
+
+/* Ensure panels in vertical layouts can resize properly */
+.dock-layout .dock-vbox > .dock-panel,
+.dock-layout div[data-mode="vertical"] > .dock-panel {
+  min-height: 200px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.dock-layout .dock-vbox,
+.dock-layout div[data-mode="vertical"] {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
 }
 
 .dock-layout .dock-divider:hover {
@@ -1396,20 +1419,35 @@
 }
 
 /* Vertical dividers for vertical layouts */
-.dock-layout .dock-box-vertical > .dock-divider {
+.dock-layout .dock-vbox > .dock-divider,
+.dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider,
+.dock-layout div[data-mode="vertical"] > .dock-divider {
   height: 4px !important;
   width: 100% !important;
+  min-height: 4px !important;
   cursor: ns-resize !important;
+  background: var(--border-color) !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  flex: 0 0 auto !important;
 }
 
-.dock-layout .dock-box-vertical > .dock-divider:hover {
+.dock-layout .dock-vbox > .dock-divider:hover,
+.dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider:hover,
+.dock-layout div[data-mode="vertical"] > .dock-divider:hover {
   height: 6px !important;
+  min-height: 6px !important;
+  background: var(--primary-color) !important;
   box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
 }
 
-.dock-layout .dock-box-vertical > .dock-divider::before {
+.dock-layout .dock-vbox > .dock-divider::before,
+.dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider::before,
+.dock-layout div[data-mode="vertical"] > .dock-divider::before {
   width: 40px;
   height: 2px;
+  left: 50%;
+  top: 50%;
 }
 
 /* Splitter styling */
@@ -2261,7 +2299,8 @@
     width: 6px !important;
   }
   
-  .dock-layout .dock-box-vertical > .dock-divider {
+  .dock-layout .dock-vbox > .dock-divider,
+  .dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider {
     height: 6px !important;
   }
 
