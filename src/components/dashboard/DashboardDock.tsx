@@ -582,7 +582,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         );
 
       default:
-        return <div>Unknown component: {component}</div>;
+        console.error('Unknown component requested:', component);
+        return (
+          <div style={{ padding: '20px', textAlign: 'center' }}>
+            <h3>Component not found: {component}</h3>
+            <p>Check factory function</p>
+          </div>
+        );
     }
   };
 
