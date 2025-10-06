@@ -41,7 +41,7 @@ export function useDockLayoutManager({
     const children: any[] = [];
 
     // Navigation panel - adjust size based on dock collapsed state
-    const navSize = isDockCollapsed ? 48 : 250;
+    const navSize = isDockCollapsed ? 50 : 250;
     children.push({
       tabs: [
         DockTabFactory.createNavigationTab(
@@ -55,8 +55,8 @@ export function useDockLayoutManager({
         ),
       ],
       size: navSize,
-      minSize: navSize,
-      maxSize: navSize,
+      minSize: isDockCollapsed ? 50 : 200,  // Allow resize when expanded
+      maxSize: isDockCollapsed ? 50 : 400,  // Lock when collapsed, flexible when expanded
     });
 
     // Show welcome section when no view is selected
