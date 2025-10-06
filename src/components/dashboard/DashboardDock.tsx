@@ -595,40 +595,25 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Initialize model with persistence
   useEffect(() => {
-    // Try to load saved layout from localStorage
-    const savedLayout = localStorage.getItem(LAYOUT_STORAGE_KEY);
-    
-    let newModel: FlexLayout.Model;
-    
-    if (savedLayout) {
-      try {
-        const layoutJson = JSON.parse(savedLayout);
-        newModel = FlexLayout.Model.fromJson(layoutJson);
-        console.log('Loaded saved layout from localStorage');
-      } catch (error) {
-        console.error('Error loading saved layout:', error);
-        newModel = generateLayout();
-      }
-    } else {
-      newModel = generateLayout();
-    }
-    
+    // Always generate fresh layout for now (until we fix persistence)
+    // TODO: Re-enable persistence after fixing component matching
+    const newModel = generateLayout();
+    console.log('Generated fresh layout');
     setModel(newModel);
-  }, []);
+    
+    // Clear old saved layouts to avoid conflicts
+    localStorage.removeItem(LAYOUT_STORAGE_KEY);
+  }, [generateLayout]);
 
-  // Update model when state changes (but preserve user's layout customizations)
+  // Update model when state changes
   useEffect(() => {
     if (!model) return;
     
-    // Only regenerate if structure fundamentally changed (view selected/deselected, panels shown/hidden)
-    // Don't regenerate on every minor change to preserve user's layout
-    const currentStructure = getCurrentLayoutStructure();
+    // Regenerate layout when structure changes
+    const newModel = generateLayout();
+    setModel(newModel);
     
-    // Save layout to localStorage whenever model changes
-    if (model) {
-      const layoutJson = model.toJson();
-      localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layoutJson));
-    }
+    console.log('Layout updated due to state change');
   }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
 
   // Apply theme changes
@@ -727,9 +712,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           factory={factory}
           onRenderTab={onRenderTab}
           onModelChange={(newModel) => {
-            // Save layout when user drags/resizes panels
-            const layoutJson = newModel.toJson();
-            localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layoutJson));
+            console.log('Model changed - layout modified by user');
+            // TODO: Re-enable persistence after fixing
+            // const layoutJson = newModel.toJson();
+            // localStorage.setItem(LAYOUT_STORAGE_KEY, JSON.stringify(layoutJson));
           }}
         />
       </div>
