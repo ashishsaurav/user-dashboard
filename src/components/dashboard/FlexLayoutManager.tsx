@@ -85,10 +85,8 @@ export function useFlexLayoutManager({
         tabSetEnableDrag: true,
         tabSetEnableDrop: true,
         tabEnableDrag: true,
-        tabEnableFloat: true,
+        tabEnablePopout: true, // Enable popout windows (floating)
         splitterSize: 8,
-        tabSetHeaderHeight: 36,
-        tabSetTabStripHeight: 36,
       },
       borders: [],
       layout: {
@@ -99,7 +97,6 @@ export function useFlexLayoutManager({
             type: "tabset",
             id: "nav-tabset",
             weight: navHeight,
-            height: navHeight,
             children: [children[0]], // Navigation
             active: true,
           },
