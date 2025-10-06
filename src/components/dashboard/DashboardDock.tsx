@@ -589,7 +589,41 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed]);
 
-  // Smart layout management
+  // Handle navigation panel collapse/expand without full layout reload
+  useEffect(() => {
+    if (!dockLayoutRef.current) return;
+
+    const currentLayout = dockLayoutRef.current.getLayout();
+    if (!currentLayout?.dockbox?.children?.[0]) return;
+
+    const navPanel = currentLayout.dockbox.children[0];
+    const newSize = isDockCollapsed 
+      ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH 
+      : LAYOUT_SIZES.NAVIGATION_PANEL_WIDTH;
+
+    // Only update size if it's different
+    if (navPanel.size !== newSize) {
+      navPanel.size = newSize;
+      dockLayoutRef.current.loadLayout(currentLayout);
+      
+      // Apply collapsed state attribute
+      setTimeout(() => {
+        const dockbox = document.querySelector('.dock-box');
+        if (dockbox) {
+          const navigationPanel = dockbox.querySelector('.dock-panel');
+          if (navigationPanel) {
+            if (isDockCollapsed) {
+              navigationPanel.setAttribute('data-collapsed', 'true');
+            } else {
+              navigationPanel.removeAttribute('data-collapsed');
+            }
+          }
+        }
+      }, 0);
+    }
+  }, [isDockCollapsed]);
+
+  // Smart layout management - only reload on structural changes
   useEffect(() => {
     if (!dockLayoutRef.current) return;
 
@@ -619,7 +653,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log("Only content changed, updating content");
       updateLayoutContent();
     }
-  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, layoutMode, navigationUpdateTrigger]);
+  }, [selectedView, reportsVisible, widgetsVisible, layoutMode, navigationUpdateTrigger]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>

@@ -153,7 +153,7 @@ export function useDockLayoutManager({
 
   const getCurrentLayoutStructure = useCallback(() => {
     const panels = [];
-    panels.push(`navigation-${isDockCollapsed ? "collapsed" : "expanded"}`);
+    // Don't include navigation collapse state - it shouldn't trigger full layout reload
     panels.push(`layout-${layoutMode}`);
     if (!selectedView) {
       panels.push("welcome");
@@ -163,7 +163,7 @@ export function useDockLayoutManager({
       if (!reportsVisible && !widgetsVisible) panels.push("welcome-closed");
     }
     return panels.join(",");
-  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, layoutMode]);
+  }, [selectedView, reportsVisible, widgetsVisible, layoutMode]);
 
   return {
     generateDynamicLayout,
