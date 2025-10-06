@@ -79,7 +79,7 @@ const AddReportModal: React.FC<AddReportModalProps> = ({
 
   return (
     <AddItemModal
-      title="Reports"
+      title="Report"
       items={filteredReports}
       selectedItems={selectedReports}
       onToggleSelection={handleToggleSelection}
