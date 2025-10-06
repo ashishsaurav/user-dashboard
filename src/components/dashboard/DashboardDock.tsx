@@ -27,6 +27,7 @@ import AddWidgetModal from "../modals/AddWidgetModal";
 import WelcomeContent from "./WelcomeContent";
 import ThemeToggle from "./ThemeToggle";
 import { useDockLayoutManager } from "./DockLayoutManager";
+import { LAYOUT_SIZES } from "../../constants/layout";
 import "./styles/DashboardDock.css";
 import "./styles/GmailDockIntegration.css";
 
@@ -62,6 +63,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // RC-DOCK REF for updates
   const dockLayoutRef = useRef<DockLayout>(null);
+  
+  // Resize observer ref for navigation panel width detection
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const isManualToggleRef = useRef<boolean>(false);
 
   // State management for views, viewGroups, and navigation settings
   const [views, setViews] = useState<View[]>(() => {
@@ -373,6 +378,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     />
   );
 
+  // Handle manual toggle (button click)
+  const handleToggleCollapse = useCallback(() => {
+    isManualToggleRef.current = true;
+    setIsDockCollapsed(prev => !prev);
+  }, []);
+
   // Dock layout manager
   const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
     selectedView,
@@ -381,7 +392,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     isAdmin: user.role === "admin",
     isDockCollapsed: isDockCollapsed,
     actions: {
-      onToggleCollapse: () => setIsDockCollapsed(prev => !prev),
+      onToggleCollapse: handleToggleCollapse,
       onNavigationManage: () => setShowNavigationModal(true),
       onSystemSettings: () => setShowManageModal(true),
       onReopenReports: handleReopenReports,
@@ -464,6 +475,62 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       }
     }
   }, [theme]);
+
+  // Setup ResizeObserver for auto expand/collapse based on width
+  useEffect(() => {
+    const setupResizeObserver = () => {
+      const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
+      
+      if (!navigationPanel) {
+        return;
+      }
+
+      // Clean up existing observer
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+
+      // Create new resize observer
+      resizeObserverRef.current = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const width = entry.contentRect.width;
+          
+          // Only auto-toggle if this isn't from a manual button toggle
+          if (!isManualToggleRef.current) {
+            // Auto-collapse if width is below collapse threshold
+            if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
+              console.log(`Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+              setIsDockCollapsed(true);
+            }
+            // Auto-expand if width is above expand threshold
+            else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
+              console.log(`Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+              setIsDockCollapsed(false);
+            }
+          }
+          
+          // Reset manual toggle flag after a short delay
+          if (isManualToggleRef.current) {
+            setTimeout(() => {
+              isManualToggleRef.current = false;
+            }, 100);
+          }
+        }
+      });
+
+      resizeObserverRef.current.observe(navigationPanel);
+    };
+
+    // Setup observer after a short delay to ensure DOM is ready
+    const timer = setTimeout(setupResizeObserver, 100);
+
+    return () => {
+      clearTimeout(timer);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+    };
+  }, [isDockCollapsed]);
 
   // Apply collapsed state to navigation panel
   useEffect(() => {
