@@ -306,11 +306,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Custom tab header renderer with action buttons
   const onRenderTabSet = (tabSetNode: FlexLayout.TabSetNode | FlexLayout.BorderNode, renderValues: any) => {
-    const activeTab = tabSetNode.getChildren().find(child => child.getId() === tabSetNode.getSelectedNode()?.getId());
+    const selectedNode = tabSetNode.getSelectedNode();
     
-    if (!activeTab) return;
+    if (!selectedNode) return;
     
-    const component = activeTab.getComponent();
+    const component = selectedNode.getComponent();
+    
+    console.log('Rendering tabset for component:', component);
     
     // Add custom buttons based on which tab is active
     const buttons: React.ReactNode[] = [];
@@ -489,8 +491,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
 
     // Add buttons to the toolbar
-    renderValues.buttons = renderValues.buttons || [];
-    renderValues.buttons.push(...buttons);
+    if (!Array.isArray(renderValues.buttons)) {
+      renderValues.buttons = [];
+    }
+    buttons.forEach(button => renderValues.buttons.push(button));
+    
+    console.log(`Added ${buttons.length} buttons for ${component}`);
   };
 
   // FlexLayout factory to render components

@@ -80,13 +80,14 @@ export function useFlexLayoutManager({
         tabEnableClose: false,
         tabEnableRename: false,
         tabSetEnableTabStrip: true,
-        tabSetEnableMaximize: true,
+        tabSetEnableMaximize: false, // Disable default maximize to avoid conflicts
         tabSetEnableDivide: true,
         tabSetEnableDrag: true,
         tabSetEnableDrop: true,
         tabEnableDrag: true,
         tabEnablePopout: true, // Enable popout windows (floating)
         splitterSize: 8,
+        tabSetEnableClose: false, // Disable default close button
       },
       borders: [],
       layout: {
