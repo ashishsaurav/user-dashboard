@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>FlexLayout Test</title>
+  <script>
+    // Quick test to verify FlexLayout structure
+    const testLayout = {
+      "global": {
+        "tabEnableClose": false,
+        "tabEnableDrag": true
+      },
+      "borders": [],
+      "layout": {
+        "type": "row",
+        "weight": 100,
+        "children": [
+          {
+            "type": "tabset",
+            "weight": 200,
+            "children": [
+              {
+                "type": "tab",
+                "name": "Navigation",
+                "component": "navigation"
+              }
+            ]
+          },
+          {
+            "type": "tabset",
+            "weight": 100,
+            "children": [
+              {
+                "type": "tab",
+                "name": "Welcome",
+                "component": "welcome"
+              }
+            ]
+          }
+        ]
+      }
+    };
+    console.log('Test layout structure:', JSON.stringify(testLayout, null, 2));
+  </script>
+</head>
+<body>
+  <h1>FlexLayout Structure Test</h1>
+  <p>Check console for layout structure</p>
+</body>
+</html>

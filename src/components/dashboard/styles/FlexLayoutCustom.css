@@ -39,6 +39,10 @@
 }
 
 .flexlayout__tab_button {
+  display: none !important; /* Hide tab button completely */
+}
+
+.flexlayout__tab_button {
   color: var(--text-primary) !important;
   font-size: 14px !important;
   font-weight: 500 !important;
@@ -73,8 +77,37 @@
 
 .flexlayout__tabset_content {
   background: var(--bg-primary) !important;
-  overflow: auto !important;
+  overflow: visible !important; /* Changed from auto to visible */
   padding: 0 !important; /* No padding in content area */
+  height: 100% !important; /* Ensure full height */
+}
+
+/* Ensure tab content is visible and sized properly */
+.flexlayout__tab_content {
+  height: 100% !important;
+  width: 100% !important;
+  overflow: auto !important;
+  display: block !important;
+  visibility: visible !important;
+  position: relative !important;
+}
+
+/* Force visibility of all child elements */
+.flexlayout__tabset_content > * {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.flexlayout__tab_button_content {
+  display: none !important; /* Hide the tab name text */
+}
+
+/* Ensure toolbar buttons are visible */
+.flexlayout__tabset_header_buttons {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
 }
 
 .flexlayout__tab_toolbar {
