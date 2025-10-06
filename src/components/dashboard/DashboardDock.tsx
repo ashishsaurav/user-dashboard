@@ -433,7 +433,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     isDockCollapsed: isDockCollapsed,
     layoutMode: layoutMode,
     actions: {
-      onToggleLayout: handleToggleLayout,
       onToggleCollapse: handleToggleCollapse,
       onNavigationManage: () => setShowNavigationModal(true),
       onSystemSettings: () => setShowManageModal(true),

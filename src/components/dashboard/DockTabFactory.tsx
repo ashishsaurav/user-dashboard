@@ -73,20 +73,6 @@ const HamburgerIcon = () => (
   </svg>
 );
 
-const LayoutHorizontalIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="3" width="7" height="18" />
-    <rect x="14" y="3" width="7" height="18" />
-  </svg>
-);
-
-const LayoutVerticalIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <rect x="3" y="3" width="18" height="7" />
-    <rect x="3" y="14" width="18" height="7" />
-  </svg>
-);
-
 interface DockTabActions {
   onToggleCollapse: () => void;
   onNavigationManage: () => void;
@@ -97,7 +83,6 @@ interface DockTabActions {
   onAddWidget: () => void;
   onCloseReports: () => void;
   onCloseWidgets: () => void;
-  onToggleLayout: () => void; // NEW: Toggle between horizontal and vertical layouts
 }
 
 export class DockTabFactory {
@@ -108,8 +93,7 @@ export class DockTabFactory {
     widgetsVisible: boolean,
     isAdmin: boolean,
     content: React.ReactNode,
-    isCollapsed: boolean = false,
-    layoutMode?: 'horizontal' | 'vertical'
+    isCollapsed: boolean = false
   ) {
     return {
       id: "navigation",

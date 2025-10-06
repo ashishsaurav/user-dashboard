@@ -21,7 +21,6 @@ interface DockLayoutManagerProps {
     onAddWidget: () => void;
     onCloseReports: () => void;
     onCloseWidgets: () => void;
-    onToggleLayout: () => void; // NEW: Toggle layout mode
   };
   content: {
     navigation: React.ReactNode;
@@ -58,8 +57,7 @@ export function useDockLayoutManager({
           widgetsVisible,
           isAdmin,
           content.navigation,
-          isDockCollapsed,
-          layoutMode
+          isDockCollapsed
         ),
       ],
       size: navSize,

@@ -48,22 +48,35 @@
 /* Main Container */
 .dashboard-dock.modern {
   height: 100vh;
+  width: 100vw;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .dock-container.full-height {
-  height: 100vh;
+  height: 100%;
+  width: 100%;
   background: var(--bg-primary);
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* Generic dock container for theme switching */
 .dock-container {
-  height: 100vh;
+  height: 100%;
+  width: 100%;
   background: var(--bg-primary);
-  position: relative;
+  position: absolute;
 }
 
 /* Dock Layout Theme Classes */
@@ -769,17 +782,6 @@
   border-color: #1565C0;
 }
 
-.tab-action-btn.layout-toggle-btn {
-  background: linear-gradient(135deg, #9333ea 0%, #7e22ce 100%);
-  border-color: #7e22ce;
-  color: white;
-}
-
-.tab-action-btn.layout-toggle-btn:hover {
-  background: linear-gradient(135deg, #7e22ce 0%, #6b21a8 100%);
-  border-color: #6b21a8;
-}
-
 /* Enhanced close button styling */
 .tab-action-btn.close-btn {
   display: flex;
@@ -1188,6 +1190,8 @@
 
 .dock-layout {
   background: var(--bg-primary) !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .dock-layout .dock-panel {
