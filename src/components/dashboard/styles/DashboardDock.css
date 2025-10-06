@@ -1027,7 +1027,12 @@
 .nav-group-icon {
   display: flex;
   align-items: center;
-  color: var(--text-muted);
+  color: var(--text-secondary, #475569);
+}
+
+.nav-group-icon svg {
+  stroke: currentColor;
+  fill: none;
 }
 
 .nav-group-title {
@@ -1800,6 +1805,10 @@
   background: var(--primary-color);
   border-color: var(--primary-color);
   color: white;
+}
+
+[data-theme="dark"] .nav-group-icon {
+  color: var(--text-secondary, #cbd5e1);
 }
 
 /* ==============================================

@@ -58,9 +58,11 @@ const CloseIcon = () => (
   </svg>
 );
 
-const CollapseIcon = () => (
+const HamburgerIcon = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-    <polyline points="15,18 9,12 15,6" />
+    <line x1="3" y1="6" x2="21" y2="6" />
+    <line x1="3" y1="12" x2="21" y2="12" />
+    <line x1="3" y1="18" x2="21" y2="18" />
   </svg>
 );
 
@@ -91,7 +93,6 @@ export class DockTabFactory {
       title: (
         <div className="dock-tab-header navigation-tab-header dock-collapsible-header">
           <div className="tab-title">
-            <NavigationIcon />
             {!isCollapsed && <span>Navigation</span>}
           </div>
           <div className="tab-actions">
@@ -104,61 +105,57 @@ export class DockTabFactory {
               }}
               title={isCollapsed ? "Expand navigation" : "Collapse navigation"}
             >
-              <CollapseIcon />
+              <HamburgerIcon />
             </button>
             
-            {!isCollapsed && (
-              <>
-                {/* Quick Action Buttons - Show only when not collapsed */}
-                {selectedView && !reportsVisible && (
-                  <button
-                    className="tab-action-btn show-section-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      actions.onReopenReports();
-                    }}
-                    title="Show Reports"
-                  >
-                    <ReportsIcon />
-                  </button>
-                )}
-                {selectedView && !widgetsVisible && (
-                  <button
-                    className="tab-action-btn show-section-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      actions.onReopenWidgets();
-                    }}
-                    title="Show Widgets"
-                  >
-                    <WidgetsIcon />
-                  </button>
-                )}
-                
-                {/* Management Buttons */}
-                <button
-                  className="tab-action-btn manage-btn"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    actions.onNavigationManage();
-                  }}
-                  title="Manage Navigation"
-                >
-                  <ManageIcon />
-                </button>
-                {isAdmin && (
-                  <button
-                    className="tab-action-btn settings-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      actions.onSystemSettings();
-                    }}
-                    title="System Settings"
-                  >
-                    <ManageIcon />
-                  </button>
-                )}
-              </>
+            {/* Quick Action Buttons - Always show */}
+            {selectedView && !reportsVisible && (
+              <button
+                className="tab-action-btn show-section-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  actions.onReopenReports();
+                }}
+                title="Show Reports"
+              >
+                <ReportsIcon />
+              </button>
+            )}
+            {selectedView && !widgetsVisible && (
+              <button
+                className="tab-action-btn show-section-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  actions.onReopenWidgets();
+                }}
+                title="Show Widgets"
+              >
+                <WidgetsIcon />
+              </button>
+            )}
+            
+            {/* Management Buttons - Always show */}
+            <button
+              className="tab-action-btn manage-btn"
+              onClick={(e) => {
+                e.stopPropagation();
+                actions.onNavigationManage();
+              }}
+              title="Manage Navigation"
+            >
+              <ManageIcon />
+            </button>
+            {isAdmin && (
+              <button
+                className="tab-action-btn settings-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  actions.onSystemSettings();
+                }}
+                title="System Settings"
+              >
+                <ManageIcon />
+              </button>
             )}
           </div>
         </div>

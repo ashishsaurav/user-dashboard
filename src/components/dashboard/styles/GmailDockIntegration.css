@@ -98,35 +98,23 @@
   color: var(--primary-color, #4f46e5);
 }
 
-/* Collapse icon animation */
+/* Collapse icon - no animation needed for hamburger */
 .tab-action-btn.collapse-toggle-btn svg {
-  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-}
-
-.dock-panel[data-collapsed="true"] .tab-action-btn.collapse-toggle-btn svg {
-  transform: rotate(180deg);
+  transition: none;
 }
 
 /* Collapsed state adjustments */
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header {
-  justify-content: center;
-  padding: 16px;
+  justify-content: flex-end;
+  padding: 12px;
 }
 
-.dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-title span {
+.dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-title {
   display: none;
 }
 
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-actions {
-  position: absolute;
-  right: 16px; /* Increased margin */
-  top: 50%;
-  transform: translateY(-50%);
-}
-
-/* Only show collapse button when collapsed */
-.dock-panel[data-collapsed="true"] .tab-action-btn:not(.collapse-toggle-btn) {
-  display: none;
+  margin-left: 0;
 }
 
 /* Dark theme for dock integration */

@@ -200,7 +200,7 @@
   width: 20px;
   height: 20px;
   margin-right: 12px;
-  color: var(--nav-icon, #666);
+  color: var(--text-secondary, #475569);
   flex-shrink: 0;
 }
 
@@ -380,7 +380,7 @@
 }
 
 .view-group-hover-popup .nav-group-icon {
-  color: var(--nav-icon, #666);
+  color: var(--text-secondary, #475569);
   flex-shrink: 0;
 }
 
@@ -685,6 +685,14 @@
   --nav-hover-bg: #2a2a2a;
   --nav-selected-bg: #1a365d;
   --nav-selected-text: #4dabf7;
+}
+
+[data-theme="dark"] .gmail-view-group-icon {
+  color: var(--text-secondary, #cbd5e1);
+}
+
+[data-theme="dark"] .view-group-hover-popup .nav-group-icon {
+  color: var(--text-secondary, #cbd5e1);
 }
 
 /* Scrollbar Styling */
