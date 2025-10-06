@@ -509,6 +509,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     const component = node.getComponent();
     const config = node.getConfig();
 
+    console.log('Factory called for component:', component);
+
     switch (component) {
       case "navigation":
         if (isDockCollapsed) {
@@ -593,28 +595,34 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     isDockCollapsed,
   });
 
-  // Initialize model with persistence
+  // Initialize model (only once on mount)
   useEffect(() => {
-    // Always generate fresh layout for now (until we fix persistence)
-    // TODO: Re-enable persistence after fixing component matching
+    // Generate initial layout
     const newModel = generateLayout();
-    console.log('Generated fresh layout');
+    const layoutJson = newModel.toJson();
+    console.log('Generated initial layout:', JSON.stringify(layoutJson, null, 2));
     setModel(newModel);
     
     // Clear old saved layouts to avoid conflicts
     localStorage.removeItem(LAYOUT_STORAGE_KEY);
-  }, [generateLayout]);
+    
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Empty deps - only run once on mount
 
-  // Update model when state changes
+  // Update model when state changes (debounced to avoid loops)
   useEffect(() => {
     if (!model) return;
     
-    // Regenerate layout when structure changes
-    const newModel = generateLayout();
-    setModel(newModel);
+    // Don't regenerate on initial mount
+    const timer = setTimeout(() => {
+      const newModel = generateLayout();
+      console.log('Layout updated due to state change');
+      setModel(newModel);
+    }, 100);
     
-    console.log('Layout updated due to state change');
-  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed]);
 
   // Apply theme changes
   useEffect(() => {
