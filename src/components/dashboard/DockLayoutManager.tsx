@@ -21,6 +21,7 @@ interface DockLayoutManagerProps {
     onAddWidget: () => void;
     onCloseReports: () => void;
     onCloseWidgets: () => void;
+    onToggleLayout: () => void; // NEW: Toggle layout mode
   };
   content: {
     navigation: React.ReactNode;

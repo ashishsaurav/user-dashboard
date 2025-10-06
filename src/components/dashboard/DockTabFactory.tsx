@@ -97,7 +97,7 @@ interface DockTabActions {
   onAddWidget: () => void;
   onCloseReports: () => void;
   onCloseWidgets: () => void;
-  onToggleLayout?: () => void; // NEW: Toggle between horizontal and vertical layouts
+  onToggleLayout: () => void; // NEW: Toggle between horizontal and vertical layouts
 }
 
 export class DockTabFactory {
@@ -130,7 +130,7 @@ export class DockTabFactory {
             </button>
             
             {/* Layout Toggle - Show when both panels are visible */}
-            {selectedView && reportsVisible && widgetsVisible && actions.onToggleLayout && (
+            {selectedView && reportsVisible && widgetsVisible && (
               <button
                 className="tab-action-btn layout-toggle-btn"
                 onClick={(e) => {
