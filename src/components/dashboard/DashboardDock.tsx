@@ -479,11 +479,23 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
     const setupResizeObserver = () => {
-      const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
+      // Find the navigation panel - it's always the first panel in our horizontal layout
+      const dockbox = document.querySelector('.dock-box');
       
-      if (!navigationPanel) {
+      if (!dockbox) {
+        console.log('Dockbox not found, retrying...');
         return;
       }
+
+      // Get the first panel (navigation is always first in our layout)
+      const navigationPanel = dockbox.querySelector('.dock-panel');
+      
+      if (!navigationPanel) {
+        console.log('Navigation panel not found, retrying...');
+        return;
+      }
+
+      console.log('Found navigation panel, setting up resize observer');
 
       // Clean up existing observer
       if (resizeObserverRef.current) {
@@ -495,37 +507,47 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         for (const entry of entries) {
           const width = entry.contentRect.width;
           
+          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
+          
           // Only auto-toggle if this isn't from a manual button toggle
           if (!isManualToggleRef.current) {
             // Auto-collapse if width is below collapse threshold
             if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
-              console.log(`Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+              console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
               setIsDockCollapsed(true);
             }
             // Auto-expand if width is above expand threshold
             else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
-              console.log(`Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+              console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
               setIsDockCollapsed(false);
             }
+          } else {
+            console.log('Manual toggle active, skipping auto-toggle');
           }
           
           // Reset manual toggle flag after a short delay
           if (isManualToggleRef.current) {
             setTimeout(() => {
               isManualToggleRef.current = false;
-            }, 100);
+              console.log('Manual toggle flag reset');
+            }, 300);
           }
         }
       });
 
       resizeObserverRef.current.observe(navigationPanel);
+      console.log('ResizeObserver attached successfully');
     };
 
-    // Setup observer after a short delay to ensure DOM is ready
-    const timer = setTimeout(setupResizeObserver, 100);
+    // Setup observer with retries to ensure DOM is ready
+    const timer = setTimeout(setupResizeObserver, 200);
+    const retryTimer = setTimeout(setupResizeObserver, 600);
+    const finalRetry = setTimeout(setupResizeObserver, 1000);
 
     return () => {
       clearTimeout(timer);
+      clearTimeout(retryTimer);
+      clearTimeout(finalRetry);
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       }
@@ -534,12 +556,16 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Apply collapsed state to navigation panel
   useEffect(() => {
-    const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
-    if (navigationPanel) {
-      if (isDockCollapsed) {
-        navigationPanel.setAttribute('data-collapsed', 'true');
-      } else {
-        navigationPanel.removeAttribute('data-collapsed');
+    // Find the navigation panel - it's always the first panel
+    const dockbox = document.querySelector('.dock-box');
+    if (dockbox) {
+      const navigationPanel = dockbox.querySelector('.dock-panel');
+      if (navigationPanel) {
+        if (isDockCollapsed) {
+          navigationPanel.setAttribute('data-collapsed', 'true');
+        } else {
+          navigationPanel.removeAttribute('data-collapsed');
+        }
       }
     }
   }, [isDockCollapsed]);
@@ -558,12 +584,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       
       // Apply collapsed state after layout loads
       setTimeout(() => {
-        const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
-        if (navigationPanel) {
-          if (isDockCollapsed) {
-            navigationPanel.setAttribute('data-collapsed', 'true');
-          } else {
-            navigationPanel.removeAttribute('data-collapsed');
+        const dockbox = document.querySelector('.dock-box');
+        if (dockbox) {
+          const navigationPanel = dockbox.querySelector('.dock-panel');
+          if (navigationPanel) {
+            if (isDockCollapsed) {
+              navigationPanel.setAttribute('data-collapsed', 'true');
+            } else {
+              navigationPanel.removeAttribute('data-collapsed');
+            }
           }
         }
       }, 0);
