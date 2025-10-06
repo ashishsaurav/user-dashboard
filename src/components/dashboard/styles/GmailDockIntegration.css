@@ -201,10 +201,15 @@
 /* Navigation panel specific styling in dock */
 .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #ffffff) !important;
+  width: 250px !important;
+  min-width: 250px !important;
+  max-width: 250px !important;
+  flex: 0 0 250px !important;
 }
 
 .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #ffffff) !important;
+  width: 250px !important;
 }
 
 /* Collapsed navigation panel in dock */
@@ -212,16 +217,44 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
+/* When collapsed, override width to 48px */
+.dock-panel[data-dock-id="navigation"][data-collapsed="true"],
+.dock-panel[data-dock-id="navigation"].collapsed {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  flex: 0 0 48px !important;
+}
+
+.dock-panel[data-dock-id="navigation"][data-collapsed="true"] .dock-tab-pane,
+.dock-panel[data-dock-id="navigation"].collapsed .dock-tab-pane {
+  width: 48px !important;
+}
+
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #0f172a) !important;
+  width: 250px !important;
+  max-width: 250px !important;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #0f172a) !important;
+  width: 250px !important;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {
   background: var(--bg-primary, #0f172a) !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"][data-collapsed="true"],
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"].collapsed {
+  width: 48px !important;
+  max-width: 48px !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"][data-collapsed="true"] .dock-tab-pane,
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"].collapsed .dock-tab-pane {
+  width: 48px !important;
 }
 
 /* Horizontal dock adjustments */

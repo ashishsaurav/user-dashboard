@@ -1317,11 +1317,38 @@
   z-index: 1;
 }
 
-/* Ensure navigation panel stays fixed width */
-.dock-layout .dock-panel:first-child .dock-panel-content {
+/* Ensure navigation panel stays fixed width - STRICT */
+.dock-layout .dock-panel:first-child,
+.dock-layout .dock-panel:first-child .dock-panel-content,
+.dock-layout .dock-panel:first-child .dock-tab-pane {
   width: 250px !important;
   min-width: 250px !important;
   max-width: 250px !important;
+  flex: 0 0 250px !important;
+}
+
+/* Prevent any flex grow/shrink */
+.dock-layout .dock-panel:first-child {
+  flex-grow: 0 !important;
+  flex-shrink: 0 !important;
+  flex-basis: 250px !important;
+}
+
+/* When collapsed, strict 48px width */
+.dock-layout .dock-panel:first-child[data-collapsed="true"],
+.dock-layout .dock-panel:first-child.collapsed {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
+  flex: 0 0 48px !important;
+  flex-basis: 48px !important;
+}
+
+.dock-layout .dock-panel:first-child[data-collapsed="true"] .dock-panel-content,
+.dock-layout .dock-panel:first-child.collapsed .dock-panel-content {
+  width: 48px !important;
+  min-width: 48px !important;
+  max-width: 48px !important;
 }
 
 /* ==============================================
@@ -2049,9 +2076,19 @@
   }
 
   .dock-layout .dock-panel:first-child .dock-panel-content {
-    width: 280px !important;
-    min-width: 280px !important;
-    max-width: 280px !important;
+    width: 250px !important;
+    min-width: 250px !important;
+    max-width: 250px !important;
+    flex: 0 0 250px !important;
+  }
+  
+  /* Collapsed state on mobile */
+  .dock-layout .dock-panel:first-child[data-collapsed="true"] .dock-panel-content,
+  .dock-layout .dock-panel:first-child.collapsed .dock-panel-content {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    flex: 0 0 48px !important;
   }
   
   .reports-tab-header .tab-actions,
