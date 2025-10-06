@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { LayoutData } from "rc-dock";
 import { View } from "../../types";
 import { DockTabFactory } from "./DockTabFactory";
+import { LAYOUT_SIZES } from "../../constants/layout";
 
 interface DockLayoutManagerProps {
   selectedView: View | null;
@@ -41,7 +42,10 @@ export function useDockLayoutManager({
     const children: any[] = [];
 
     // Navigation panel - adjust size based on dock collapsed state
-    const navSize = isDockCollapsed ? 59 : 250;
+    const navSize = isDockCollapsed 
+      ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH 
+      : LAYOUT_SIZES.NAVIGATION_PANEL_WIDTH;
+    
     children.push({
       tabs: [
         DockTabFactory.createNavigationTab(
@@ -55,8 +59,8 @@ export function useDockLayoutManager({
         ),
       ],
       size: navSize,
-      minSize: navSize, // Lock to exact size
-      maxSize: navSize, // Lock to exact size
+      minSize: LAYOUT_SIZES.NAVIGATION_PANEL_MIN_WIDTH,
+      maxSize: LAYOUT_SIZES.NAVIGATION_PANEL_MAX_WIDTH,
     });
 
     // Show welcome section when no view is selected

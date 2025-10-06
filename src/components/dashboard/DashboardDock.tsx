@@ -27,6 +27,7 @@ import AddWidgetModal from "../modals/AddWidgetModal";
 import WelcomeContent from "./WelcomeContent";
 import ThemeToggle from "./ThemeToggle";
 import { useDockLayoutManager } from "./DockLayoutManager";
+import { LAYOUT_SIZES } from "../../constants/layout";
 import "./styles/DashboardDock.css";
 import "./styles/GmailDockIntegration.css";
 
@@ -62,6 +63,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // RC-DOCK REF for updates
   const dockLayoutRef = useRef<DockLayout>(null);
+  
+  // Resize observer ref for navigation panel width detection
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
+  const isManualToggleRef = useRef<boolean>(false);
 
   // State management for views, viewGroups, and navigation settings
   const [views, setViews] = useState<View[]>(() => {
@@ -373,6 +378,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     />
   );
 
+  // Handle manual toggle (button click)
+  const handleToggleCollapse = useCallback(() => {
+    isManualToggleRef.current = true;
+    setIsDockCollapsed(prev => !prev);
+  }, []);
+
   // Dock layout manager
   const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
     selectedView,
@@ -381,7 +392,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     isAdmin: user.role === "admin",
     isDockCollapsed: isDockCollapsed,
     actions: {
-      onToggleCollapse: () => setIsDockCollapsed(prev => !prev),
+      onToggleCollapse: handleToggleCollapse,
       onNavigationManage: () => setShowNavigationModal(true),
       onSystemSettings: () => setShowManageModal(true),
       onReopenReports: handleReopenReports,
@@ -465,14 +476,96 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [theme]);
 
+  // Setup ResizeObserver for auto expand/collapse based on width
+  useEffect(() => {
+    const setupResizeObserver = () => {
+      // Find the navigation panel - it's always the first panel in our horizontal layout
+      const dockbox = document.querySelector('.dock-box');
+      
+      if (!dockbox) {
+        console.log('Dockbox not found, retrying...');
+        return;
+      }
+
+      // Get the first panel (navigation is always first in our layout)
+      const navigationPanel = dockbox.querySelector('.dock-panel');
+      
+      if (!navigationPanel) {
+        console.log('Navigation panel not found, retrying...');
+        return;
+      }
+
+      console.log('Found navigation panel, setting up resize observer');
+
+      // Clean up existing observer
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+
+      // Create new resize observer
+      resizeObserverRef.current = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          const width = entry.contentRect.width;
+          
+          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
+          
+          // Only auto-toggle if this isn't from a manual button toggle
+          if (!isManualToggleRef.current) {
+            // Auto-collapse if width is below collapse threshold
+            if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
+              console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+              setIsDockCollapsed(true);
+            }
+            // Auto-expand if width is above expand threshold
+            else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
+              console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+              setIsDockCollapsed(false);
+            }
+          } else {
+            console.log('Manual toggle active, skipping auto-toggle');
+          }
+          
+          // Reset manual toggle flag after a short delay
+          if (isManualToggleRef.current) {
+            setTimeout(() => {
+              isManualToggleRef.current = false;
+              console.log('Manual toggle flag reset');
+            }, 300);
+          }
+        }
+      });
+
+      resizeObserverRef.current.observe(navigationPanel);
+      console.log('ResizeObserver attached successfully');
+    };
+
+    // Setup observer with retries to ensure DOM is ready
+    const timer = setTimeout(setupResizeObserver, 200);
+    const retryTimer = setTimeout(setupResizeObserver, 600);
+    const finalRetry = setTimeout(setupResizeObserver, 1000);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(retryTimer);
+      clearTimeout(finalRetry);
+      if (resizeObserverRef.current) {
+        resizeObserverRef.current.disconnect();
+      }
+    };
+  }, [isDockCollapsed]);
+
   // Apply collapsed state to navigation panel
   useEffect(() => {
-    const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
-    if (navigationPanel) {
-      if (isDockCollapsed) {
-        navigationPanel.setAttribute('data-collapsed', 'true');
-      } else {
-        navigationPanel.removeAttribute('data-collapsed');
+    // Find the navigation panel - it's always the first panel
+    const dockbox = document.querySelector('.dock-box');
+    if (dockbox) {
+      const navigationPanel = dockbox.querySelector('.dock-panel');
+      if (navigationPanel) {
+        if (isDockCollapsed) {
+          navigationPanel.setAttribute('data-collapsed', 'true');
+        } else {
+          navigationPanel.removeAttribute('data-collapsed');
+        }
       }
     }
   }, [isDockCollapsed]);
@@ -491,12 +584,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       
       // Apply collapsed state after layout loads
       setTimeout(() => {
-        const navigationPanel = document.querySelector('.dock-panel[data-dock-id="navigation"]');
-        if (navigationPanel) {
-          if (isDockCollapsed) {
-            navigationPanel.setAttribute('data-collapsed', 'true');
-          } else {
-            navigationPanel.removeAttribute('data-collapsed');
+        const dockbox = document.querySelector('.dock-box');
+        if (dockbox) {
+          const navigationPanel = dockbox.querySelector('.dock-panel');
+          if (navigationPanel) {
+            if (isDockCollapsed) {
+              navigationPanel.setAttribute('data-collapsed', 'true');
+            } else {
+              navigationPanel.removeAttribute('data-collapsed');
+            }
           }
         }
       }, 0);
