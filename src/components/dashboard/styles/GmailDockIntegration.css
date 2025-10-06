@@ -198,11 +198,18 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
-/* Navigation panel specific styling in dock - prevent width changes */
-.dock-panel[data-dock-id="navigation"] {
+/* Navigation panel specific styling in dock - prevent width changes during normal operation */
+.dock-panel[data-dock-id="navigation"]:not(.dock-panel-max) {
   background: var(--bg-primary, #ffffff) !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
+}
+
+/* Allow navigation panel to expand when maximized */
+.dock-panel[data-dock-id="navigation"].dock-panel-max {
+  background: var(--bg-primary, #ffffff) !important;
+  flex-shrink: 1 !important;
+  flex-grow: 1 !important;
 }
 
 .dock-panel[data-dock-id="navigation"] .dock-panel-content {
@@ -225,10 +232,17 @@
 
 /* Keep collapsed header styling */
 
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"]:not(.dock-panel-max) {
   background: var(--bg-primary, #0f172a) !important;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
+}
+
+/* Allow navigation panel to expand when maximized in dark theme */
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"].dock-panel-max {
+  background: var(--bg-primary, #0f172a) !important;
+  flex-shrink: 1 !important;
+  flex-grow: 1 !important;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-panel-content {
@@ -270,9 +284,15 @@
   display: none;
 }
 
-/* Smooth transitions */
-.dock-panel {
+/* Smooth transitions - only for navigation panel to avoid interfering with maximize/minimize */
+.dock-panel[data-dock-id="navigation"] {
   transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
               min-width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
               max-width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+/* Disable transitions when maximizing/minimizing to prevent glitches */
+.dock-panel.dock-panel-maximized,
+.dock-panel.dock-panel-minimized {
+  transition: none !important;
 }

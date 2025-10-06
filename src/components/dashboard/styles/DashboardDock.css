@@ -1260,6 +1260,7 @@
   align-items: center !important;
   justify-content: center !important;
   transition: all 0.2s ease !important;
+  z-index: 10 !important;
 }
 
 .dock-layout .dock-panel-max-btn:hover,
@@ -1269,6 +1270,19 @@
   color: white !important;
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 8px rgba(79, 70, 229, 0.2) !important;
+}
+
+/* Ensure panels can be maximized/minimized properly */
+.dock-layout .dock-panel {
+  transition: none !important;
+}
+
+.dock-layout .dock-panel.dock-panel-max {
+  transition: none !important;
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  min-width: 100% !important;
+  max-width: 100% !important;
 }
 
 /* Custom button icons using pseudo-elements */
