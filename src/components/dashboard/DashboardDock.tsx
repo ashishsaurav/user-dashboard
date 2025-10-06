@@ -313,8 +313,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     
     console.log('Rendering tab for component:', component);
     
-    // Hide tab names (empty content)
-    renderValues.content = <span style={{ display: 'none' }}></span>;
+    // Don't hide content - just use empty string for tab name
+    renderValues.content = '';
     
     // Initialize buttons array
     if (!renderValues.buttons) {
@@ -513,72 +513,86 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
     switch (component) {
       case "navigation":
+        console.log('Rendering NavigationPanel - collapsed:', isDockCollapsed, 'viewGroups:', viewGroups.length, 'views:', views.length);
         if (isDockCollapsed) {
           return (
-            <CollapsedNavigationPanel
+            <div style={{ height: '100%', overflow: 'auto' }}>
+              <CollapsedNavigationPanel
+                user={user}
+                views={views}
+                viewGroups={viewGroups}
+                userNavSettings={navSettings}
+                onViewSelect={handleViewSelect}
+                selectedView={selectedView}
+                onUpdateViews={handleUpdateViews}
+                onUpdateViewGroups={handleUpdateViewGroups}
+                onUpdateNavSettings={handleUpdateNavSettings}
+                reports={getUserAccessibleReports()}
+                widgets={getUserAccessibleWidgets()}
+              />
+            </div>
+          );
+        }
+        return (
+          <div style={{ height: '100%', overflow: 'auto' }}>
+            <NavigationPanel
               user={user}
               views={views}
               viewGroups={viewGroups}
               userNavSettings={navSettings}
-              onViewSelect={handleViewSelect}
-              selectedView={selectedView}
+              reports={getUserAccessibleReports()}
+              widgets={getUserAccessibleWidgets()}
               onUpdateViews={handleUpdateViews}
               onUpdateViewGroups={handleUpdateViewGroups}
               onUpdateNavSettings={handleUpdateNavSettings}
-              reports={getUserAccessibleReports()}
-              widgets={getUserAccessibleWidgets()}
+              onViewSelect={handleViewSelect}
+              selectedView={selectedView}
             />
-          );
-        }
-        return (
-          <NavigationPanel
-            user={user}
-            views={views}
-            viewGroups={viewGroups}
-            userNavSettings={navSettings}
-            reports={getUserAccessibleReports()}
-            widgets={getUserAccessibleWidgets()}
-            onUpdateViews={handleUpdateViews}
-            onUpdateViewGroups={handleUpdateViewGroups}
-            onUpdateNavSettings={handleUpdateNavSettings}
-            onViewSelect={handleViewSelect}
-            selectedView={selectedView}
-          />
+          </div>
         );
 
       case "reports":
+        console.log('Rendering Reports - selectedView:', selectedView?.name);
         return (
-          <ViewContentPanel
-            type="reports"
-            selectedView={selectedView}
-            reports={getUserAccessibleReports()}
-            widgets={[]}
-            onRemoveReport={handleRemoveReportFromView}
-            onRemoveWidget={() => {}}
-            onReorderReports={handleReorderReports}
-          />
+          <div style={{ height: '100%', overflow: 'auto' }}>
+            <ViewContentPanel
+              type="reports"
+              selectedView={selectedView}
+              reports={getUserAccessibleReports()}
+              widgets={[]}
+              onRemoveReport={handleRemoveReportFromView}
+              onRemoveWidget={() => {}}
+              onReorderReports={handleReorderReports}
+            />
+          </div>
         );
 
       case "widgets":
+        console.log('Rendering Widgets - selectedView:', selectedView?.name);
         return (
-          <ViewContentPanel
-            type="widgets"
-            selectedView={selectedView}
-            reports={[]}
-            widgets={getUserAccessibleWidgets()}
-            onRemoveReport={() => {}}
-            onRemoveWidget={handleRemoveWidgetFromView}
-            onReorderWidgets={handleReorderWidgets}
-          />
+          <div style={{ height: '100%', overflow: 'auto' }}>
+            <ViewContentPanel
+              type="widgets"
+              selectedView={selectedView}
+              reports={[]}
+              widgets={getUserAccessibleWidgets()}
+              onRemoveReport={() => {}}
+              onRemoveWidget={handleRemoveWidgetFromView}
+              onReorderWidgets={handleReorderWidgets}
+            />
+          </div>
         );
 
       case "welcome":
+        console.log('Rendering Welcome - selectedView:', selectedView?.name);
         return (
-          <WelcomeContent
-            selectedView={selectedView}
-            onReopenReports={handleReopenReports}
-            onReopenWidgets={handleReopenWidgets}
-          />
+          <div style={{ height: '100%', overflow: 'auto' }}>
+            <WelcomeContent
+              selectedView={selectedView}
+              onReopenReports={handleReopenReports}
+              onReopenWidgets={handleReopenWidgets}
+            />
+          </div>
         );
 
       default:

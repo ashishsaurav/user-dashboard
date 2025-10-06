@@ -39,6 +39,10 @@
 }
 
 .flexlayout__tab_button {
+  display: none !important; /* Hide tab button completely */
+}
+
+.flexlayout__tab_button {
   color: var(--text-primary) !important;
   font-size: 14px !important;
   font-weight: 500 !important;
