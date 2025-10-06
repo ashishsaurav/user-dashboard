@@ -54,6 +54,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Navigation state - dock level collapse
   const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+  
+  // Layout mode state - horizontal or vertical
+  const [layoutMode, setLayoutMode] = useState<'horizontal' | 'vertical'>('horizontal');
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
@@ -344,6 +347,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     navSettings,
     selectedView,
     navigationUpdateTrigger,
+    layoutMode,
   ]);
 
   const createReportsContent = () => (
@@ -383,6 +387,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     isManualToggleRef.current = true;
     setIsDockCollapsed(prev => !prev);
   }, []);
+  
+  // Handle layout mode toggle
+  const handleToggleLayout = useCallback(() => {
+    setLayoutMode(prev => prev === 'horizontal' ? 'vertical' : 'horizontal');
+  }, []);
 
   // Dock layout manager
   const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
@@ -391,7 +400,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     widgetsVisible,
     isAdmin: user.role === "admin",
     isDockCollapsed: isDockCollapsed,
+    layoutMode: layoutMode,
     actions: {
+      onToggleLayout: handleToggleLayout,
       onToggleCollapse: handleToggleCollapse,
       onNavigationManage: () => setShowNavigationModal(true),
       onSystemSettings: () => setShowManageModal(true),
@@ -418,21 +429,29 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       const currentLayout = dockLayoutRef.current.getLayout();
 
       if (currentLayout?.dockbox?.children) {
-        currentLayout.dockbox.children.forEach((panel: any) => {
-          if (panel.tabs && panel.tabs[0]) {
-            const tabId = panel.tabs[0].id;
+        const updatePanelContent = (panels: any[]) => {
+          panels.forEach((panel: any) => {
+            if (panel.tabs && panel.tabs[0]) {
+              const tabId = panel.tabs[0].id;
 
-            if (tabId === "navigation") {
-              panel.tabs[0].content = createNavigationContent();
-            } else if (tabId === "reports") {
-              panel.tabs[0].content = createReportsContent();
-            } else if (tabId === "widgets") {
-              panel.tabs[0].content = createWidgetsContent();
-            } else if (tabId.startsWith("welcome")) {
-              panel.tabs[0].content = createWelcomeContent();
+              if (tabId === "navigation") {
+                panel.tabs[0].content = createNavigationContent();
+              } else if (tabId === "reports") {
+                panel.tabs[0].content = createReportsContent();
+              } else if (tabId === "widgets") {
+                panel.tabs[0].content = createWidgetsContent();
+              } else if (tabId.startsWith("welcome")) {
+                panel.tabs[0].content = createWelcomeContent();
+              }
             }
-          }
-        });
+            // Recursively update nested panels (for vertical layouts)
+            if (panel.children) {
+              updatePanelContent(panel.children);
+            }
+          });
+        };
+        
+        updatePanelContent(currentLayout.dockbox.children);
 
         dockLayoutRef.current.loadLayout(currentLayout);
       }
@@ -600,7 +619,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log("Only content changed, updating content");
       updateLayoutContent();
     }
-  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
+  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, layoutMode, navigationUpdateTrigger]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>

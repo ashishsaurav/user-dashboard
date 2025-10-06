@@ -10,6 +10,7 @@ interface DockLayoutManagerProps {
   widgetsVisible: boolean;
   isAdmin: boolean;
   isDockCollapsed?: boolean;
+  layoutMode?: 'horizontal' | 'vertical'; // NEW: Support for vertical layouts
   actions: {
     onToggleCollapse: () => void;
     onNavigationManage: () => void;
@@ -35,6 +36,7 @@ export function useDockLayoutManager({
   widgetsVisible,
   isAdmin,
   isDockCollapsed = false,
+  layoutMode = 'horizontal', // NEW: Default to horizontal
   actions,
   content,
 }: DockLayoutManagerProps) {
@@ -55,11 +57,12 @@ export function useDockLayoutManager({
           widgetsVisible,
           isAdmin,
           content.navigation,
-          isDockCollapsed
+          isDockCollapsed,
+          layoutMode
         ),
       ],
       size: navSize,
-      minSize: LAYOUT_SIZES.NAVIGATION_PANEL_MIN_WIDTH,
+      minSize: isDockCollapsed ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH : LAYOUT_SIZES.NAVIGATION_PANEL_MIN_WIDTH,
       maxSize: LAYOUT_SIZES.NAVIGATION_PANEL_MAX_WIDTH,
     });
 
@@ -70,22 +73,52 @@ export function useDockLayoutManager({
         size: 1300 - navSize,
       });
     } else {
-      // Add reports section if view selected and visible
-      if (reportsVisible) {
-        children.push({
-          tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
-          size: widgetsVisible ? 700 : 1300 - navSize,
-          minSize: 250,
-        });
-      }
+      // Add content panels based on layout mode
+      if (layoutMode === 'horizontal') {
+        // Horizontal layout: side-by-side
+        if (reportsVisible) {
+          children.push({
+            tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
+            size: widgetsVisible ? 700 : 1300 - navSize,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+          });
+        }
 
-      // Add widgets section if view selected and visible
-      if (widgetsVisible) {
-        children.push({
-          tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
-          size: reportsVisible ? 350 : 1300 - navSize,
-          minSize: 250,
-        });
+        if (widgetsVisible) {
+          children.push({
+            tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
+            size: reportsVisible ? 350 : 1300 - navSize,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+          });
+        }
+      } else {
+        // Vertical layout: stacked on top of each other
+        const contentChildren: any[] = [];
+        
+        if (reportsVisible) {
+          contentChildren.push({
+            tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
+            size: widgetsVisible ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT : 800,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
+          });
+        }
+
+        if (widgetsVisible) {
+          contentChildren.push({
+            tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
+            size: reportsVisible ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT : 800,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
+          });
+        }
+
+        // Add vertical content box
+        if (contentChildren.length > 0) {
+          children.push({
+            mode: 'vertical',
+            children: contentChildren,
+            size: 1300 - navSize,
+          });
+        }
       }
 
       // Show welcome when both sections are closed
@@ -101,7 +134,7 @@ export function useDockLayoutManager({
 
     return {
       dockbox: {
-        mode: "horizontal",
+        mode: "horizontal", // Top-level is always horizontal (navigation + content)
         children,
       },
     };
@@ -111,6 +144,7 @@ export function useDockLayoutManager({
     widgetsVisible,
     isAdmin,
     isDockCollapsed,
+    layoutMode,
     actions,
     content,
   ]);
@@ -118,6 +152,7 @@ export function useDockLayoutManager({
   const getCurrentLayoutStructure = useCallback(() => {
     const panels = [];
     panels.push(`navigation-${isDockCollapsed ? "collapsed" : "expanded"}`);
+    panels.push(`layout-${layoutMode}`);
     if (!selectedView) {
       panels.push("welcome");
     } else {
@@ -126,7 +161,7 @@ export function useDockLayoutManager({
       if (!reportsVisible && !widgetsVisible) panels.push("welcome-closed");
     }
     return panels.join(",");
-  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed]);
+  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, layoutMode]);
 
   return {
     generateDynamicLayout,
