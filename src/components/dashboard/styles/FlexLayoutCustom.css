@@ -14,6 +14,7 @@
 .flexlayout__splitter {
   background: var(--border-color) !important;
   opacity: 1 !important;
+  width: 1px !important; /* Thin splitter */
 }
 
 .flexlayout__splitter:hover {
@@ -21,7 +22,8 @@
 }
 
 .flexlayout__tabset {
-  background: var(--bg-secondary) !important;
+  background: transparent !important;
+  border: 1px solid var(--border-color) !important; /* Single line border */
 }
 
 .flexlayout__tabset_header {
@@ -29,16 +31,11 @@
   border-bottom: 1px solid var(--border-color) !important;
   min-height: 36px !important;
   height: 36px !important;
+  padding: 0 8px !important; /* Minimal padding */
 }
 
 .flexlayout__tab {
-  background: var(--bg-tertiary) !important;
-  border: 1px solid var(--border-color) !important;
-  color: var(--text-primary) !important;
-  font-weight: 500 !important;
-  padding: 8px 16px !important;
-  border-radius: 4px 4px 0 0 !important;
-  margin-right: 2px !important;
+  display: none !important; /* Hide tab buttons since we only use toolbar */
 }
 
 .flexlayout__tab_button {
@@ -77,6 +74,7 @@
 .flexlayout__tabset_content {
   background: var(--bg-primary) !important;
   overflow: auto !important;
+  padding: 0 !important; /* No padding in content area */
 }
 
 .flexlayout__tab_toolbar {
@@ -167,15 +165,16 @@
   width: 28px !important;
   height: 28px !important;
   border: 1px solid var(--border-color) !important;
-  border-radius: 6px !important;
-  background: var(--bg-tertiary) !important;
+  border-radius: 4px !important;
+  background: transparent !important;
   color: var(--text-secondary) !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
   transition: all 0.2s ease !important;
-  margin: 0 4px !important;
+  margin: 0 2px !important;
+  padding: 0 !important;
 }
 
 .flexlayout__tab_toolbar_button:hover {
