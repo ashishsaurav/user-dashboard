@@ -129,20 +129,6 @@ export class DockTabFactory {
               <HamburgerIcon />
             </button>
             
-            {/* Layout Toggle - Show when both panels are visible */}
-            {selectedView && reportsVisible && widgetsVisible && (
-              <button
-                className="tab-action-btn layout-toggle-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  actions.onToggleLayout();
-                }}
-                title={layoutMode === 'horizontal' ? 'Switch to Vertical Layout' : 'Switch to Horizontal Layout'}
-              >
-                {layoutMode === 'horizontal' ? <LayoutVerticalIcon /> : <LayoutHorizontalIcon />}
-              </button>
-            )}
-            
             {/* Quick Action Buttons - Always show */}
             {selectedView && !reportsVisible && (
               <button

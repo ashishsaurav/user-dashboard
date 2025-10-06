@@ -70,6 +70,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Resize observer ref for navigation panel width detection
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const isManualToggleRef = useRef<boolean>(false);
+  const isLayoutChangingRef = useRef<boolean>(false);
 
   // State management for views, viewGroups, and navigation settings
   const [views, setViews] = useState<View[]>(() => {
@@ -188,18 +189,48 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Enhanced view selection handler - auto-show sections when view selected
   const handleViewSelect = (view: View) => {
     console.log("View selected:", view.name);
+    
+    // Mark as layout changing to prevent auto-collapse
+    isLayoutChangingRef.current = true;
+    
     setSelectedView(view);
 
     // Auto-show both sections when a view is selected
     setReportsVisible(true);
     setWidgetsVisible(true);
+    
+    // Reset layout changing flag after animation completes
+    setTimeout(() => {
+      isLayoutChangingRef.current = false;
+    }, 500);
   };
 
   // Section handlers
-  const handleCloseReports = () => setReportsVisible(false);
-  const handleCloseWidgets = () => setWidgetsVisible(false);
-  const handleReopenReports = () => selectedView && setReportsVisible(true);
-  const handleReopenWidgets = () => selectedView && setWidgetsVisible(true);
+  const handleCloseReports = () => {
+    isLayoutChangingRef.current = true;
+    setReportsVisible(false);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
+  
+  const handleCloseWidgets = () => {
+    isLayoutChangingRef.current = true;
+    setWidgetsVisible(false);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
+  
+  const handleReopenReports = () => {
+    if (!selectedView) return;
+    isLayoutChangingRef.current = true;
+    setReportsVisible(true);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
+  
+  const handleReopenWidgets = () => {
+    if (!selectedView) return;
+    isLayoutChangingRef.current = true;
+    setWidgetsVisible(true);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
 
   // Content management handlers
   const handleAddReportsToView = (reports: Report[]) => {
@@ -528,20 +559,26 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           
           console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
           
-          // Only auto-toggle if this isn't from a manual button toggle
-          if (!isManualToggleRef.current) {
-            // Auto-collapse if width is below collapse threshold
-            if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
-              console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
-              setIsDockCollapsed(true);
-            }
-            // Auto-expand if width is above expand threshold
-            else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
-              console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
-              setIsDockCollapsed(false);
+          // Only auto-toggle if this isn't from a manual button toggle or layout change
+          if (!isManualToggleRef.current && !isLayoutChangingRef.current) {
+            // Only trigger auto-collapse/expand if width is stable
+            // Ignore transient width changes during layout updates
+            const isStableWidth = width > 50; // Ignore very small transient widths
+            
+            if (isStableWidth) {
+              // Auto-collapse if width is below collapse threshold
+              if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
+                console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+                setIsDockCollapsed(true);
+              }
+              // Auto-expand if width is above expand threshold
+              else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
+                console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+                setIsDockCollapsed(false);
+              }
             }
           } else {
-            console.log('Manual toggle active, skipping auto-toggle');
+            console.log('Manual toggle or layout change active, skipping auto-toggle');
           }
           
           // Reset manual toggle flag after a short delay
