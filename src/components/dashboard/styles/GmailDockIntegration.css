@@ -198,11 +198,10 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
-/* Navigation panel specific styling in dock - prevent width changes */
+/* Navigation panel specific styling in dock - let rc-dock control flex for maximize/minimize */
 .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #ffffff) !important;
-  flex-shrink: 0 !important;
-  flex-grow: 0 !important;
+  /* Removed flex-shrink and flex-grow !important to allow rc-dock to control sizing */
 }
 
 .dock-panel[data-dock-id="navigation"] .dock-panel-content {
@@ -227,8 +226,7 @@
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #0f172a) !important;
-  flex-shrink: 0 !important;
-  flex-grow: 0 !important;
+  /* Removed flex-shrink and flex-grow !important to allow rc-dock to control sizing */
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-panel-content {
@@ -270,9 +268,9 @@
   display: none;
 }
 
-/* Smooth transitions */
-.dock-panel {
+/* Smooth transitions disabled - let rc-dock handle all animations for maximize/minimize */
+/* .dock-panel[data-dock-id="navigation"] {
   transition: width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
               min-width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1),
               max-width 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-}
+} */
