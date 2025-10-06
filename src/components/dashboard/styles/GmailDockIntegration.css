@@ -199,22 +199,23 @@
 }
 
 /* Navigation panel specific styling in dock - Allow resizing */
-.dock-panel[data-dock-id="navigation"] {
+.dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) {
   background: var(--bg-primary, #ffffff) !important;
-  width: 250px;  /* Default width */
+  width: 250px !important;  /* Force 250px when expanded */
+  min-width: 200px;
+  max-width: 400px;
+  flex: 0 0 250px !important;
+}
+
+.dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-panel-content {
+  width: 100% !important;
   min-width: 200px;
   max-width: 400px;
 }
 
-.dock-panel[data-dock-id="navigation"] .dock-panel-content {
-  width: 100%;
-  min-width: 200px;
-  max-width: 400px;
-}
-
-.dock-panel[data-dock-id="navigation"] .dock-tab-pane {
+.dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-tab-pane {
   background: var(--bg-primary, #ffffff) !important;
-  width: 100%;
+  width: 100% !important;
 }
 
 /* Collapsed navigation panel in dock */
@@ -251,22 +252,23 @@
   max-width: 50px !important;
 }
 
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) {
   background: var(--bg-primary, #0f172a) !important;
-  width: 250px;  /* Default width */
+  width: 250px !important;  /* Force 250px when expanded */
+  min-width: 200px;
+  max-width: 400px;
+  flex: 0 0 250px !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-panel-content {
+  width: 100% !important;
   min-width: 200px;
   max-width: 400px;
 }
 
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-panel-content {
-  width: 100%;
-  min-width: 200px;
-  max-width: 400px;
-}
-
-[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"]:not([data-collapsed="true"]) .dock-tab-pane {
   background: var(--bg-primary, #0f172a) !important;
-  width: 100%;
+  width: 100% !important;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {

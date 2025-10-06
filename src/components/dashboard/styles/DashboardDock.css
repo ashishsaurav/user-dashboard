@@ -1317,22 +1317,22 @@
   z-index: 1;
 }
 
-/* Navigation panel width - allow resizing when expanded */
-.dock-layout .dock-panel:first-child {
-  width: 250px;  /* Default width */
+/* Navigation panel width - force 250px when expanded (not collapsed) */
+.dock-layout .dock-panel:first-child:not([data-collapsed="true"]) {
+  width: 250px !important;  /* Force 250px when expanded */
   min-width: 200px;
   max-width: 400px;
-  flex: 0 0 250px;
+  flex: 0 0 250px !important;
 }
 
-.dock-layout .dock-panel:first-child .dock-panel-content {
-  width: 100%;
+.dock-layout .dock-panel:first-child:not([data-collapsed="true"]) .dock-panel-content {
+  width: 100% !important;
   min-width: 200px;
   max-width: 400px;
 }
 
-.dock-layout .dock-panel:first-child .dock-tab-pane {
-  width: 100%;
+.dock-layout .dock-panel:first-child:not([data-collapsed="true"]) .dock-tab-pane {
+  width: 100% !important;
   min-width: inherit;
   max-width: inherit;
 }
