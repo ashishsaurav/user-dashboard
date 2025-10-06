@@ -1367,7 +1367,7 @@
 /* Enhanced divider styling for horizontal resizing */
 .dock-layout .dock-divider {
   background: var(--border-color) !important;
-  width: 4px !important;
+  width: 1px !important;
   cursor: ew-resize !important;
   transition: all 0.2s ease !important;
   flex: 0 0 auto !important;
@@ -1377,7 +1377,7 @@
 /* Ensure dividers in horizontal boxes stay vertical */
 .dock-layout .dock-hbox > .dock-divider,
 .dock-layout .dock-box:not(.dock-vbox) > .dock-divider {
-  width: 4px !important;
+  width: 1px !important;
   height: 100% !important;
   cursor: ew-resize !important;
 }
@@ -1399,7 +1399,7 @@
 
 .dock-layout .dock-divider:hover {
   background: var(--primary-color) !important;
-  width: 6px !important;
+  width: 1px !important;
   box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
 }
 
@@ -1426,9 +1426,9 @@
 .dock-layout .dock-vbox > .dock-divider,
 .dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider,
 .dock-layout div[data-mode="vertical"] > .dock-divider {
-  height: 4px !important;
+  height: 1px !important;
   width: 100% !important;
-  min-height: 4px !important;
+  min-height: 1px !important;
   cursor: ns-resize !important;
   background: var(--border-color) !important;
   transition: all 0.2s ease !important;
@@ -1439,8 +1439,8 @@
 .dock-layout .dock-vbox > .dock-divider:hover,
 .dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider:hover,
 .dock-layout div[data-mode="vertical"] > .dock-divider:hover {
-  height: 6px !important;
-  min-height: 6px !important;
+  height: 1px !important;
+  min-height: 1px !important;
   background: var(--primary-color) !important;
   box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
 }
@@ -2300,12 +2300,12 @@
   }
   
   .dock-layout .dock-divider {
-    width: 6px !important;
+    width: 1px !important;
   }
   
   .dock-layout .dock-vbox > .dock-divider,
   .dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider {
-    height: 6px !important;
+    height: 1px !important;
   }
 
   .welcome-content {
