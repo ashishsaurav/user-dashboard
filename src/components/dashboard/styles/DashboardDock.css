@@ -1272,19 +1272,6 @@
   box-shadow: 0 4px 8px rgba(79, 70, 229, 0.2) !important;
 }
 
-/* Ensure panels can be maximized/minimized properly */
-.dock-layout .dock-panel {
-  transition: none !important;
-}
-
-.dock-layout .dock-panel.dock-panel-max {
-  transition: none !important;
-  flex: 1 1 100% !important;
-  width: 100% !important;
-  min-width: 100% !important;
-  max-width: 100% !important;
-}
-
 /* Custom button icons using pseudo-elements */
 .dock-layout .dock-panel-max-btn::before {
   content: '' !important;
@@ -1400,8 +1387,7 @@
 .dock-layout .dock-vbox > .dock-panel,
 .dock-layout div[data-mode="vertical"] > .dock-panel {
   min-height: 200px;
-  flex-shrink: 0;
-  flex-grow: 0;
+  /* Removed flex constraints to allow rc-dock maximize/minimize */
 }
 
 .dock-layout .dock-vbox,
@@ -1690,10 +1676,10 @@
   flex: 1;
 }
 
-/* Layout transition animations */
-.dock-layout .dock-panel {
+/* Layout transition animations - disabled to prevent interference with rc-dock maximize/minimize */
+/* .dock-layout .dock-panel {
   transition: width 0.3s ease, opacity 0.2s ease;
-}
+} */
 
 .dock-layout .dock-panel.closing {
   opacity: 0;
