@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import * as FlexLayout from "flexlayout-react";
-import "flexlayout-react/style/light.css";
+import "flexlayout-react/style/dark.css";
 import {
   User,
   View,

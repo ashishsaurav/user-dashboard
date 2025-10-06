@@ -89,6 +89,25 @@
   overflow: auto !important;
   display: block !important;
   visibility: visible !important;
+  position: relative !important;
+}
+
+/* Force visibility of all child elements */
+.flexlayout__tabset_content > * {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.flexlayout__tab_button_content {
+  display: none !important; /* Hide the tab name text */
+}
+
+/* Ensure toolbar buttons are visible */
+.flexlayout__tabset_header_buttons {
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
 }
 
 .flexlayout__tab_toolbar {
