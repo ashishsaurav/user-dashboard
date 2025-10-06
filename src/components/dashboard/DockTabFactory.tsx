@@ -167,6 +167,8 @@ export class DockTabFactory {
       ),
       content,
       closable: false,
+      minWidth: 59,
+      minHeight: 100,
     };
   }
 
@@ -205,6 +207,8 @@ export class DockTabFactory {
       ),
       content,
       closable: false,
+      minWidth: 200,
+      minHeight: 150,
     };
   }
 
@@ -243,6 +247,8 @@ export class DockTabFactory {
       ),
       content,
       closable: false,
+      minWidth: 200,
+      minHeight: 150,
     };
   }
 
@@ -262,6 +268,8 @@ export class DockTabFactory {
       ),
       content,
       closable: false,
+      minWidth: 200,
+      minHeight: 150,
     };
   }
 }

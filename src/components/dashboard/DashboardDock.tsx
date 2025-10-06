@@ -506,20 +506,40 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       resizeObserverRef.current = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const width = entry.contentRect.width;
+          const height = entry.contentRect.height;
           
-          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
+          // Detect if panel is in vertical layout (height > width means horizontal bar)
+          const isVerticalStacked = height < width;
+          const dimensionToCheck = isVerticalStacked ? height : width;
+          
+          console.log(`Navigation panel - Width: ${width}px, Height: ${height}px, Vertical: ${isVerticalStacked}, Collapsed: ${isDockCollapsed}`);
           
           // Only auto-toggle if this isn't from a manual button toggle
           if (!isManualToggleRef.current) {
-            // Auto-collapse if width is below collapse threshold
-            if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
-              console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
-              setIsDockCollapsed(true);
-            }
-            // Auto-expand if width is above expand threshold
-            else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
-              console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
-              setIsDockCollapsed(false);
+            // For vertical stacking, use height; for horizontal sidebar, use width
+            if (!isVerticalStacked) {
+              // Horizontal sidebar mode - check width
+              if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
+                console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+                setIsDockCollapsed(true);
+              }
+              else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
+                console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+                setIsDockCollapsed(false);
+              }
+            } else {
+              // Vertical stacked mode - check height
+              const heightCollapseThreshold = 100;
+              const heightExpandThreshold = 150;
+              
+              if (height < heightCollapseThreshold && !isDockCollapsed) {
+                console.log(`🔽 Auto-collapsing: height ${height}px < ${heightCollapseThreshold}px`);
+                setIsDockCollapsed(true);
+              }
+              else if (height > heightExpandThreshold && isDockCollapsed) {
+                console.log(`🔼 Auto-expanding: height ${height}px > ${heightExpandThreshold}px`);
+                setIsDockCollapsed(false);
+              }
             }
           } else {
             console.log('Manual toggle active, skipping auto-toggle');
