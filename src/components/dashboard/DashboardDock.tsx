@@ -514,6 +514,19 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     switch (component) {
       case "navigation":
         console.log('Rendering NavigationPanel - collapsed:', isDockCollapsed, 'viewGroups:', viewGroups.length, 'views:', views.length);
+        
+        // Test render to verify factory works
+        if (viewGroups.length === 0 || views.length === 0) {
+          return (
+            <div style={{ padding: '20px', background: '#f0f0f0', height: '100%' }}>
+              <h3>Navigation Panel</h3>
+              <p>ViewGroups: {viewGroups.length}</p>
+              <p>Views: {views.length}</p>
+              <p>User: {user.name}</p>
+            </div>
+          );
+        }
+        
         if (isDockCollapsed) {
           return (
             <div style={{ height: '100%', overflow: 'auto' }}>
@@ -586,7 +599,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       case "welcome":
         console.log('Rendering Welcome - selectedView:', selectedView?.name);
         return (
-          <div style={{ height: '100%', overflow: 'auto' }}>
+          <div style={{ height: '100%', overflow: 'auto', padding: '20px' }}>
             <WelcomeContent
               selectedView={selectedView}
               onReopenReports={handleReopenReports}
