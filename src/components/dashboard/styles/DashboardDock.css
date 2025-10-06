@@ -672,6 +672,14 @@
   position: relative;
 }
 
+.dock-tab > div{
+  padding: 0px !important;
+}
+
+.dock-top .dock-bar{
+  padding-left: 0px !important;
+}
+
 .dock-tab-header .tab-title {
   display: flex;
   align-items: center;
@@ -722,18 +730,7 @@
   color: var(--text-secondary);
 }
 
-/* Ensure consistent icon sizing in navigation header */
-.navigation-tab-header .tab-action-btn {
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-}
-
-.navigation-tab-header .tab-action-btn svg {
-  width: 16px !important;
-  height: 16px !important;
-}
+/* Navigation header button styling is handled in GmailDockIntegration.css */
 
 .tab-action-btn:hover {
   background: var(--bg-quaternary);
@@ -1027,7 +1024,12 @@
 .nav-group-icon {
   display: flex;
   align-items: center;
-  color: var(--text-muted);
+  color: var(--text-secondary, #475569);
+}
+
+.nav-group-icon svg {
+  stroke: currentColor;
+  fill: none;
 }
 
 .nav-group-title {
@@ -1315,11 +1317,22 @@
   z-index: 1;
 }
 
-/* Ensure navigation panel stays fixed width */
+/* Navigation panel - strict width control to prevent divider expansion */
+.dock-layout .dock-panel:first-child {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
 .dock-layout .dock-panel:first-child .dock-panel-content {
-  width: 320px !important;
-  min-width: 320px !important;
-  max-width: 320px !important;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+.dock-layout .dock-panel:first-child .dock-tab-pane {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 /* ==============================================
@@ -1802,6 +1815,10 @@
   color: white;
 }
 
+[data-theme="dark"] .nav-group-icon {
+  color: var(--text-secondary, #cbd5e1);
+}
+
 /* ==============================================
    PANEL CONTENT & MISC STYLES
    ============================================== */
@@ -2042,10 +2059,10 @@
     height: 10px;
   }
 
+  /* Mobile - let rc-dock control width */
   .dock-layout .dock-panel:first-child .dock-panel-content {
-    width: 280px !important;
-    min-width: 280px !important;
-    max-width: 280px !important;
+    width: 100%;
+    height: 100%;
   }
   
   .reports-tab-header .tab-actions,

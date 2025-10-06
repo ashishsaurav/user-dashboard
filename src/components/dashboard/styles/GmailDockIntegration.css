@@ -1,132 +1,151 @@
-/* Gmail-style dock tab integration - Match Navigation Panel */
+/* Gmail-style dock tab integration - Align with other dock headers */
 .dock-tab-header.dock-collapsible-header {
-  padding: 12px 16px;
+  padding: 0 2px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   background: var(--bg-primary, #ffffff);
   border-bottom: 1px solid var(--border-color, #e2e8f0);
-  min-height: 56px;
+  min-height: 36px;
   box-sizing: border-box;
 }
 
 .dock-tab-header.dock-collapsible-header .tab-title {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-weight: 600;
-  font-size: 16px;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 14px;
   color: var(--text-primary, #1e293b);
   flex: 1;
-  min-height: 32px;
+  min-height: 0;
+}
+
+/* When title is empty, hide it */
+.navigation-tab-header .tab-title:empty {
+  display: none;
 }
 
 .dock-tab-header.dock-collapsible-header .tab-actions {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   flex-shrink: 0;
-  min-height: 32px;
-  margin-left: 12px;
+  min-height: 0;
+  margin-left: auto;
+  padding-left: 0px;
 }
 
-/* Dock Header Action Buttons - Match Navigation Panel Style */
-.tab-action-btn {
+/* When no title, align actions to the left */
+.navigation-tab-header:has(.tab-title:empty) .tab-actions,
+.navigation-tab-header .tab-title:empty + .tab-actions {
+  margin-left: 0;
+}
+
+/* Dock Header Action Buttons - Match other dock headers */
+.navigation-tab-header .tab-action-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
   border-radius: 6px;
-  background: transparent;
+  background: var(--bg-tertiary);
   cursor: pointer;
   transition: all 0.2s ease;
-  color: var(--text-muted, #94a3b8);
+  color: var(--text-secondary);
   flex-shrink: 0;
 }
 
-.tab-action-btn svg {
-  width: 16px !important;
-  height: 16px !important;
+.navigation-tab-header .tab-action-btn svg {
+  width: 14px !important;
+  height: 14px !important;
   stroke: currentColor;
   fill: none;
   stroke-width: 2;
 }
 
-.tab-action-btn:hover {
-  background: var(--bg-tertiary, #f1f5f9);
-  color: var(--text-primary, #1e293b);
-  transform: scale(1.05);
+.navigation-tab-header .tab-action-btn:hover {
+  background: var(--bg-quaternary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+  transform: translateY(-1px);
 }
 
-.tab-action-btn:active {
+.navigation-tab-header .tab-action-btn:active {
   transform: scale(0.95);
 }
 
 /* Specific button styles */
-.tab-action-btn.collapse-toggle-btn {
+.navigation-tab-header .tab-action-btn.collapse-toggle-btn {
   color: var(--text-secondary, #475569);
 }
 
-.tab-action-btn.collapse-toggle-btn:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+.navigation-tab-header .tab-action-btn.collapse-toggle-btn:hover {
+  background: var(--bg-quaternary);
   color: var(--text-primary, #1e293b);
 }
 
-.tab-action-btn.show-section-btn {
+.navigation-tab-header .tab-action-btn.show-section-btn {
   color: var(--text-secondary, #475569);
 }
 
-.tab-action-btn.show-section-btn:hover {
-  background: var(--bg-tertiary, #f1f5f9);
+.navigation-tab-header .tab-action-btn.show-section-btn:hover {
+  background: var(--bg-quaternary);
   color: var(--text-primary, #1e293b);
 }
 
-.tab-action-btn.manage-btn,
-.tab-action-btn.settings-btn {
+.navigation-tab-header .tab-action-btn.manage-btn,
+.navigation-tab-header .tab-action-btn.settings-btn {
   color: var(--text-secondary, #475569);
 }
 
-.tab-action-btn.manage-btn:hover {
+.navigation-tab-header .tab-action-btn.manage-btn:hover {
   background: rgba(16, 185, 129, 0.1);
+  border-color: var(--success-color);
   color: var(--success-color, #10b981);
 }
 
-.tab-action-btn.settings-btn:hover {
+.navigation-tab-header .tab-action-btn.settings-btn:hover {
   background: rgba(79, 70, 229, 0.1);
+  border-color: var(--primary-color);
   color: var(--primary-color, #4f46e5);
 }
 
-/* Collapse icon animation */
-.tab-action-btn.collapse-toggle-btn svg {
-  transition: transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-}
-
-.dock-panel[data-collapsed="true"] .tab-action-btn.collapse-toggle-btn svg {
-  transform: rotate(180deg);
+/* Collapse icon - no animation needed for hamburger */
+.navigation-tab-header .tab-action-btn.collapse-toggle-btn svg {
+  transition: none;
 }
 
 /* Collapsed state adjustments */
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header {
   justify-content: center;
-  padding: 16px;
+  padding: 0 4px;
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
 }
 
-.dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-title span {
+.dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-title {
   display: none;
 }
 
 .dock-panel[data-collapsed="true"] .dock-tab-header.dock-collapsible-header .tab-actions {
-  position: absolute;
-  right: 16px; /* Increased margin */
-  top: 50%;
-  transform: translateY(-50%);
+  margin-left: 0;
+  padding-left: 0;
+  width: 100%;
+  justify-content: center;
 }
 
-/* Only show collapse button when collapsed */
+/* Hide all buttons except collapse button when collapsed */
 .dock-panel[data-collapsed="true"] .tab-action-btn:not(.collapse-toggle-btn) {
-  display: none;
+  display: none !important;
+}
+
+/* Ensure collapse button is centered and visible */
+.dock-panel[data-collapsed="true"] .tab-action-btn.collapse-toggle-btn {
+  margin: 0;
 }
 
 /* Dark theme for dock integration */
@@ -140,22 +159,27 @@
   color: var(--text-primary, #f8fafc);
 }
 
-[data-theme="dark"] .tab-action-btn {
+[data-theme="dark"] .navigation-tab-header .tab-action-btn {
+  background: var(--bg-tertiary, #334155);
+  border-color: var(--border-color, #334155);
   color: var(--text-muted, #64748b);
 }
 
-[data-theme="dark"] .tab-action-btn:hover {
-  background: var(--bg-tertiary, #334155);
+[data-theme="dark"] .navigation-tab-header .tab-action-btn:hover {
+  background: var(--bg-quaternary, #475569);
+  border-color: var(--border-hover, #475569);
   color: var(--text-primary, #f8fafc);
 }
 
-[data-theme="dark"] .tab-action-btn.manage-btn:hover {
+[data-theme="dark"] .navigation-tab-header .tab-action-btn.manage-btn:hover {
   background: rgba(52, 211, 153, 0.15);
+  border-color: var(--success-color, #34d399);
   color: var(--success-color, #34d399);
 }
 
-[data-theme="dark"] .tab-action-btn.settings-btn:hover {
+[data-theme="dark"] .navigation-tab-header .tab-action-btn.settings-btn:hover {
   background: rgba(129, 140, 248, 0.15);
+  border-color: var(--primary-color, #818cf8);
   color: var(--primary-color, #818cf8);
 }
 
@@ -174,22 +198,57 @@
   background: var(--bg-primary, #ffffff) !important;
 }
 
-/* Navigation panel specific styling in dock */
+/* Navigation panel specific styling in dock - prevent width changes */
 .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #ffffff) !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
+.dock-panel[data-dock-id="navigation"] .dock-panel-content {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #ffffff) !important;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
+
+/* Collapsed navigation panel in dock */
+.dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {
+  background: var(--bg-primary, #ffffff) !important;
+}
+
+/* Keep collapsed header styling */
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] {
   background: var(--bg-primary, #0f172a) !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+}
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-panel-content {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
 
 [data-theme="dark"] .dock-panel[data-dock-id="navigation"] .dock-tab-pane {
   background: var(--bg-primary, #0f172a) !important;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
 }
+
+[data-theme="dark"] .dock-panel[data-dock-id="navigation"] .collapsed-navigation-panel {
+  background: var(--bg-primary, #0f172a) !important;
+}
+
+/* Dark theme collapsed styling handled by layout manager */
 
 /* Horizontal dock adjustments */
 .dock-layout[data-dockmode="horizontal"] .gmail-navigation-panel {

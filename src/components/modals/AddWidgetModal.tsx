@@ -79,7 +79,7 @@ const AddWidgetModal: React.FC<AddWidgetModalProps> = ({
 
   return (
     <AddItemModal
-      title="Widgets"
+      title="Widget"
       items={filteredWidgets}
       selectedItems={selectedWidgets}
       onToggleSelection={handleToggleSelection}

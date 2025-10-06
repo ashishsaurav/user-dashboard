@@ -181,12 +181,34 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   };
 
   const handleConfirmDeleteView = () => {
-    if (!deletingView) return;
-    handleDeleteView(deletingView);
+    if (!deletingView || !onUpdateViews || !onUpdateViewGroups) return;
+    
+    // Remove view from all view groups
+    const updatedViewGroups = allViewGroups.map(vg => ({
+      ...vg,
+      viewIds: vg.viewIds.filter(id => id !== deletingView.id)
+    }));
+    
+    // Remove view from views array
+    const updatedViews = allViews.filter(v => v.id !== deletingView.id);
+    
+    onUpdateViews(updatedViews);
+    onUpdateViewGroups(updatedViewGroups);
     setDeletingView(null);
+    showSuccess("View deleted successfully");
   };
 
   const canModify = user?.role === "admin" || user?.role === "user";
+
+  // Check if any modal is open
+  const hasOpenModal = editingView || editingViewGroup || deletingView || deletingViewGroup;
+
+  // Handle mouse leave - don't close if modal is open
+  const handleMouseLeave = (e: React.MouseEvent) => {
+    if (!hasOpenModal && onMouseLeave) {
+      onMouseLeave();
+    }
+  };
 
   return (
     <>
@@ -199,7 +221,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
           zIndex: 1000,
         }}
         onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        onMouseLeave={handleMouseLeave}
       >
         {/* Replicate exact NavigationPanel structure */}
         <div className="navigation-popup-content">
