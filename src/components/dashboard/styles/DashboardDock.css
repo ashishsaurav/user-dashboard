@@ -48,22 +48,35 @@
 /* Main Container */
 .dashboard-dock.modern {
   height: 100vh;
+  width: 100vw;
   background: var(--bg-primary);
   color: var(--text-primary);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  overflow: hidden;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .dock-container.full-height {
-  height: 100vh;
+  height: 100%;
+  width: 100%;
   background: var(--bg-primary);
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* Generic dock container for theme switching */
 .dock-container {
-  height: 100vh;
+  height: 100%;
+  width: 100%;
   background: var(--bg-primary);
-  position: relative;
+  position: absolute;
 }
 
 /* Dock Layout Theme Classes */
@@ -1177,6 +1190,8 @@
 
 .dock-layout {
   background: var(--bg-primary) !important;
+  width: 100% !important;
+  height: 100% !important;
 }
 
 .dock-layout .dock-panel {
@@ -1290,35 +1305,45 @@
 }
 
 /* ==============================================
-   NAVIGATION PANEL NON-RESIZABLE - UPDATED TO 1PX
+   NAVIGATION PANEL RESIZING ENABLED
    ============================================== */
 
-/* Hide resize divider for navigation panel */
+/* Enable resize divider for navigation panel with visual feedback */
 .dock-layout .dock-box > .dock-divider:first-of-type {
-  display: none !important;
-  width: 0 !important;
-  cursor: default !important;
-}
-
-/* Make navigation panel non-interactive for resizing */
-.dock-layout .dock-panel:first-child {
+  width: 4px !important;
+  cursor: ew-resize !important;
+  background: var(--border-color) !important;
+  transition: all 0.2s ease !important;
   position: relative;
 }
 
-.dock-layout .dock-panel:first-child::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 1px; /* UPDATED: From 4px to 1px */
-  background: var(--border-color);
-  pointer-events: none;
-  z-index: 1;
+.dock-layout .dock-box > .dock-divider:first-of-type:hover {
+  background: var(--primary-color) !important;
+  width: 6px !important;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
 }
 
-/* Navigation panel - strict width control to prevent divider expansion */
+.dock-layout .dock-box > .dock-divider:first-of-type::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dock-layout .dock-box > .dock-divider:first-of-type:hover::before {
+  opacity: 1;
+}
+
+/* Navigation panel - allow flexible resizing */
 .dock-layout .dock-panel:first-child {
+  position: relative;
   flex-shrink: 0 !important;
   flex-grow: 0 !important;
 }
@@ -1336,33 +1361,110 @@
 }
 
 /* ==============================================
-   IMPROVED DOCK LAYOUT STYLING - UPDATED TO 1PX DIVIDERS
+   IMPROVED DOCK LAYOUT STYLING - ENHANCED DIVIDERS
    ============================================== */
 
-/* Better divider styling - UPDATED TO 1PX */
+/* Enhanced divider styling for horizontal resizing */
 .dock-layout .dock-divider {
   background: var(--border-color) !important;
-  width: 1px !important; /* UPDATED: From 4px to 1px */
+  width: 1px !important;
   cursor: ew-resize !important;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease !important;
   flex: 0 0 auto !important;
+  position: relative !important;
+}
+
+/* Ensure dividers in horizontal boxes stay vertical */
+.dock-layout .dock-hbox > .dock-divider,
+.dock-layout .dock-box:not(.dock-vbox) > .dock-divider {
+  width: 1px !important;
+  height: 100% !important;
+  cursor: ew-resize !important;
+}
+
+/* Ensure panels in vertical layouts can resize properly */
+.dock-layout .dock-vbox > .dock-panel,
+.dock-layout div[data-mode="vertical"] > .dock-panel {
+  min-height: 200px;
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+.dock-layout .dock-vbox,
+.dock-layout div[data-mode="vertical"] {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
 }
 
 .dock-layout .dock-divider:hover {
   background: var(--primary-color) !important;
-  width: 2px !important; /* UPDATED: Slightly thicker on hover */
+  width: 1px !important;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
 }
 
-/* Splitter - UPDATED TO 1PX */
+/* Visual handle for dividers */
+.dock-layout .dock-divider::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 2px;
+  height: 40px;
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.dock-layout .dock-divider:hover::before {
+  opacity: 1;
+}
+
+/* Vertical dividers for vertical layouts */
+.dock-layout .dock-vbox > .dock-divider,
+.dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider,
+.dock-layout div[data-mode="vertical"] > .dock-divider {
+  height: 1px !important;
+  width: 100% !important;
+  min-height: 1px !important;
+  cursor: ns-resize !important;
+  background: var(--border-color) !important;
+  transition: all 0.2s ease !important;
+  position: relative !important;
+  flex: 0 0 auto !important;
+}
+
+.dock-layout .dock-vbox > .dock-divider:hover,
+.dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider:hover,
+.dock-layout div[data-mode="vertical"] > .dock-divider:hover {
+  height: 1px !important;
+  min-height: 1px !important;
+  background: var(--primary-color) !important;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
+}
+
+.dock-layout .dock-vbox > .dock-divider::before,
+.dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider::before,
+.dock-layout div[data-mode="vertical"] > .dock-divider::before {
+  width: 40px;
+  height: 2px;
+  left: 50%;
+  top: 50%;
+}
+
+/* Splitter styling */
 .dock-layout .dock-splitter {
   background: var(--border-color) !important;
-  width: 1px !important; /* UPDATED: From 2px to 1px */
+  width: 4px !important;
   transition: all 0.2s ease !important;
 }
 
 .dock-layout .dock-splitter:hover {
   background: var(--primary-color) !important;
-  width: 2px !important; /* UPDATED: From 4px to 2px */
+  width: 6px !important;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
 }
 
 /* Extra Content Area */
@@ -1462,16 +1564,18 @@
   border-color: var(--border-color);
 }
 
-[data-theme="dark"] .dock-layout .dock-panel:first-child::after {
-  background: var(--border-color);
-}
-
 [data-theme="dark"] .dock-layout .dock-divider {
   background: var(--border-color) !important;
 }
 
 [data-theme="dark"] .dock-layout .dock-divider:hover {
   background: var(--primary-color) !important;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
+}
+
+[data-theme="dark"] .dock-layout .dock-box > .dock-divider:first-of-type:hover {
+  background: var(--primary-color) !important;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
 }
 
 [data-theme="dark"] .tab-action-btn.close-btn {
@@ -2196,11 +2300,12 @@
   }
   
   .dock-layout .dock-divider {
-    width: 2px !important; /* UPDATED: From 6px to 2px */
+    width: 1px !important;
   }
   
-  .dock-layout .dock-panel:first-child::after {
-    width: 2px; /* UPDATED: From 6px to 2px */
+  .dock-layout .dock-vbox > .dock-divider,
+  .dock-layout .dock-box[data-dockbox-mode="vertical"] > .dock-divider {
+    height: 1px !important;
   }
 
   .welcome-content {

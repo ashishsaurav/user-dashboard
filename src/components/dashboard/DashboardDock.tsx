@@ -54,6 +54,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Navigation state - dock level collapse
   const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+  
+  // Layout mode state - horizontal or vertical
+  const [layoutMode, setLayoutMode] = useState<'horizontal' | 'vertical'>('horizontal');
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
@@ -67,6 +70,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Resize observer ref for navigation panel width detection
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const isManualToggleRef = useRef<boolean>(false);
+  const isLayoutChangingRef = useRef<boolean>(false);
 
   // State management for views, viewGroups, and navigation settings
   const [views, setViews] = useState<View[]>(() => {
@@ -185,18 +189,48 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Enhanced view selection handler - auto-show sections when view selected
   const handleViewSelect = (view: View) => {
     console.log("View selected:", view.name);
+    
+    // Mark as layout changing to prevent auto-collapse
+    isLayoutChangingRef.current = true;
+    
     setSelectedView(view);
 
     // Auto-show both sections when a view is selected
     setReportsVisible(true);
     setWidgetsVisible(true);
+    
+    // Reset layout changing flag after animation completes
+    setTimeout(() => {
+      isLayoutChangingRef.current = false;
+    }, 500);
   };
 
   // Section handlers
-  const handleCloseReports = () => setReportsVisible(false);
-  const handleCloseWidgets = () => setWidgetsVisible(false);
-  const handleReopenReports = () => selectedView && setReportsVisible(true);
-  const handleReopenWidgets = () => selectedView && setWidgetsVisible(true);
+  const handleCloseReports = () => {
+    isLayoutChangingRef.current = true;
+    setReportsVisible(false);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
+  
+  const handleCloseWidgets = () => {
+    isLayoutChangingRef.current = true;
+    setWidgetsVisible(false);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
+  
+  const handleReopenReports = () => {
+    if (!selectedView) return;
+    isLayoutChangingRef.current = true;
+    setReportsVisible(true);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
+  
+  const handleReopenWidgets = () => {
+    if (!selectedView) return;
+    isLayoutChangingRef.current = true;
+    setWidgetsVisible(true);
+    setTimeout(() => { isLayoutChangingRef.current = false; }, 500);
+  };
 
   // Content management handlers
   const handleAddReportsToView = (reports: Report[]) => {
@@ -344,6 +378,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     navSettings,
     selectedView,
     navigationUpdateTrigger,
+    layoutMode,
   ]);
 
   const createReportsContent = () => (
@@ -383,6 +418,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     isManualToggleRef.current = true;
     setIsDockCollapsed(prev => !prev);
   }, []);
+  
+  // Handle layout mode toggle
+  const handleToggleLayout = useCallback(() => {
+    setLayoutMode(prev => prev === 'horizontal' ? 'vertical' : 'horizontal');
+  }, []);
 
   // Dock layout manager
   const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
@@ -391,6 +431,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     widgetsVisible,
     isAdmin: user.role === "admin",
     isDockCollapsed: isDockCollapsed,
+    layoutMode: layoutMode,
     actions: {
       onToggleCollapse: handleToggleCollapse,
       onNavigationManage: () => setShowNavigationModal(true),
@@ -418,21 +459,29 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       const currentLayout = dockLayoutRef.current.getLayout();
 
       if (currentLayout?.dockbox?.children) {
-        currentLayout.dockbox.children.forEach((panel: any) => {
-          if (panel.tabs && panel.tabs[0]) {
-            const tabId = panel.tabs[0].id;
+        const updatePanelContent = (panels: any[]) => {
+          panels.forEach((panel: any) => {
+            if (panel.tabs && panel.tabs[0]) {
+              const tabId = panel.tabs[0].id;
 
-            if (tabId === "navigation") {
-              panel.tabs[0].content = createNavigationContent();
-            } else if (tabId === "reports") {
-              panel.tabs[0].content = createReportsContent();
-            } else if (tabId === "widgets") {
-              panel.tabs[0].content = createWidgetsContent();
-            } else if (tabId.startsWith("welcome")) {
-              panel.tabs[0].content = createWelcomeContent();
+              if (tabId === "navigation") {
+                panel.tabs[0].content = createNavigationContent();
+              } else if (tabId === "reports") {
+                panel.tabs[0].content = createReportsContent();
+              } else if (tabId === "widgets") {
+                panel.tabs[0].content = createWidgetsContent();
+              } else if (tabId.startsWith("welcome")) {
+                panel.tabs[0].content = createWelcomeContent();
+              }
             }
-          }
-        });
+            // Recursively update nested panels (for vertical layouts)
+            if (panel.children) {
+              updatePanelContent(panel.children);
+            }
+          });
+        };
+        
+        updatePanelContent(currentLayout.dockbox.children);
 
         dockLayoutRef.current.loadLayout(currentLayout);
       }
@@ -509,20 +558,26 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           
           console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
           
-          // Only auto-toggle if this isn't from a manual button toggle
-          if (!isManualToggleRef.current) {
-            // Auto-collapse if width is below collapse threshold
-            if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
-              console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
-              setIsDockCollapsed(true);
-            }
-            // Auto-expand if width is above expand threshold
-            else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
-              console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
-              setIsDockCollapsed(false);
+          // Only auto-toggle if this isn't from a manual button toggle or layout change
+          if (!isManualToggleRef.current && !isLayoutChangingRef.current) {
+            // Only trigger auto-collapse/expand if width is stable
+            // Ignore transient width changes during layout updates
+            const isStableWidth = width > 50; // Ignore very small transient widths
+            
+            if (isStableWidth) {
+              // Auto-collapse if width is below collapse threshold
+              if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
+                console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+                setIsDockCollapsed(true);
+              }
+              // Auto-expand if width is above expand threshold
+              else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
+                console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+                setIsDockCollapsed(false);
+              }
             }
           } else {
-            console.log('Manual toggle active, skipping auto-toggle');
+            console.log('Manual toggle or layout change active, skipping auto-toggle');
           }
           
           // Reset manual toggle flag after a short delay
@@ -570,7 +625,41 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed]);
 
-  // Smart layout management
+  // Handle navigation panel collapse/expand without full layout reload
+  useEffect(() => {
+    if (!dockLayoutRef.current) return;
+
+    const currentLayout = dockLayoutRef.current.getLayout();
+    if (!currentLayout?.dockbox?.children?.[0]) return;
+
+    const navPanel = currentLayout.dockbox.children[0];
+    const newSize = isDockCollapsed 
+      ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH 
+      : LAYOUT_SIZES.NAVIGATION_PANEL_WIDTH;
+
+    // Only update size if it's different
+    if (navPanel.size !== newSize) {
+      navPanel.size = newSize;
+      dockLayoutRef.current.loadLayout(currentLayout);
+      
+      // Apply collapsed state attribute
+      setTimeout(() => {
+        const dockbox = document.querySelector('.dock-box');
+        if (dockbox) {
+          const navigationPanel = dockbox.querySelector('.dock-panel');
+          if (navigationPanel) {
+            if (isDockCollapsed) {
+              navigationPanel.setAttribute('data-collapsed', 'true');
+            } else {
+              navigationPanel.removeAttribute('data-collapsed');
+            }
+          }
+        }
+      }, 0);
+    }
+  }, [isDockCollapsed]);
+
+  // Smart layout management - only reload on structural changes
   useEffect(() => {
     if (!dockLayoutRef.current) return;
 
@@ -600,7 +689,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log("Only content changed, updating content");
       updateLayoutContent();
     }
-  }, [selectedView, reportsVisible, widgetsVisible, isDockCollapsed, navigationUpdateTrigger]);
+  }, [selectedView, reportsVisible, widgetsVisible, layoutMode, navigationUpdateTrigger]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
