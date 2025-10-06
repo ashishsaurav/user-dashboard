@@ -304,17 +304,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     setIsDockCollapsed(prev => !prev);
   }, []);
 
-  // Custom tab header renderer with action buttons
-  const onRenderTabSet = (tabSetNode: FlexLayout.TabSetNode | FlexLayout.BorderNode, renderValues: any) => {
-    const selectedNode = tabSetNode.getSelectedNode();
+  // Custom tab renderer with action buttons (better than onRenderTabSet)
+  const onRenderTab = useCallback((node: FlexLayout.TabNode, renderValues: any) => {
+    const component = node.getComponent();
     
-    if (!selectedNode) return;
+    console.log('Rendering tab for component:', component);
     
-    const component = selectedNode.getComponent();
+    // Initialize buttons array
+    if (!renderValues.buttons) {
+      renderValues.buttons = [];
+    }
     
-    console.log('Rendering tabset for component:', component);
-    
-    // Add custom buttons based on which tab is active
     const buttons: React.ReactNode[] = [];
 
     if (component === "navigation") {
@@ -490,14 +490,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       );
     }
 
-    // Add buttons to the toolbar
-    if (!Array.isArray(renderValues.buttons)) {
-      renderValues.buttons = [];
-    }
+    // Add buttons to the tab
     buttons.forEach(button => renderValues.buttons.push(button));
     
-    console.log(`Added ${buttons.length} buttons for ${component}`);
-  };
+    console.log(`Added ${buttons.length} buttons for tab: ${component}`);
+  }, [isDockCollapsed, selectedView, reportsVisible, widgetsVisible, user.role, 
+      handleToggleCollapse, handleReopenReports, handleReopenWidgets, 
+      handleCloseReports, handleCloseWidgets]);
 
   // FlexLayout factory to render components
   const factory = (node: FlexLayout.TabNode) => {
@@ -688,7 +687,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           ref={layoutRef}
           model={model}
           factory={factory}
-          onRenderTabSet={onRenderTabSet}
+          onRenderTab={onRenderTab}
         />
       </div>
 
