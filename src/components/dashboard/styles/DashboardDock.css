@@ -1202,6 +1202,30 @@
   overflow: hidden !important;
 }
 
+/* Fix floating panel resizing - override flex for absolute positioned panels */
+.dock-layout .dock-panel[style*="position: absolute"],
+.dock-layout .dock-panel[style*="position: fixed"] {
+  flex: none !important;
+  /* Ensure resize handles work properly */
+  min-width: auto !important;
+  min-height: auto !important;
+}
+
+/* Ensure floating panels can resize properly */
+.dock-layout .dock-panel[style*="left"][style*="top"] {
+  flex: none !important;
+  min-width: auto !important;
+  min-height: auto !important;
+}
+
+/* Floating panel specific styling - enhanced box shadow */
+.dock-layout .dock-panel[style*="z-index: 3"],
+.dock-layout .dock-panel[style*="z-index: 4"],
+.dock-layout .dock-panel[style*="z-index: 5"] {
+  box-shadow: var(--shadow-lg) !important;
+  flex: none !important;
+}
+
 .dock-layout .dock-bar {
   background: var(--bg-secondary) !important;
   border-bottom: 1px solid var(--border-color) !important;
