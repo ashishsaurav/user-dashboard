@@ -552,6 +552,20 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return panelWithNavContent as HTMLElement | null;
   }, []);
 
+  // Helper function to detect navigation panel position (left or right)
+  const detectNavigationPosition = useCallback(() => {
+    const navPanel = findNavigationPanel();
+    if (!navPanel) return;
+
+    const rect = navPanel.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const panelCenterX = rect.left + rect.width / 2;
+    
+    // If panel center is in left half of viewport, it's on the left
+    const position = panelCenterX < viewportWidth / 2 ? 'left' : 'right';
+    setNavPanelPosition(position);
+  }, [findNavigationPanel]);
+
   // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
     const setupResizeObserver = () => {
