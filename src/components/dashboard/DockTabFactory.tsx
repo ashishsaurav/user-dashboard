@@ -101,17 +101,19 @@ export class DockTabFactory {
         <div className="dock-tab-header navigation-tab-header dock-collapsible-header">
           <div className="tab-title"></div>
           <div className="tab-actions">
-            {/* Collapse/Expand Toggle - Always visible */}
-            <button
-              className="tab-action-btn collapse-toggle-btn"
-              onClick={(e) => {
-                e.stopPropagation();
-                actions.onToggleCollapse();
-              }}
-              title={isCollapsed ? "Expand navigation" : "Collapse navigation"}
-            >
-              <HamburgerIcon />
-            </button>
+            {/* Collapse/Expand Toggle - Only show when vertically oriented */}
+            {navOrientation === 'vertical' && (
+              <button
+                className="tab-action-btn collapse-toggle-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  actions.onToggleCollapse();
+                }}
+                title={isCollapsed ? "Expand navigation" : "Collapse navigation"}
+              >
+                <HamburgerIcon />
+              </button>
+            )}
             
             {/* Quick Action Buttons - Always show */}
             {selectedView && !reportsVisible && (

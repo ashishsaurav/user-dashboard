@@ -457,6 +457,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   }, []);
 
   // Dock layout manager
+<<<<<<< HEAD
   const { generateDynamicLayout, getCurrentLayoutStructure } =
     useDockLayoutManager({
       selectedView,
@@ -483,6 +484,34 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         welcome: createWelcomeContent(),
       },
     });
+=======
+  const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
+    selectedView,
+    reportsVisible,
+    widgetsVisible,
+    isAdmin: user.role === "admin",
+    isDockCollapsed: isDockCollapsed,
+    layoutMode: layoutMode,
+    navPanelOrientation: navPanelOrientation,
+    actions: {
+      onToggleCollapse: handleToggleCollapse,
+      onNavigationManage: () => setShowNavigationModal(true),
+      onSystemSettings: () => setShowManageModal(true),
+      onReopenReports: handleReopenReports,
+      onReopenWidgets: handleReopenWidgets,
+      onAddReport: () => setShowAddReportModal(true),
+      onAddWidget: () => setShowAddWidgetModal(true),
+      onCloseReports: handleCloseReports,
+      onCloseWidgets: handleCloseWidgets,
+    },
+    content: {
+      navigation: createNavigationContent(),
+      reports: createReportsContent(),
+      widgets: createWidgetsContent(),
+      welcome: createWelcomeContent(),
+    },
+  });
+>>>>>>> 64bbaae (feat: Hide collapse button when navigation is horizontally oriented)
 
   // Smart update that preserves RC-Dock internal state
   const updateLayoutContent = useCallback(() => {
@@ -723,6 +752,24 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     findNavigationPanel,
     detectNavigationPositionAndOrientation,
   ]);
+
+  // Detect navigation position and orientation on mount and when layout changes
+  useEffect(() => {
+    const detectWithRetry = () => {
+      detectNavigationPositionAndOrientation();
+    };
+    
+    // Run detection with retries
+    const timer1 = setTimeout(detectWithRetry, 100);
+    const timer2 = setTimeout(detectWithRetry, 500);
+    const timer3 = setTimeout(detectWithRetry, 1000);
+    
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+      clearTimeout(timer3);
+    };
+  }, [selectedView, reportsVisible, widgetsVisible, detectNavigationPositionAndOrientation]);
 
   // Apply collapsed state to navigation panel
   useEffect(() => {
