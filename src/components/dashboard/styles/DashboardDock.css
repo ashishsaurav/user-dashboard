@@ -1259,7 +1259,55 @@
    RC-DOCK DRAG & DROP - THEME FIX
    ============================================== */
 
-/* Fix drag drop indicator colors for light theme */
+/* Light Theme - Dragging States */
+
+/* Panel being dragged/dropped */
+.dock-layout .dock-panel.dock-panel-dropping,
+.dock-layout .dock-panel.dragging {
+  opacity: 0.9 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Drag layer (the ghost panel while dragging) */
+.dock-layout .dock-drag-layer {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
+  opacity: 0.95 !important;
+}
+
+.dock-layout .dock-drag-layer .dock-bar {
+  background: var(--bg-secondary) !important;
+  border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout .dock-drag-layer .dock-tab {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout .dock-drag-layer .dock-panel {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Divider when dragging starts */
+.dock-layout .dock-divider.drag-initiator {
+  background: var(--primary-color) !important;
+  width: 4px !important;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
+}
+
+/* Vertical divider when dragging */
+.dock-layout .dock-vbox > .dock-divider.drag-initiator {
+  height: 4px !important;
+  width: 100% !important;
+  box-shadow: 0 0 8px rgba(79, 70, 229, 0.4) !important;
+}
+
+/* Drop indicator (shows where panel will be dropped) */
 .dock-layout .dock-drop-indicator {
   background: var(--primary-color) !important;
   opacity: 0.5 !important;
@@ -1276,26 +1324,7 @@
   opacity: 0.6 !important;
 }
 
-/* Fix dock drag layer background */
-.dock-layout .dock-drag-layer {
-  background: var(--bg-primary) !important;
-  color: var(--text-primary) !important;
-  border: 1px solid var(--border-color) !important;
-  box-shadow: var(--shadow-lg) !important;
-}
-
-.dock-layout .dock-drag-layer .dock-tab {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-}
-
-/* Fix dragging panel header */
-.dock-layout .dock-drag-layer .dock-bar {
-  background: var(--bg-secondary) !important;
-  border-bottom-color: var(--border-color) !important;
-}
-
-/* Fix drag move indicators (top, bottom, left, right arrows) */
+/* Drop indicator box (arrows showing drop position) */
 .dock-layout .dock-drop-indicator-box {
   border: 2px solid var(--primary-color) !important;
   background: rgba(79, 70, 229, 0.1) !important;
@@ -1305,9 +1334,10 @@
   background: var(--primary-color) !important;
 }
 
-/* Fix floating panel drag layer */
+/* Floating panel while dragging */
 .dock-layout .dock-float-panel-dragging {
-  opacity: 0.8 !important;
+  opacity: 0.9 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
 }
 
 .dock-layout .dock-float-panel-dragging .dock-bar {
@@ -1315,30 +1345,89 @@
   color: var(--text-primary) !important;
 }
 
-/* Dark theme overrides for drag indicators */
-[data-theme="dark"] .dock-layout .dock-drop-indicator {
-  background: var(--primary-color) !important;
+/* ==============================================
+   DARK THEME - Dragging States
+   ============================================== */
+
+/* Panel being dragged/dropped - Dark theme */
+.dock-layout-dark .dock-panel.dock-panel-dropping,
+.dock-layout-dark .dock-panel.dragging {
+  opacity: 0.9 !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
-[data-theme="dark"] .dock-layout .dock-drop-square {
-  background: var(--primary-color) !important;
-  border-color: var(--primary-color) !important;
-}
-
-[data-theme="dark"] .dock-layout .dock-drop-indicator-box {
-  border-color: var(--primary-color) !important;
-  background: rgba(129, 140, 248, 0.15) !important;
-}
-
-[data-theme="dark"] .dock-layout .dock-drag-layer {
+/* Drag layer - Dark theme */
+.dock-layout-dark .dock-drag-layer {
   background: var(--bg-primary) !important;
   color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6) !important;
+}
+
+.dock-layout-dark .dock-drag-layer .dock-bar {
+  background: var(--bg-secondary) !important;
+  border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout-dark .dock-drag-layer .dock-tab {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout-dark .dock-drag-layer .dock-panel {
+  background: var(--bg-primary) !important;
   border-color: var(--border-color) !important;
 }
 
-[data-theme="dark"] .dock-layout .dock-drag-layer .dock-bar {
+/* Divider when dragging - Dark theme */
+.dock-layout-dark .dock-divider.drag-initiator {
+  background: var(--primary-color) !important;
+  width: 4px !important;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.5) !important;
+}
+
+.dock-layout-dark .dock-vbox > .dock-divider.drag-initiator {
+  height: 4px !important;
+  width: 100% !important;
+  box-shadow: 0 0 8px rgba(129, 140, 248, 0.5) !important;
+}
+
+/* Drop indicators - Dark theme */
+.dock-layout-dark .dock-drop-indicator {
+  background: var(--primary-color) !important;
+  opacity: 0.6 !important;
+}
+
+.dock-layout-dark .dock-drop-square {
+  background: var(--primary-color) !important;
+  border: 2px solid var(--primary-color) !important;
+  opacity: 0.85 !important;
+}
+
+.dock-layout-dark .dock-drop-edge {
+  background: var(--primary-color) !important;
+  opacity: 0.7 !important;
+}
+
+.dock-layout-dark .dock-drop-indicator-box {
+  border: 2px solid var(--primary-color) !important;
+  background: rgba(129, 140, 248, 0.15) !important;
+}
+
+.dock-layout-dark .dock-drop-indicator-box::before {
+  background: var(--primary-color) !important;
+}
+
+/* Floating panel - Dark theme */
+.dock-layout-dark .dock-float-panel-dragging {
+  opacity: 0.9 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7) !important;
+}
+
+.dock-layout-dark .dock-float-panel-dragging .dock-bar {
   background: var(--bg-secondary) !important;
-  border-bottom-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
 }
 
 /* Maximize/Minimize Buttons */
