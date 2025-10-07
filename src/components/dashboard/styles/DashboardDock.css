@@ -2717,23 +2717,6 @@
   border-color: var(--border-color) !important;
 }
 
-.dock-tab-btn {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color) !important;
-}
-
-.dock-tab-btn:hover {
-  background: var(--bg-tertiary) !important;
-  color: var(--text-primary) !important;
-}
-
-.dock-tab-active > .dock-tab-btn {
-  background: var(--bg-primary) !important;
-  color: var(--text-primary) !important;
-  border-bottom-color: transparent !important;
-}
-
 /* RC-Dock Dragging States - Light Theme */
 .dock-panel-dragging {
   background: var(--bg-secondary) !important;
@@ -2769,54 +2752,6 @@
   opacity: 0.4 !important;
 }
 
-/* RC-Dock Floating Panels */
-.dock-fbox {
-  background: var(--bg-primary) !important;
-  border: 1px solid var(--border-color) !important;
-  box-shadow: var(--shadow-xl) !important;
-  border-radius: 8px !important;
-  resize: both !important;
-  overflow: auto !important;
-}
-
-.dock-fbox .dock-panel-header {
-  background: var(--bg-primary) !important;
-  border-bottom: 1px solid var(--border-color) !important;
-}
-
-/* RC-Dock Maximize/Minimize Buttons */
-.dock-panel-max-btn,
-.dock-panel-min-btn {
-  background: var(--bg-tertiary) !important;
-  border: 1px solid var(--border-color) !important;
-  border-radius: 4px !important;
-  color: var(--text-secondary) !important;
-  transition: all 0.2s ease !important;
-}
-
-.dock-panel-max-btn:hover,
-.dock-panel-min-btn:hover {
-  background: var(--bg-quaternary) !important;
-  border-color: var(--border-hover) !important;
-  color: var(--text-primary) !important;
-  transform: scale(1.1) !important;
-}
-
-/* RC-Dock Divider Drag Handle */
-.dock-divider {
-  background: var(--border-color) !important;
-  transition: all 0.2s ease !important;
-}
-
-.dock-divider:hover {
-  background: var(--primary-color) !important;
-  box-shadow: 0 0 8px var(--primary-color) !important;
-}
-
-.dock-divider::before {
-  background: rgba(0, 0, 0, 0.3) !important;
-}
-
 /* ==============================================
    RC-DOCK DARK THEME OVERRIDES
    ============================================== */
@@ -2833,21 +2768,6 @@
 [data-theme="dark"] .dock-bar {
   background: var(--bg-primary) !important;
   border-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .dock-tab-btn {
-  background: var(--bg-secondary) !important;
-  color: var(--text-primary) !important;
-  border-color: var(--border-color) !important;
-}
-
-[data-theme="dark"] .dock-tab-btn:hover {
-  background: var(--bg-tertiary) !important;
-}
-
-[data-theme="dark"] .dock-tab-active > .dock-tab-btn {
-  background: var(--bg-primary) !important;
-  color: var(--text-primary) !important;
 }
 
 /* RC-Dock Dragging States - Dark Theme */
@@ -2871,141 +2791,11 @@
 }
 
 [data-theme="dark"] .dock-drop-edge {
-  background: var(--primary-color) !important;
+  background: var(--bg-primary) !important;
   opacity: 0.6 !important;
 }
 
 [data-theme="dark"] .dock-drop-square {
   background: var(--primary-color) !important;
   opacity: 0.5 !important;
-}
-
-/* RC-Dock Floating Panels - Dark Theme */
-[data-theme="dark"] .dock-fbox {
-  background: var(--bg-primary) !important;
-  border-color: var(--border-color) !important;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6) !important;
-}
-
-[data-theme="dark"] .dock-fbox .dock-panel-header {
-  background: var(--bg-primary) !important;
-  border-bottom-color: var(--border-color) !important;
-}
-
-/* RC-Dock Maximize/Minimize Buttons - Dark Theme */
-[data-theme="dark"] .dock-panel-max-btn,
-[data-theme="dark"] .dock-panel-min-btn {
-  background: var(--bg-tertiary) !important;
-  border-color: var(--border-color) !important;
-  color: var(--text-secondary) !important;
-}
-
-[data-theme="dark"] .dock-panel-max-btn:hover,
-[data-theme="dark"] .dock-panel-min-btn:hover {
-  background: var(--bg-quaternary) !important;
-  border-color: var(--border-hover) !important;
-  color: var(--text-primary) !important;
-}
-
-/* RC-Dock Divider - Dark Theme */
-[data-theme="dark"] .dock-divider {
-  background: var(--border-color) !important;
-}
-
-[data-theme="dark"] .dock-divider:hover {
-  background: var(--primary-color) !important;
-  box-shadow: 0 0 8px rgba(129, 140, 248, 0.4) !important;
-}
-
-[data-theme="dark"] .dock-divider::before {
-  background: rgba(255, 255, 255, 0.3) !important;
-}
-
-/* ==============================================
-   RC-DOCK FLOATING PANEL RESIZE FIX
-   ============================================== */
-
-/* Enable resize for floating panels - sizing handled above */
-.dock-fbox .dock-panel {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* Floating panel resize handle */
-.dock-fbox::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 16px;
-  height: 16px;
-  background: linear-gradient(
-    135deg,
-    transparent 0%,
-    transparent 50%,
-    var(--border-hover) 50%,
-    var(--border-hover) 100%
-  );
-  cursor: nwse-resize;
-  pointer-events: auto;
-}
-
-/* ==============================================
-   RC-DOCK CUSTOM MAXIMIZE/MINIMIZE ICONS
-   ============================================== */
-
-/* Hide default RC-dock icons */
-.dock-panel-max-btn span,
-.dock-panel-min-btn span {
-  display: none !important;
-}
-
-/* Add custom maximize icon (expand arrows) */
-.dock-panel-max-btn::before {
-  content: '';
-  display: block;
-  width: 14px;
-  height: 14px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-/* Add custom minimize icon (compress arrows) */
-.dock-panel-min-btn::before {
-  content: '';
-  display: block;
-  width: 14px;
-  height: 14px;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'%3E%3Cpath d='M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7'/%3E%3C/svg%3E");
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
-/* Dark theme icon colors */
-[data-theme="dark"] .dock-panel-max-btn::before,
-[data-theme="dark"] .dock-panel-min-btn::before {
-  filter: brightness(1.2);
-}
-
-/* ==============================================
-   COLLAPSED NAVIGATION POPUP THEME FIX
-   ============================================== */
-
-/* Popup container for collapsed navigation */
-.dock-panel[data-collapsed="true"] .nav-popup,
-.collapsed-navigation-popup {
-  background: var(--bg-primary) !important;
-  border: 1px solid var(--border-color) !important;
-  box-shadow: var(--shadow-lg) !important;
-  border-radius: 8px !important;
-}
-
-[data-theme="dark"] .dock-panel[data-collapsed="true"] .nav-popup,
-[data-theme="dark"] .collapsed-navigation-popup {
-  background: var(--bg-primary) !important;
-  border-color: var(--border-color) !important;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6) !important;
 }
