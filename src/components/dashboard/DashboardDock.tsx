@@ -418,17 +418,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     />
   );
 
-  // Handle manual toggle (button click) - only allow in vertical mode
+  // Handle manual toggle (button click) - only allow when vertically oriented
   const handleToggleCollapse = useCallback(() => {
-    // Only allow manual collapse/expand in vertical layout mode
-    if (layoutMode !== 'vertical') {
-      console.log('⚠️ Collapse/expand only works in vertical layout mode');
+    // Only allow manual collapse/expand when navigation is vertically oriented (docked left/right)
+    if (navPanelOrientation !== 'vertical') {
+      console.log('⚠️ Collapse/expand only works when navigation is docked left/right (vertical orientation)');
       return;
     }
     
     isManualToggleRef.current = true;
     setIsDockCollapsed(prev => !prev);
-  }, [layoutMode]);
+  }, [navPanelOrientation]);
   
   // Handle layout mode toggle
   const handleToggleLayout = useCallback(() => {
@@ -607,22 +607,22 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             const isStableWidth = width > 50; // Ignore very small transient widths
             
             if (isStableWidth) {
-              // Only allow collapse/expand in vertical layout mode
-              if (layoutMode === 'vertical') {
+              // Only allow collapse/expand when navigation is vertically oriented (docked left/right)
+              if (navPanelOrientation === 'vertical') {
                 // Auto-collapse if width is below collapse threshold
                 if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
-                  console.log(`🔽 Auto-collapsing (vertical): width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+                  console.log(`🔽 Auto-collapsing (vertical orientation): width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
                   setIsDockCollapsed(true);
                 }
                 // Auto-expand if width is above expand threshold
                 else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
-                  console.log(`🔼 Auto-expanding (vertical): width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+                  console.log(`🔼 Auto-expanding (vertical orientation): width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
                   setIsDockCollapsed(false);
                 }
               } else {
-                // In horizontal mode, always show expanded
+                // In horizontal orientation (docked top/bottom), always show expanded
                 if (isDockCollapsed) {
-                  console.log(`🔼 Forcing expand in horizontal mode`);
+                  console.log(`🔼 Forcing expand - horizontal orientation (docked top/bottom)`);
                   setIsDockCollapsed(false);
                 }
               }
@@ -690,7 +690,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log('🔼 Navigation maximized - auto-expanding');
       setIsDockCollapsed(false);
     }
-  }, [isDockCollapsed, detectNavigationPosition]);
+  }, [isDockCollapsed, detectNavigationPositionAndOrientation]);
 
   // Helper function to find navigation panel in layout data
   const findNavigationPanelInLayout = useCallback((layout: LayoutData) => {
@@ -853,4 +853,4 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   );
 };
 
-export default DashboardDock;
+export default DashboardDock;t DashboardDock;
