@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import DockLayout, { LayoutData } from "rc-dock";
 import "rc-dock/dist/rc-dock.css";
-import "rc-dock/dist/rc-dock-dark.css";
 import {
   User,
   View,
@@ -417,6 +416,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const handleToggleCollapse = useCallback(() => {
     isManualToggleRef.current = true;
     setIsDockCollapsed(prev => !prev);
+    
+    // Reset manual toggle flag after animation completes
+    setTimeout(() => {
+      isManualToggleRef.current = false;
+      console.log('Manual toggle flag reset');
+    }, 400);
   }, []);
   
   // Handle layout mode toggle
@@ -498,42 +503,65 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     generateDynamicLayout,
   ]);
 
-  // Apply theme changes
+  // Apply theme changes and dynamically load rc-dock dark theme
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
 
+    // Dynamically load/unload rc-dock dark theme CSS
+    const darkThemeId = 'rc-dock-dark-theme';
+    let existingDarkTheme = document.getElementById(darkThemeId);
+
+    if (theme === 'dark') {
+      // Load dark theme if not already loaded
+      if (!existingDarkTheme) {
+        const link = document.createElement('link');
+        link.id = darkThemeId;
+        link.rel = 'stylesheet';
+        link.type = 'text/css';
+        // Use the CSS path from node_modules
+        link.href = `${process.env.PUBLIC_URL}/node_modules/rc-dock/dist/rc-dock-dark.css`;
+        
+        // Fallback: try to import via webpack
+        import('rc-dock/dist/rc-dock-dark.css').catch(() => {
+          console.warn('Could not dynamically load rc-dock dark theme');
+        });
+        
+        document.head.appendChild(link);
+      }
+    } else {
+      // Remove dark theme if it exists
+      if (existingDarkTheme) {
+        existingDarkTheme.remove();
+      }
+    }
+
+    // Apply theme classes to dock elements
     const dockContainer = document.querySelector(".dock-container");
     const dockLayoutElement = document.querySelector(".dock-layout");
 
     if (dockContainer) {
       dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
-      if (theme === "dark") {
-        dockContainer.classList.add("dock-layout-dark");
-      } else {
-        dockContainer.classList.add("dock-layout-light");
-      }
+      dockContainer.classList.add(theme === "dark" ? "dock-layout-dark" : "dock-layout-light");
     }
 
     if (dockLayoutElement) {
       dockLayoutElement.classList.remove("dock-layout-dark", "dock-layout-light");
-      if (theme === "dark") {
-        dockLayoutElement.classList.add("dock-layout-dark");
-      } else {
-        dockLayoutElement.classList.add("dock-layout-light");
-      }
+      dockLayoutElement.classList.add(theme === "dark" ? "dock-layout-dark" : "dock-layout-light");
     }
   }, [theme]);
 
   // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
+    let resizeTimeout: NodeJS.Timeout | null = null;
+    
     const setupResizeObserver = () => {
       // Find the navigation panel - it's always the first panel in our horizontal layout
       const dockbox = document.querySelector('.dock-box');
       
       if (!dockbox) {
         console.log('Dockbox not found, retrying...');
-        return;
+        return false;
       }
 
       // Get the first panel (navigation is always first in our layout)
@@ -541,7 +569,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       
       if (!navigationPanel) {
         console.log('Navigation panel not found, retrying...');
-        return;
+        return false;
       }
 
       console.log('Found navigation panel, setting up resize observer');
@@ -551,16 +579,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         resizeObserverRef.current.disconnect();
       }
 
-      // Create new resize observer with debouncing
-      let resizeTimeout: NodeJS.Timeout | null = null;
-      
+      // Create new resize observer
       resizeObserverRef.current = new ResizeObserver((entries) => {
         // Clear previous timeout to debounce rapid changes
         if (resizeTimeout) {
           clearTimeout(resizeTimeout);
         }
         
-        // Debounce resize events to prevent glitching during maximize/minimize
+        // Small debounce to prevent rapid firing, but not too long
         resizeTimeout = setTimeout(() => {
           for (const entry of entries) {
             const width = entry.contentRect.width;
@@ -599,31 +625,28 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                 console.log('Manual toggle or layout change active, skipping auto-toggle');
               }
             }
-            
-            // Reset manual toggle flag after a short delay
-            if (isManualToggleRef.current) {
-              setTimeout(() => {
-                isManualToggleRef.current = false;
-                console.log('Manual toggle flag reset');
-              }, 300);
-            }
           }
-        }, 150); // 150ms debounce to prevent glitching
+        }, 50); // Reduced to 50ms for more responsive behavior
       });
 
       resizeObserverRef.current.observe(navigationPanel);
       console.log('ResizeObserver attached successfully');
+      return true;
     };
 
     // Setup observer with retries to ensure DOM is ready
-    const timer = setTimeout(setupResizeObserver, 200);
-    const retryTimer = setTimeout(setupResizeObserver, 600);
-    const finalRetry = setTimeout(setupResizeObserver, 1000);
+    const timer = setTimeout(() => {
+      if (!setupResizeObserver()) {
+        // Retry if first attempt fails
+        setTimeout(setupResizeObserver, 400);
+      }
+    }, 200);
 
     return () => {
       clearTimeout(timer);
-      clearTimeout(retryTimer);
-      clearTimeout(finalRetry);
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
       if (resizeObserverRef.current) {
         resizeObserverRef.current.disconnect();
       }
