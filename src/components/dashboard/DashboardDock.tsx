@@ -628,7 +628,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Handle navigation panel maximize - auto expand
   const handleLayoutChange = useCallback((newLayout: LayoutData) => {
     // Check if navigation panel is maximized
-    const isNavigationMaximized = newLayout?.maxbox?.children?.[0]?.tabs?.[0]?.id === 'navigation';
+    const maxboxChild = newLayout?.maxbox?.children?.[0];
+    const isNavigationMaximized = 
+      maxboxChild && 
+      'tabs' in maxboxChild && 
+      maxboxChild.tabs?.[0]?.id === 'navigation';
     
     if (isNavigationMaximized && isDockCollapsed) {
       console.log('🔼 Navigation maximized - auto-expanding');
