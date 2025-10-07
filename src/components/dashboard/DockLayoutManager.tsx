@@ -11,6 +11,7 @@ interface DockLayoutManagerProps {
   isAdmin: boolean;
   isDockCollapsed?: boolean;
   layoutMode?: 'horizontal' | 'vertical'; // NEW: Support for vertical layouts
+  navPanelOrientation?: 'vertical' | 'horizontal'; // Navigation panel orientation
   actions: {
     onToggleCollapse: () => void;
     onNavigationManage: () => void;
@@ -37,6 +38,7 @@ export function useDockLayoutManager({
   isAdmin,
   isDockCollapsed = false,
   layoutMode = 'horizontal', // NEW: Default to horizontal
+  navPanelOrientation = 'vertical', // Default to vertical
   actions,
   content,
 }: DockLayoutManagerProps) {
@@ -57,7 +59,8 @@ export function useDockLayoutManager({
           widgetsVisible,
           isAdmin,
           content.navigation,
-          isDockCollapsed
+          isDockCollapsed,
+          navPanelOrientation
         ),
       ],
       size: navSize,
@@ -152,6 +155,7 @@ export function useDockLayoutManager({
     isAdmin,
     isDockCollapsed,
     layoutMode,
+    navPanelOrientation,
     actions,
     content,
   ]);

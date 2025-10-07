@@ -31,6 +31,8 @@ interface ViewGroupHoverPopupProps {
   onUpdateViews?: (views: View[]) => void;
   onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
   onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
+  // Dock position for smart popup placement
+  dockPosition?: 'left' | 'right';
 }
 
 const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
@@ -50,6 +52,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
+  dockPosition = 'left',
 }) => {
   // Modal states
   const [editingView, setEditingView] = useState<View | null>(null);

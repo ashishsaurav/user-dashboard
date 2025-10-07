@@ -1202,6 +1202,54 @@
   overflow: hidden !important;
 }
 
+/* Fix floating panel resizing - override flex for absolute positioned panels */
+.dock-layout .dock-panel[style*="position: absolute"],
+.dock-layout .dock-panel[style*="position: fixed"] {
+  flex: none !important;
+  /* Ensure resize handles work properly */
+  min-width: 200px !important;
+  min-height: 150px !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Ensure floating panels can resize properly */
+.dock-layout .dock-panel[style*="left"][style*="top"] {
+  flex: none !important;
+  min-width: 200px !important;
+  min-height: 150px !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Floating panel specific styling - enhanced box shadow */
+.dock-layout .dock-panel[style*="z-index: 3"],
+.dock-layout .dock-panel[style*="z-index: 4"],
+.dock-layout .dock-panel[style*="z-index: 5"] {
+  box-shadow: var(--shadow-lg) !important;
+  flex: none !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Fix floating panel content - prevent width stretching */
+.dock-layout .dock-panel[style*="position: absolute"] .dock-panel-content,
+.dock-layout .dock-panel[style*="position: fixed"] .dock-panel-content,
+.dock-layout .dock-panel[style*="left"][style*="top"] .dock-panel-content {
+  width: 100% !important;
+  height: calc(100% - 40px) !important;
+  max-width: none !important;
+}
+
+/* Fix floating panel tab pane */
+.dock-layout .dock-panel[style*="position: absolute"] .dock-tab-pane,
+.dock-layout .dock-panel[style*="position: fixed"] .dock-tab-pane,
+.dock-layout .dock-panel[style*="left"][style*="top"] .dock-tab-pane {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+}
+
 .dock-layout .dock-bar {
   background: var(--bg-secondary) !important;
   border-bottom: 1px solid var(--border-color) !important;
@@ -1279,8 +1327,8 @@
   width: 16px !important;
   height: 16px !important;
   background: currentColor !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cpolyline points='9 21 3 21 3 15'%3E%3C/polyline%3E%3Cline x1='21' y1='3' x2='14' y2='10'%3E%3C/line%3E%3Cline x1='3' y1='21' x2='10' y2='14'%3E%3C/line%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cpolyline points='9 21 3 21 3 15'%3E%3C/polyline%3E%3Cline x1='21' y1='3' x2='14' y2='10'%3E%3C/line%3E%3Cline x1='3' y1='21' x2='10' y2='14'%3E%3C/line%3E%3C/svg%3E") !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'%3E%3C/path%3E%3C/svg%3E") !important;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'%3E%3C/path%3E%3C/svg%3E") !important;
   -webkit-mask-size: contain !important;
   mask-size: contain !important;
   -webkit-mask-repeat: no-repeat !important;
@@ -1295,8 +1343,8 @@
   width: 16px !important;
   height: 16px !important;
   background: currentColor !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='6' height='6' rx='1'%3E%3C/rect%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'%3E%3C/path%3E%3Cpath d='M15 5h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1'%3E%3C/path%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='6' height='6' rx='1'%3E%3C/rect%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'%3E%3C/path%3E%3Cpath d='M15 5h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1'%3E%3C/path%3E%3C/svg%3E") !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7'%3E%3C/path%3E%3C/svg%3E") !important;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 14h6m0 0v6m0-6l-7 7m17-11h-6m0 0V4m0 6l7-7'%3E%3C/path%3E%3C/svg%3E") !important;
   -webkit-mask-size: contain !important;
   mask-size: contain !important;
   -webkit-mask-repeat: no-repeat !important;
@@ -1309,52 +1357,19 @@
    NAVIGATION PANEL RESIZING ENABLED
    ============================================== */
 
-/* Enable resize divider for navigation panel with visual feedback */
-.dock-layout .dock-box > .dock-divider:first-of-type {
-  width: 4px !important;
-  cursor: ew-resize !important;
-  background: var(--border-color) !important;
-  transition: all 0.2s ease !important;
-  position: relative;
-}
-
-.dock-layout .dock-box > .dock-divider:first-of-type:hover {
-  background: var(--primary-color) !important;
-  width: 6px !important;
-  box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
-}
-
-.dock-layout .dock-box > .dock-divider:first-of-type::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 2px;
-  height: 40px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 2px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.dock-layout .dock-box > .dock-divider:first-of-type:hover::before {
-  opacity: 1;
-}
-
-/* Navigation panel - allow flexible resizing and maximize/minimize */
-.dock-layout .dock-panel:first-child {
+/* Navigation panel - target by data-collapsed attribute (works regardless of position) */
+.dock-layout .dock-panel[data-collapsed="true"]:not([style*="position: absolute"]):not([style*="position: fixed"]) {
   position: relative;
   /* Removed flex-shrink and flex-grow !important to allow rc-dock maximize/minimize */
 }
 
-.dock-layout .dock-panel:first-child .dock-panel-content {
+.dock-layout .dock-panel[data-collapsed]:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-panel-content {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
 }
 
-.dock-layout .dock-panel:first-child .dock-tab-pane {
+.dock-layout .dock-panel[data-collapsed]:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-tab-pane {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -1400,6 +1415,20 @@
   background: var(--primary-color) !important;
   width: 1px !important;
   box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
+}
+
+.dock-nav-more{
+  color: var(--text-primary);
+  align-self: flex-start;
+}
+
+.dock-dropdown .dock-dropdown-menu-item:hover{
+  background-color: var(--bg-primary) !important;
+  background: var(--bg-primary) !important;
+}
+
+.dock-dropdown-menu{
+  background-color: var(--bg-primary) !important;
 }
 
 /* Visual handle for dividers */
@@ -1572,14 +1601,7 @@
   box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
 }
 
-[data-theme="dark"] .dock-layout .dock-box > .dock-divider:first-of-type:hover {
-  background: var(--primary-color) !important;
-  box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
-}
-
-[data-theme="dark"] .dock-layout .dock-box > .dock-divider:first-of-type::before {
-  background: rgba(255, 255, 255, 0.3);
-}
+/* Dark theme divider styling - removed first-of-type dependency */
 
 [data-theme="dark"] .dock-layout .dock-divider::before {
   background: rgba(255, 255, 255, 0.3);
@@ -2170,8 +2192,8 @@
     height: 10px;
   }
 
-  /* Mobile - let rc-dock control width */
-  .dock-layout .dock-panel:first-child .dock-panel-content {
+  /* Mobile - let rc-dock control width for navigation panel */
+  .dock-layout .dock-panel[data-collapsed] .dock-panel-content {
     width: 100%;
     height: 100%;
   }
@@ -2674,4 +2696,106 @@
 .nav-group-content-horizontal::-webkit-scrollbar-thumb {
   background: var(--border-color);
   border-radius: 2px;
+}
+
+/* ==============================================
+   RC-DOCK THEME OVERRIDES - FIX FOR ALL THEMES
+   ============================================== */
+
+/* RC-Dock Panel Headers - Light Theme */
+.dock-panel {
+  background: var(--bg-primary) !important;
+}
+
+.dock-panel-header {
+  background: var(--bg-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+.dock-bar {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* RC-Dock Dragging States - Light Theme */
+.dock-panel-dragging {
+  background: var(--bg-secondary) !important;
+  opacity: 0.95;
+}
+
+.dock-panel-dragging .dock-panel-header {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-hover) !important;
+}
+
+.dock-panel-dragging .dock-bar {
+  background: var(--bg-secondary) !important;
+}
+
+/* RC-Dock Drop Indicators - Light Theme */
+.dock-drop-indicator {
+  background: var(--primary-color) !important;
+  opacity: 0.3 !important;
+}
+
+.dock-drop-edge {
+  background: var(--primary-color) !important;
+  opacity: 0.5 !important;
+}
+
+.dock-drop-layer {
+  pointer-events: auto !important;
+}
+
+.dock-drop-square {
+  background: var(--primary-color) !important;
+  opacity: 0.4 !important;
+}
+
+/* ==============================================
+   RC-DOCK DARK THEME OVERRIDES
+   ============================================== */
+
+[data-theme="dark"] .dock-panel {
+  background: var(--bg-primary) !important;
+}
+
+[data-theme="dark"] .dock-panel-header {
+  background: var(--bg-primary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .dock-bar {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* RC-Dock Dragging States - Dark Theme */
+[data-theme="dark"] .dock-panel-dragging {
+  background: var(--bg-secondary) !important;
+}
+
+[data-theme="dark"] .dock-panel-dragging .dock-panel-header {
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-hover) !important;
+}
+
+[data-theme="dark"] .dock-panel-dragging .dock-bar {
+  background: var(--bg-secondary) !important;
+}
+
+/* RC-Dock Drop Indicators - Dark Theme */
+[data-theme="dark"] .dock-drop-indicator {
+  background: var(--primary-color) !important;
+  opacity: 0.4 !important;
+}
+
+[data-theme="dark"] .dock-drop-edge {
+  background: var(--bg-primary) !important;
+  opacity: 0.6 !important;
+}
+
+[data-theme="dark"] .dock-drop-square {
+  background: var(--primary-color) !important;
+  opacity: 0.5 !important;
 }
