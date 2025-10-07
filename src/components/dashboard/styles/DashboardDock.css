@@ -1357,52 +1357,19 @@
    NAVIGATION PANEL RESIZING ENABLED
    ============================================== */
 
-/* Enable resize divider for navigation panel with visual feedback */
-.dock-layout .dock-box > .dock-divider:first-of-type {
-  width: 4px !important;
-  cursor: ew-resize !important;
-  background: var(--border-color) !important;
-  transition: all 0.2s ease !important;
-  position: relative;
-}
-
-.dock-layout .dock-box > .dock-divider:first-of-type:hover {
-  background: var(--primary-color) !important;
-  width: 6px !important;
-  box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
-}
-
-.dock-layout .dock-box > .dock-divider:first-of-type::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 2px;
-  height: 40px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 2px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.dock-layout .dock-box > .dock-divider:first-of-type:hover::before {
-  opacity: 1;
-}
-
-/* Navigation panel - allow flexible resizing and maximize/minimize */
-.dock-layout .dock-panel:first-child:not([style*="position: absolute"]):not([style*="position: fixed"]) {
+/* Navigation panel - target by data-collapsed attribute (works regardless of position) */
+.dock-layout .dock-panel[data-collapsed="true"]:not([style*="position: absolute"]):not([style*="position: fixed"]) {
   position: relative;
   /* Removed flex-shrink and flex-grow !important to allow rc-dock maximize/minimize */
 }
 
-.dock-layout .dock-panel:first-child:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-panel-content {
+.dock-layout .dock-panel[data-collapsed]:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-panel-content {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
 }
 
-.dock-layout .dock-panel:first-child:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-tab-pane {
+.dock-layout .dock-panel[data-collapsed]:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-tab-pane {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
@@ -1634,14 +1601,7 @@
   box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
 }
 
-[data-theme="dark"] .dock-layout .dock-box > .dock-divider:first-of-type:hover {
-  background: var(--primary-color) !important;
-  box-shadow: 0 0 8px rgba(129, 140, 248, 0.4);
-}
-
-[data-theme="dark"] .dock-layout .dock-box > .dock-divider:first-of-type::before {
-  background: rgba(255, 255, 255, 0.3);
-}
+/* Dark theme divider styling - removed first-of-type dependency */
 
 [data-theme="dark"] .dock-layout .dock-divider::before {
   background: rgba(255, 255, 255, 0.3);
@@ -2232,8 +2192,8 @@
     height: 10px;
   }
 
-  /* Mobile - let rc-dock control width */
-  .dock-layout .dock-panel:first-child .dock-panel-content {
+  /* Mobile - let rc-dock control width for navigation panel */
+  .dock-layout .dock-panel[data-collapsed] .dock-panel-content {
     width: 100%;
     height: 100%;
   }

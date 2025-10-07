@@ -525,19 +525,25 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [theme]);
 
+  // Helper function to find navigation panel by tab ID (works regardless of position)
+  const findNavigationPanel = useCallback(() => {
+    // Find panel that contains a tab with id="navigation"
+    const allPanels = document.querySelectorAll('.dock-panel');
+    for (const panel of allPanels) {
+      const navTab = panel.querySelector('.dock-tab[data-dockid="navigation"]');
+      if (navTab) {
+        return panel as HTMLElement;
+      }
+    }
+    // Fallback: check if panel contains navigation content
+    const panelWithNavContent = document.querySelector('[data-dock-id*="navigation"]')?.closest('.dock-panel');
+    return panelWithNavContent as HTMLElement | null;
+  }, []);
+
   // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
     const setupResizeObserver = () => {
-      // Find the navigation panel - it's always the first panel in our horizontal layout
-      const dockbox = document.querySelector('.dock-box');
-      
-      if (!dockbox) {
-        console.log('Dockbox not found, retrying...');
-        return;
-      }
-
-      // Get the first panel (navigation is always first in our layout)
-      const navigationPanel = dockbox.querySelector('.dock-panel');
+      const navigationPanel = findNavigationPanel();
       
       if (!navigationPanel) {
         console.log('Navigation panel not found, retrying...');
@@ -607,23 +613,19 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         resizeObserverRef.current.disconnect();
       }
     };
-  }, [isDockCollapsed]);
+  }, [isDockCollapsed, findNavigationPanel]);
 
   // Apply collapsed state to navigation panel
   useEffect(() => {
-    // Find the navigation panel - it's always the first panel
-    const dockbox = document.querySelector('.dock-box');
-    if (dockbox) {
-      const navigationPanel = dockbox.querySelector('.dock-panel');
-      if (navigationPanel) {
-        if (isDockCollapsed) {
-          navigationPanel.setAttribute('data-collapsed', 'true');
-        } else {
-          navigationPanel.removeAttribute('data-collapsed');
-        }
+    const navigationPanel = findNavigationPanel();
+    if (navigationPanel) {
+      if (isDockCollapsed) {
+        navigationPanel.setAttribute('data-collapsed', 'true');
+      } else {
+        navigationPanel.removeAttribute('data-collapsed');
       }
     }
-  }, [isDockCollapsed]);
+  }, [isDockCollapsed, findNavigationPanel]);
 
   // Handle navigation panel maximize - auto expand
   const handleLayoutChange = useCallback((newLayout: LayoutData) => {
@@ -640,14 +642,38 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed]);
 
+  // Helper function to find navigation panel in layout data
+  const findNavigationPanelInLayout = useCallback((layout: LayoutData) => {
+    if (!layout?.dockbox?.children) return null;
+    
+    const findInChildren = (children: any[]): any => {
+      for (const child of children) {
+        // Check if this is a panel with navigation tab
+        if (child.tabs && child.tabs.some((tab: any) => tab.id === 'navigation')) {
+          return child;
+        }
+        // Recursively check nested children (for complex layouts)
+        if (child.children) {
+          const found = findInChildren(child.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    
+    return findInChildren(layout.dockbox.children);
+  }, []);
+
   // Handle navigation panel collapse/expand without full layout reload
   useEffect(() => {
     if (!dockLayoutRef.current) return;
 
     const currentLayout = dockLayoutRef.current.getLayout();
-    if (!currentLayout?.dockbox?.children?.[0]) return;
+    if (!currentLayout?.dockbox) return;
 
-    const navPanel = currentLayout.dockbox.children[0];
+    const navPanel = findNavigationPanelInLayout(currentLayout);
+    if (!navPanel) return;
+
     const newSize = isDockCollapsed 
       ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH 
       : LAYOUT_SIZES.NAVIGATION_PANEL_WIDTH;
@@ -659,20 +685,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       
       // Apply collapsed state attribute
       setTimeout(() => {
-        const dockbox = document.querySelector('.dock-box');
-        if (dockbox) {
-          const navigationPanel = dockbox.querySelector('.dock-panel');
-          if (navigationPanel) {
-            if (isDockCollapsed) {
-              navigationPanel.setAttribute('data-collapsed', 'true');
-            } else {
-              navigationPanel.removeAttribute('data-collapsed');
-            }
+        const navigationPanel = findNavigationPanel();
+        if (navigationPanel) {
+          if (isDockCollapsed) {
+            navigationPanel.setAttribute('data-collapsed', 'true');
+          } else {
+            navigationPanel.removeAttribute('data-collapsed');
           }
         }
       }, 0);
     }
-  }, [isDockCollapsed]);
+  }, [isDockCollapsed, findNavigationPanel, findNavigationPanelInLayout]);
 
   // Smart layout management - only reload on structural changes
   useEffect(() => {
@@ -688,15 +711,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       
       // Apply collapsed state after layout loads
       setTimeout(() => {
-        const dockbox = document.querySelector('.dock-box');
-        if (dockbox) {
-          const navigationPanel = dockbox.querySelector('.dock-panel');
-          if (navigationPanel) {
-            if (isDockCollapsed) {
-              navigationPanel.setAttribute('data-collapsed', 'true');
-            } else {
-              navigationPanel.removeAttribute('data-collapsed');
-            }
+        const navigationPanel = findNavigationPanel();
+        if (navigationPanel) {
+          if (isDockCollapsed) {
+            navigationPanel.setAttribute('data-collapsed', 'true');
+          } else {
+            navigationPanel.removeAttribute('data-collapsed');
           }
         }
       }, 0);
@@ -704,7 +724,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log("Only content changed, updating content");
       updateLayoutContent();
     }
-  }, [selectedView, reportsVisible, widgetsVisible, layoutMode, navigationUpdateTrigger]);
+  }, [selectedView, reportsVisible, widgetsVisible, layoutMode, navigationUpdateTrigger, findNavigationPanel]);
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
