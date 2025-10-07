@@ -853,4 +853,4 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   );
 };
 
-export default DashboardDock;t DashboardDock;
+export default DashboardDock;
