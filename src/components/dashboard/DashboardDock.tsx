@@ -666,7 +666,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         resizeObserverRef.current.disconnect();
       }
     };
-  }, [isDockCollapsed, layoutMode, findNavigationPanel, detectNavigationPosition]);
+  }, [isDockCollapsed, navPanelOrientation, findNavigationPanel, detectNavigationPositionAndOrientation]);
 
   // Apply collapsed state to navigation panel
   useEffect(() => {
@@ -861,4 +861,4 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   );
 };
 
-export default DashboardDock;
+export default DashboardDock;rdDock;
