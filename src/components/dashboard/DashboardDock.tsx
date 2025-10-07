@@ -625,6 +625,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed]);
 
+  // Handle navigation panel maximize - auto expand
+  const handleLayoutChange = useCallback((newLayout: LayoutData) => {
+    // Check if navigation panel is maximized
+    const isNavigationMaximized = newLayout?.maxbox?.children?.[0]?.tabs?.[0]?.id === 'navigation';
+    
+    if (isNavigationMaximized && isDockCollapsed) {
+      console.log('🔼 Navigation maximized - auto-expanding');
+      setIsDockCollapsed(false);
+    }
+  }, [isDockCollapsed]);
+
   // Handle navigation panel collapse/expand without full layout reload
   useEffect(() => {
     if (!dockLayoutRef.current) return;
@@ -697,6 +708,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <DockLayout
           ref={dockLayoutRef}
           defaultLayout={generateDynamicLayout()}
+          onLayoutChange={handleLayoutChange}
           style={{
             position: "absolute",
             left: 0,

@@ -1207,15 +1207,19 @@
 .dock-layout .dock-panel[style*="position: fixed"] {
   flex: none !important;
   /* Ensure resize handles work properly */
-  min-width: auto !important;
-  min-height: auto !important;
+  min-width: 200px !important;
+  min-height: 150px !important;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 /* Ensure floating panels can resize properly */
 .dock-layout .dock-panel[style*="left"][style*="top"] {
   flex: none !important;
-  min-width: auto !important;
-  min-height: auto !important;
+  min-width: 200px !important;
+  min-height: 150px !important;
+  max-width: none !important;
+  max-height: none !important;
 }
 
 /* Floating panel specific styling - enhanced box shadow */
@@ -1224,6 +1228,26 @@
 .dock-layout .dock-panel[style*="z-index: 5"] {
   box-shadow: var(--shadow-lg) !important;
   flex: none !important;
+  max-width: none !important;
+  max-height: none !important;
+}
+
+/* Fix floating panel content - prevent width stretching */
+.dock-layout .dock-panel[style*="position: absolute"] .dock-panel-content,
+.dock-layout .dock-panel[style*="position: fixed"] .dock-panel-content,
+.dock-layout .dock-panel[style*="left"][style*="top"] .dock-panel-content {
+  width: 100% !important;
+  height: calc(100% - 40px) !important;
+  max-width: none !important;
+}
+
+/* Fix floating panel tab pane */
+.dock-layout .dock-panel[style*="position: absolute"] .dock-tab-pane,
+.dock-layout .dock-panel[style*="position: fixed"] .dock-tab-pane,
+.dock-layout .dock-panel[style*="left"][style*="top"] .dock-tab-pane {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
 }
 
 .dock-layout .dock-bar {
@@ -1367,18 +1391,18 @@
 }
 
 /* Navigation panel - allow flexible resizing and maximize/minimize */
-.dock-layout .dock-panel:first-child {
+.dock-layout .dock-panel:first-child:not([style*="position: absolute"]):not([style*="position: fixed"]) {
   position: relative;
   /* Removed flex-shrink and flex-grow !important to allow rc-dock maximize/minimize */
 }
 
-.dock-layout .dock-panel:first-child .dock-panel-content {
+.dock-layout .dock-panel:first-child:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-panel-content {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
 }
 
-.dock-layout .dock-panel:first-child .dock-tab-pane {
+.dock-layout .dock-panel:first-child:not([style*="position: absolute"]):not([style*="position: fixed"]) .dock-tab-pane {
   width: 100%;
   height: 100%;
   box-sizing: border-box;
