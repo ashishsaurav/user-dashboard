@@ -93,7 +93,8 @@ export class DockTabFactory {
     widgetsVisible: boolean,
     isAdmin: boolean,
     content: React.ReactNode,
-    isCollapsed: boolean = false
+    isCollapsed: boolean = false,
+    navOrientation: 'vertical' | 'horizontal' = 'vertical'
   ) {
     return {
       id: "navigation",

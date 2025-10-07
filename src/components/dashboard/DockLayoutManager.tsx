@@ -38,6 +38,7 @@ export function useDockLayoutManager({
   isAdmin,
   isDockCollapsed = false,
   layoutMode = 'horizontal', // NEW: Default to horizontal
+  navPanelOrientation = 'vertical', // Default to vertical
   actions,
   content,
 }: DockLayoutManagerProps) {
