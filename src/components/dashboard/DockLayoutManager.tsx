@@ -148,8 +148,6 @@ export function useDockLayoutManager({
         mode: "float",
         children: [],
       },
-      // Enable floating panel features
-      defaultFloatSize: [800, 600],
     };
   }, [
     selectedView,
