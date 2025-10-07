@@ -734,6 +734,104 @@
   transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
 }
 
+/* ==============================================
+   VIEW GROUP HOVER POPUP - THEME FIX
+   ============================================== */
+
+.view-group-hover-popup {
+  min-width: 280px;
+  max-width: 380px;
+  background: var(--bg-primary, #ffffff);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  z-index: 1000;
+}
+
+.navigation-popup-content {
+  padding: 0;
+  background: var(--bg-primary, #ffffff);
+}
+
+/* Light theme for popup */
+[data-theme="light"] .view-group-hover-popup,
+.view-group-hover-popup {
+  background: var(--bg-primary, #ffffff);
+  border-color: var(--border-color, #e2e8f0);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .navigation-popup-content,
+.navigation-popup-content {
+  background: var(--bg-primary, #ffffff);
+}
+
+/* Dark theme for popup */
+[data-theme="dark"] .view-group-hover-popup {
+  background: var(--bg-primary, #0f172a);
+  border-color: var(--border-color, #334155);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+[data-theme="dark"] .navigation-popup-content {
+  background: var(--bg-primary, #0f172a);
+}
+
+/* Ensure all popup elements use theme variables */
+.view-group-hover-popup .nav-group {
+  background: var(--bg-secondary, #f8fafc);
+  border-color: var(--border-color, #e2e8f0);
+}
+
+.view-group-hover-popup .nav-group-header {
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.view-group-hover-popup .nav-group-content {
+  background: var(--bg-primary, #ffffff);
+}
+
+.view-group-hover-popup .nav-view-item {
+  color: var(--text-primary, #1e293b);
+}
+
+.view-group-hover-popup .nav-view-item:hover {
+  background: var(--bg-secondary, #f8fafc);
+}
+
+.view-group-hover-popup .nav-view-item.selected {
+  background: var(--primary-color, #4f46e5);
+  color: white;
+}
+
+/* Dark theme popup elements */
+[data-theme="dark"] .view-group-hover-popup .nav-group {
+  background: var(--bg-secondary, #1e293b);
+  border-color: var(--border-color, #334155);
+}
+
+[data-theme="dark"] .view-group-hover-popup .nav-group-header {
+  background: var(--bg-secondary, #1e293b);
+}
+
+[data-theme="dark"] .view-group-hover-popup .nav-group-content {
+  background: var(--bg-primary, #0f172a);
+}
+
+[data-theme="dark"] .view-group-hover-popup .nav-view-item {
+  color: var(--text-primary, #f8fafc);
+}
+
+[data-theme="dark"] .view-group-hover-popup .nav-view-item:hover {
+  background: var(--bg-secondary, #1e293b);
+}
+
+[data-theme="dark"] .view-group-hover-popup .nav-view-item.selected {
+  background: var(--primary-color, #818cf8);
+  color: white;
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .gmail-navigation-panel.horizontal .gmail-nav-header {
@@ -746,5 +844,6 @@
   
   .view-group-hover-popup {
     min-width: 200px;
+    max-width: 280px;
   }
 }

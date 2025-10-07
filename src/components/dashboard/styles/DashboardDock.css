@@ -1251,6 +1251,92 @@
   display: none !important;
 }
 
+/* ==============================================
+   RC-DOCK DRAG & DROP - THEME FIX
+   ============================================== */
+
+/* Fix drag drop indicator colors for light theme */
+.dock-layout .dock-drop-indicator {
+  background: var(--primary-color) !important;
+  opacity: 0.5 !important;
+}
+
+.dock-layout .dock-drop-square {
+  background: var(--primary-color) !important;
+  border: 2px solid var(--primary-color) !important;
+  opacity: 0.8 !important;
+}
+
+.dock-layout .dock-drop-edge {
+  background: var(--primary-color) !important;
+  opacity: 0.6 !important;
+}
+
+/* Fix dock drag layer background */
+.dock-layout .dock-drag-layer {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.dock-layout .dock-drag-layer .dock-tab {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Fix dragging panel header */
+.dock-layout .dock-drag-layer .dock-bar {
+  background: var(--bg-secondary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+/* Fix drag move indicators (top, bottom, left, right arrows) */
+.dock-layout .dock-drop-indicator-box {
+  border: 2px solid var(--primary-color) !important;
+  background: rgba(79, 70, 229, 0.1) !important;
+}
+
+.dock-layout .dock-drop-indicator-box::before {
+  background: var(--primary-color) !important;
+}
+
+/* Fix floating panel drag layer */
+.dock-layout .dock-float-panel-dragging {
+  opacity: 0.8 !important;
+}
+
+.dock-layout .dock-float-panel-dragging .dock-bar {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Dark theme overrides for drag indicators */
+[data-theme="dark"] .dock-layout .dock-drop-indicator {
+  background: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .dock-layout .dock-drop-square {
+  background: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+[data-theme="dark"] .dock-layout .dock-drop-indicator-box {
+  border-color: var(--primary-color) !important;
+  background: rgba(129, 140, 248, 0.15) !important;
+}
+
+[data-theme="dark"] .dock-layout .dock-drag-layer {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .dock-layout .dock-drag-layer .dock-bar {
+  background: var(--bg-secondary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
 /* Maximize/Minimize Buttons */
 .dock-layout .dock-panel-max-btn,
 .dock-layout .dock-panel-min-btn {
@@ -1273,14 +1359,15 @@
 }
 
 /* Custom button icons using pseudo-elements */
+/* Maximize Icon - Full Screen Expand */
 .dock-layout .dock-panel-max-btn::before {
   content: '' !important;
   display: inline-block !important;
   width: 16px !important;
   height: 16px !important;
   background: currentColor !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cpolyline points='9 21 3 21 3 15'%3E%3C/polyline%3E%3Cline x1='21' y1='3' x2='14' y2='10'%3E%3C/line%3E%3Cline x1='3' y1='21' x2='10' y2='14'%3E%3C/line%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='15 3 21 3 21 9'%3E%3C/polyline%3E%3Cpolyline points='9 21 3 21 3 15'%3E%3C/polyline%3E%3Cline x1='21' y1='3' x2='14' y2='10'%3E%3C/line%3E%3Cline x1='3' y1='21' x2='10' y2='14'%3E%3C/line%3E%3C/svg%3E") !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'%3E%3C/path%3E%3C/svg%3E") !important;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3'%3E%3C/path%3E%3C/svg%3E") !important;
   -webkit-mask-size: contain !important;
   mask-size: contain !important;
   -webkit-mask-repeat: no-repeat !important;
@@ -1289,14 +1376,15 @@
   mask-position: center !important;
 }
 
+/* Minimize Icon - Exit Full Screen / Restore */
 .dock-layout .dock-panel-min-btn::before {
   content: '' !important;
   display: inline-block !important;
   width: 16px !important;
   height: 16px !important;
   background: currentColor !important;
-  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='6' height='6' rx='1'%3E%3C/rect%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'%3E%3C/path%3E%3Cpath d='M15 5h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1'%3E%3C/path%3E%3C/svg%3E") !important;
-  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='9' y='9' width='6' height='6' rx='1'%3E%3C/rect%3E%3Cpath d='M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1'%3E%3C/path%3E%3Cpath d='M15 5h1a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-1'%3E%3C/path%3E%3C/svg%3E") !important;
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3'%3E%3C/path%3E%3C/svg%3E") !important;
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3'%3E%3C/path%3E%3C/svg%3E") !important;
   -webkit-mask-size: contain !important;
   mask-size: contain !important;
   -webkit-mask-repeat: no-repeat !important;

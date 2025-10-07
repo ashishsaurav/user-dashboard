@@ -551,43 +551,64 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         resizeObserverRef.current.disconnect();
       }
 
-      // Create new resize observer
+      // Create new resize observer with debouncing
+      let resizeTimeout: NodeJS.Timeout | null = null;
+      
       resizeObserverRef.current = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const width = entry.contentRect.width;
-          
-          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
-          
-          // Only auto-toggle if this isn't from a manual button toggle or layout change
-          if (!isManualToggleRef.current && !isLayoutChangingRef.current) {
-            // Only trigger auto-collapse/expand if width is stable
-            // Ignore transient width changes during layout updates
-            const isStableWidth = width > 50; // Ignore very small transient widths
+        // Clear previous timeout to debounce rapid changes
+        if (resizeTimeout) {
+          clearTimeout(resizeTimeout);
+        }
+        
+        // Debounce resize events to prevent glitching during maximize/minimize
+        resizeTimeout = setTimeout(() => {
+          for (const entry of entries) {
+            const width = entry.contentRect.width;
             
-            if (isStableWidth) {
-              // Auto-collapse if width is below collapse threshold
-              if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
-                console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
-                setIsDockCollapsed(true);
+            console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
+            
+            // Check if any panel is maximized (indicates maximize/minimize operation in progress)
+            const hasMaximizedPanel = document.querySelector('.dock-panel-maximized');
+            const isMaximizing = hasMaximizedPanel !== null;
+            
+            // Only auto-toggle if:
+            // 1. Not from a manual button toggle
+            // 2. Not during layout change
+            // 3. Not during maximize/minimize operation
+            if (!isManualToggleRef.current && !isLayoutChangingRef.current && !isMaximizing) {
+              // Only trigger auto-collapse/expand if width is stable
+              // Ignore transient width changes during layout updates
+              const isStableWidth = width > 50; // Ignore very small transient widths
+              
+              if (isStableWidth) {
+                // Auto-collapse if width is below collapse threshold
+                if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
+                  console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+                  setIsDockCollapsed(true);
+                }
+                // Auto-expand if width is above expand threshold
+                else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
+                  console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+                  setIsDockCollapsed(false);
+                }
               }
-              // Auto-expand if width is above expand threshold
-              else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
-                console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
-                setIsDockCollapsed(false);
+            } else {
+              if (isMaximizing) {
+                console.log('Maximize/minimize operation detected, skipping auto-toggle');
+              } else {
+                console.log('Manual toggle or layout change active, skipping auto-toggle');
               }
             }
-          } else {
-            console.log('Manual toggle or layout change active, skipping auto-toggle');
+            
+            // Reset manual toggle flag after a short delay
+            if (isManualToggleRef.current) {
+              setTimeout(() => {
+                isManualToggleRef.current = false;
+                console.log('Manual toggle flag reset');
+              }, 300);
+            }
           }
-          
-          // Reset manual toggle flag after a short delay
-          if (isManualToggleRef.current) {
-            setTimeout(() => {
-              isManualToggleRef.current = false;
-              console.log('Manual toggle flag reset');
-            }, 300);
-          }
-        }
+        }, 150); // 150ms debounce to prevent glitching
       });
 
       resizeObserverRef.current.observe(navigationPanel);

@@ -144,6 +144,12 @@ export function useDockLayoutManager({
         mode: "horizontal", // Top-level is always horizontal (navigation + content)
         children,
       },
+      floatbox: {
+        mode: "float",
+        children: [],
+      },
+      // Enable floating panel features
+      defaultFloatSize: [800, 600],
     };
   }, [
     selectedView,
