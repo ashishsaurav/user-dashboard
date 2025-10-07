@@ -673,6 +673,7 @@
    DOCK TAB STYLING
    ============================================== */
 
+/* Light Theme - Dock Tab Headers */
 .dock-tab-header {
   display: flex;
   align-items: center;
@@ -683,6 +684,7 @@
   transition: all 0.3s ease;
   padding: 0 8px;
   position: relative;
+  color: var(--text-primary);
 }
 
 .dock-tab > div{
@@ -708,6 +710,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--text-primary);
 }
 
 .dock-tab-header .tab-title svg {
@@ -717,6 +720,7 @@
   fill: none;
   stroke-width: 2;
   flex-shrink: 0;
+  color: var(--text-primary);
 }
 
 .dock-tab-header .tab-actions {
@@ -727,7 +731,29 @@
   padding-left: 8px;
 }
 
-/* Tab Action Buttons */
+/* Dark Theme - Dock Tab Headers */
+[data-theme="dark"] .dock-tab-header,
+.dock-layout-dark .dock-tab-header {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dock-tab-header .tab-title,
+.dock-layout-dark .dock-tab-header .tab-title {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dock-tab-header .tab-title span,
+.dock-layout-dark .dock-tab-header .tab-title span {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .dock-tab-header .tab-title svg,
+.dock-layout-dark .dock-tab-header .tab-title svg {
+  color: var(--text-primary);
+  stroke: currentColor;
+}
+
+/* Tab Action Buttons - Light Theme */
 .tab-action-btn {
   display: flex;
   align-items: center;
@@ -758,6 +784,19 @@
   stroke: currentColor;
   fill: none;
   stroke-width: 2;
+}
+
+/* Dark Theme - Tab Action Buttons */
+[data-theme="dark"] .tab-action-btn {
+  background: var(--bg-tertiary);
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .tab-action-btn:hover {
+  background: var(--bg-quaternary);
+  border-color: var(--border-hover);
+  color: var(--text-primary);
 }
 
 .tab-action-btn.manage-btn {
@@ -1198,18 +1237,41 @@
   height: 100% !important;
 }
 
+/* Light Theme - Panels */
 .dock-layout .dock-panel {
   background: var(--bg-primary) !important;
   border: 1px solid var(--border-color) !important;
   border-radius: 8px !important;
   box-shadow: var(--shadow-sm) !important;
   overflow: hidden !important;
+  color: var(--text-primary) !important;
 }
 
+.dock-layout .dock-panel-header {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+}
+
+/* Dark Theme - Panels */
+.dock-layout-dark .dock-panel {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout-dark .dock-panel-header {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-bottom-color: var(--border-color) !important;
+}
+
+/* Light Theme - Tab Bar and Tabs */
 .dock-layout .dock-bar {
   background: var(--bg-secondary) !important;
   border-bottom: 1px solid var(--border-color) !important;
   min-height: 40px !important;
+  color: var(--text-primary) !important;
 }
 
 .dock-layout .dock-tab {
@@ -1248,6 +1310,39 @@
 .dock-layout .dock-ink-bar {
   background: var(--primary-color) !important;
   height: 3px !important;
+}
+
+/* Dark Theme - Tab Bar and Tabs */
+.dock-layout-dark .dock-bar {
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout-dark .dock-tab {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout-dark .dock-tab:hover {
+  background: var(--bg-tertiary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout-dark .dock-tab.dock-tab-active,
+.dock-layout-dark .dock-tab-active {
+  color: var(--primary-color) !important;
+  background: var(--bg-primary) !important;
+  border-bottom-color: var(--primary-color) !important;
+}
+
+.dock-layout-dark .dock-tab-content {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+}
+
+.dock-layout-dark .dock-ink-bar {
+  background: var(--primary-color) !important;
 }
 
 /* Remove default RC-Dock close button since we're using custom ones */
