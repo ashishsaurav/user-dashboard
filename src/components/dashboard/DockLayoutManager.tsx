@@ -154,6 +154,7 @@ export function useDockLayoutManager({
     isAdmin,
     isDockCollapsed,
     layoutMode,
+    navPanelOrientation,
     actions,
     content,
   ]);
