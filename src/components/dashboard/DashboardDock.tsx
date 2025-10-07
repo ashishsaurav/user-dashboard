@@ -60,6 +60,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   
   // Navigation panel position state (for popup positioning)
   const [navPanelPosition, setNavPanelPosition] = useState<'left' | 'right'>('left');
+  
+  // Navigation panel orientation state (for collapse/expand logic)
+  const [navPanelOrientation, setNavPanelOrientation] = useState<'vertical' | 'horizontal'>('vertical');
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
