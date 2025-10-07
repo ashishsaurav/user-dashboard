@@ -457,34 +457,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   }, []);
 
   // Dock layout manager
-<<<<<<< HEAD
-  const { generateDynamicLayout, getCurrentLayoutStructure } =
-    useDockLayoutManager({
-      selectedView,
-      reportsVisible,
-      widgetsVisible,
-      isAdmin: user.role === "admin",
-      isDockCollapsed: isDockCollapsed,
-      layoutMode: layoutMode,
-      actions: {
-        onToggleCollapse: handleToggleCollapse,
-        onNavigationManage: () => setShowNavigationModal(true),
-        onSystemSettings: () => setShowManageModal(true),
-        onReopenReports: handleReopenReports,
-        onReopenWidgets: handleReopenWidgets,
-        onAddReport: () => setShowAddReportModal(true),
-        onAddWidget: () => setShowAddWidgetModal(true),
-        onCloseReports: handleCloseReports,
-        onCloseWidgets: handleCloseWidgets,
-      },
-      content: {
-        navigation: createNavigationContent(),
-        reports: createReportsContent(),
-        widgets: createWidgetsContent(),
-        welcome: createWelcomeContent(),
-      },
-    });
-=======
   const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
     selectedView,
     reportsVisible,
@@ -511,7 +483,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       welcome: createWelcomeContent(),
     },
   });
->>>>>>> 64bbaae (feat: Hide collapse button when navigation is horizontally oriented)
 
   // Smart update that preserves RC-Dock internal state
   const updateLayoutContent = useCallback(() => {
