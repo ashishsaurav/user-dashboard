@@ -685,9 +685,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Handle navigation panel maximize - auto expand
   const handleLayoutChange = useCallback((newLayout: LayoutData) => {
-    // Detect navigation position on layout change
+    // Detect navigation position and orientation on layout change
     setTimeout(() => {
-      detectNavigationPosition();
+      detectNavigationPositionAndOrientation();
     }, 100);
     
     // Check if navigation panel is maximized
