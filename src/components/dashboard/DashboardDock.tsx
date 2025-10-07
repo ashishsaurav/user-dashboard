@@ -528,8 +528,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Helper function to find navigation panel by tab ID (works regardless of position)
   const findNavigationPanel = useCallback(() => {
     // Find panel that contains a tab with id="navigation"
-    const allPanels = document.querySelectorAll('.dock-panel');
-    for (const panel of allPanels) {
+    const allPanels = Array.from(document.querySelectorAll('.dock-panel'));
+    for (let i = 0; i < allPanels.length; i++) {
+      const panel = allPanels[i];
       const navTab = panel.querySelector('.dock-tab[data-dockid="navigation"]');
       if (navTab) {
         return panel as HTMLElement;
