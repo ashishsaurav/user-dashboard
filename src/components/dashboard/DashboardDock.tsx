@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import DockLayout, { LayoutData } from "rc-dock";
 import "rc-dock/dist/rc-dock.css";
+import "rc-dock/dist/rc-dock-dark.css";
 import {
   User,
   View,
@@ -503,51 +504,29 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     generateDynamicLayout,
   ]);
 
-  // Apply theme changes and dynamically load rc-dock dark theme
+  // Apply theme changes - rc-dock dark CSS is imported but controlled via body class
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
 
-    // Dynamically load/unload rc-dock dark theme CSS
-    const darkThemeId = 'rc-dock-dark-theme';
-    let existingDarkTheme = document.getElementById(darkThemeId);
-
-    if (theme === 'dark') {
-      // Load dark theme if not already loaded
-      if (!existingDarkTheme) {
-        const link = document.createElement('link');
-        link.id = darkThemeId;
-        link.rel = 'stylesheet';
-        link.type = 'text/css';
-        // Use the CSS path from node_modules
-        link.href = `${process.env.PUBLIC_URL}/node_modules/rc-dock/dist/rc-dock-dark.css`;
-        
-        // Fallback: try to import via webpack
-        import('rc-dock/dist/rc-dock-dark.css').catch(() => {
-          console.warn('Could not dynamically load rc-dock dark theme');
-        });
-        
-        document.head.appendChild(link);
-      }
-    } else {
-      // Remove dark theme if it exists
-      if (existingDarkTheme) {
-        existingDarkTheme.remove();
+    // Apply dock-layout class to body for rc-dock theme switching
+    // rc-dock-dark.css styles are scoped to .dock-layout selector
+    // We need to ensure the dock-layout element gets the right class
+    const dockLayoutElement = document.querySelector(".dock-layout");
+    if (dockLayoutElement) {
+      if (theme === "dark") {
+        dockLayoutElement.classList.add("dock-layout");
+      } else {
+        // Light theme uses base rc-dock.css without dark overrides
+        dockLayoutElement.classList.add("dock-layout");
       }
     }
 
-    // Apply theme classes to dock elements
+    // Apply theme classes to dock container
     const dockContainer = document.querySelector(".dock-container");
-    const dockLayoutElement = document.querySelector(".dock-layout");
-
     if (dockContainer) {
       dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
       dockContainer.classList.add(theme === "dark" ? "dock-layout-dark" : "dock-layout-light");
-    }
-
-    if (dockLayoutElement) {
-      dockLayoutElement.classList.remove("dock-layout-dark", "dock-layout-light");
-      dockLayoutElement.classList.add(theme === "dark" ? "dock-layout-dark" : "dock-layout-light");
     }
   }, [theme]);
 
@@ -737,7 +716,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
-      <div className="dock-container full-height">
+      <div className={`dock-container full-height ${theme === 'dark' ? 'dock-theme-dark' : 'dock-theme-light'}`}>
         <DockLayout
           ref={dockLayoutRef}
           defaultLayout={generateDynamicLayout()}

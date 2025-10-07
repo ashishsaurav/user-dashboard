@@ -1185,8 +1185,30 @@
 }
 
 /* ==============================================
-   RC-DOCK INTEGRATION
+   RC-DOCK INTEGRATION & THEME CONTROL
    ============================================== */
+
+/* Light theme wrapper - neutralize dark theme styles from rc-dock-dark.css */
+.dock-theme-light .dock-layout {
+  /* Explicitly set light theme */
+  color-scheme: light !important;
+  filter: none !important;
+}
+
+/* Ensure light theme for all rc-dock elements when in light mode */
+.dock-theme-light .dock-bar,
+.dock-theme-light .dock-tab,
+.dock-theme-light .dock-panel,
+.dock-theme-light .dock-drag-layer,
+.dock-theme-light .dock-drop-square {
+  /* Light theme will use our custom CSS variables */
+  filter: none !important;
+}
+
+/* Dark theme wrapper - enable rc-dock dark styles */
+.dock-theme-dark .dock-layout {
+  color-scheme: dark !important;
+}
 
 .dock-layout {
   background: var(--bg-primary) !important;
