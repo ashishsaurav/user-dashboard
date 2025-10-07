@@ -57,6 +57,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   
   // Layout mode state - horizontal or vertical
   const [layoutMode, setLayoutMode] = useState<'horizontal' | 'vertical'>('horizontal');
+  
+  // Navigation panel position state (for popup positioning)
+  const [navPanelPosition, setNavPanelPosition] = useState<'left' | 'right'>('left');
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
@@ -350,6 +353,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onUpdateNavSettings={handleUpdateNavSettings}
           reports={getUserAccessibleReports()}
           widgets={getUserAccessibleWidgets()}
+          popupPosition={navPanelPosition}
         />
       );
     }
@@ -379,6 +383,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     selectedView,
     navigationUpdateTrigger,
     layoutMode,
+    navPanelPosition,
   ]);
 
   const createReportsContent = () => (
@@ -413,11 +418,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     />
   );
 
-  // Handle manual toggle (button click)
+  // Handle manual toggle (button click) - only allow in vertical mode
   const handleToggleCollapse = useCallback(() => {
+    // Only allow manual collapse/expand in vertical layout mode
+    if (layoutMode !== 'vertical') {
+      console.log('⚠️ Collapse/expand only works in vertical layout mode');
+      return;
+    }
+    
     isManualToggleRef.current = true;
     setIsDockCollapsed(prev => !prev);
-  }, []);
+  }, [layoutMode]);
   
   // Handle layout mode toggle
   const handleToggleLayout = useCallback(() => {
@@ -563,7 +574,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         for (const entry of entries) {
           const width = entry.contentRect.width;
           
-          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}`);
+          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}, layout: ${layoutMode}`);
+          
+          // Detect panel position for popup positioning
+          detectNavigationPosition();
+          
+          // Force expand if width is above threshold (regardless of mode)
+          if (width >= LAYOUT_SIZES.NAVIGATION_FORCE_EXPAND_WIDTH && isDockCollapsed) {
+            console.log(`🔼 Force expanding: width ${width}px >= ${LAYOUT_SIZES.NAVIGATION_FORCE_EXPAND_WIDTH}px`);
+            setIsDockCollapsed(false);
+            return;
+          }
           
           // Only auto-toggle if this isn't from a manual button toggle or layout change
           if (!isManualToggleRef.current && !isLayoutChangingRef.current) {
@@ -572,15 +593,24 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             const isStableWidth = width > 50; // Ignore very small transient widths
             
             if (isStableWidth) {
-              // Auto-collapse if width is below collapse threshold
-              if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
-                console.log(`🔽 Auto-collapsing: width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
-                setIsDockCollapsed(true);
-              }
-              // Auto-expand if width is above expand threshold
-              else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
-                console.log(`🔼 Auto-expanding: width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
-                setIsDockCollapsed(false);
+              // Only allow collapse/expand in vertical layout mode
+              if (layoutMode === 'vertical') {
+                // Auto-collapse if width is below collapse threshold
+                if (width < LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD && !isDockCollapsed) {
+                  console.log(`🔽 Auto-collapsing (vertical): width ${width}px < ${LAYOUT_SIZES.NAVIGATION_COLLAPSE_THRESHOLD}px`);
+                  setIsDockCollapsed(true);
+                }
+                // Auto-expand if width is above expand threshold
+                else if (width > LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD && isDockCollapsed) {
+                  console.log(`🔼 Auto-expanding (vertical): width ${width}px > ${LAYOUT_SIZES.NAVIGATION_EXPAND_THRESHOLD}px`);
+                  setIsDockCollapsed(false);
+                }
+              } else {
+                // In horizontal mode, always show expanded
+                if (isDockCollapsed) {
+                  console.log(`🔼 Forcing expand in horizontal mode`);
+                  setIsDockCollapsed(false);
+                }
               }
             }
           } else {
@@ -614,7 +644,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         resizeObserverRef.current.disconnect();
       }
     };
-  }, [isDockCollapsed, findNavigationPanel]);
+  }, [isDockCollapsed, layoutMode, findNavigationPanel, detectNavigationPosition]);
 
   // Apply collapsed state to navigation panel
   useEffect(() => {
@@ -630,6 +660,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Handle navigation panel maximize - auto expand
   const handleLayoutChange = useCallback((newLayout: LayoutData) => {
+    // Detect navigation position on layout change
+    setTimeout(() => {
+      detectNavigationPosition();
+    }, 100);
+    
     // Check if navigation panel is maximized
     const maxboxChild = newLayout?.maxbox?.children?.[0];
     const isNavigationMaximized = 
@@ -641,7 +676,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       console.log('🔼 Navigation maximized - auto-expanding');
       setIsDockCollapsed(false);
     }
-  }, [isDockCollapsed]);
+  }, [isDockCollapsed, detectNavigationPosition]);
 
   // Helper function to find navigation panel in layout data
   const findNavigationPanelInLayout = useCallback((layout: LayoutData) => {

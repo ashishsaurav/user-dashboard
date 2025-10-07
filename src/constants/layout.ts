@@ -5,6 +5,7 @@ export const LAYOUT_SIZES = {
   NAVIGATION_PANEL_MAX_WIDTH: 500,
   NAVIGATION_COLLAPSE_THRESHOLD: 100, // Below this width, auto-collapse
   NAVIGATION_EXPAND_THRESHOLD: 120, // Above this width, auto-expand
+  NAVIGATION_FORCE_EXPAND_WIDTH: 200, // Above this width, always show expanded
   CONTENT_PANEL_MIN_WIDTH: 300,
   CONTENT_PANEL_MIN_HEIGHT: 200,
   DEFAULT_PANEL_WIDTH: 700,

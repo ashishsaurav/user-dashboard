@@ -22,6 +22,8 @@ interface CollapsedNavigationPanelProps {
   // Add reports and widgets for modals
   reports?: any[];
   widgets?: any[];
+  // Popup position based on dock side
+  popupPosition?: 'left' | 'right';
 }
 
 const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
@@ -36,6 +38,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   onUpdateNavSettings,
   reports = [],
   widgets = [],
+  popupPosition = 'left',
 }) => {
   const [hoveredViewGroup, setHoveredViewGroup] = useState<string | null>(null);
   const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
@@ -102,10 +105,22 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const position = {
-      x: rect.right - 2, // Eliminate gap completely
-      y: rect.top,
-    };
+    const POPUP_WIDTH = 280; // Approximate popup width
+    
+    let position;
+    if (popupPosition === 'right') {
+      // Panel on right side - show popup on left
+      position = {
+        x: rect.left - POPUP_WIDTH - 10, // 10px gap
+        y: rect.top,
+      };
+    } else {
+      // Panel on left side - show popup on right (default)
+      position = {
+        x: rect.right + 10, // 10px gap
+        y: rect.top,
+      };
+    }
 
     setHoveredViewGroup(viewGroup.id);
     setHoverPosition(position);
@@ -197,6 +212,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
           onUpdateViews={onUpdateViews}
           onUpdateViewGroups={onUpdateViewGroups}
           onUpdateNavSettings={onUpdateNavSettings}
+          dockPosition={popupPosition}
         />
       )}
     </div>
