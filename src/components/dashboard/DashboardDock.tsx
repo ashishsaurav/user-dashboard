@@ -552,8 +552,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return panelWithNavContent as HTMLElement | null;
   }, []);
 
-  // Helper function to detect navigation panel position (left or right)
-  const detectNavigationPosition = useCallback(() => {
+  // Helper function to detect navigation panel position and orientation
+  const detectNavigationPositionAndOrientation = useCallback(() => {
     const navPanel = findNavigationPanel();
     if (!navPanel) return;
 
@@ -561,9 +561,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     const viewportWidth = window.innerWidth;
     const panelCenterX = rect.left + rect.width / 2;
     
-    // If panel center is in left half of viewport, it's on the left
+    // Detect position (left or right) for popup positioning
     const position = panelCenterX < viewportWidth / 2 ? 'left' : 'right';
     setNavPanelPosition(position);
+    
+    // Detect orientation based on panel dimensions
+    // If height > width, panel is vertically oriented (docked left/right)
+    // If width > height, panel is horizontally oriented (docked top/bottom)
+    const orientation = rect.height > rect.width ? 'vertical' : 'horizontal';
+    setNavPanelOrientation(orientation);
+    
+    console.log(`📍 Navigation panel - Position: ${position}, Orientation: ${orientation}, Dimensions: ${rect.width}x${rect.height}`);
   }, [findNavigationPanel]);
 
   // Setup ResizeObserver for auto expand/collapse based on width
