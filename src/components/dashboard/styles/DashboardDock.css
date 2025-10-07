@@ -1426,6 +1426,20 @@
   box-shadow: 0 0 8px rgba(79, 70, 229, 0.3);
 }
 
+.dock-nav-more{
+  color: var(--text-primary);
+  align-self: flex-start;
+}
+
+.dock-dropdown .dock-dropdown-menu-item:hover{
+  background-color: var(--bg-primary) !important;
+  background: var(--bg-primary) !important;
+}
+
+.dock-dropdown-menu{
+  background-color: var(--bg-primary) !important;
+}
+
 /* Visual handle for dividers */
 .dock-layout .dock-divider::before {
   content: '';
