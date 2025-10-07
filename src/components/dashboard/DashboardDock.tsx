@@ -504,30 +504,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     generateDynamicLayout,
   ]);
 
-  // Apply theme changes - rc-dock dark CSS is imported but controlled via body class
+  // Apply theme changes - rc-dock uses .dock-layout-dark class on parent
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
     document.body.setAttribute("data-theme", theme);
-
-    // Apply dock-layout class to body for rc-dock theme switching
-    // rc-dock-dark.css styles are scoped to .dock-layout selector
-    // We need to ensure the dock-layout element gets the right class
-    const dockLayoutElement = document.querySelector(".dock-layout");
-    if (dockLayoutElement) {
-      if (theme === "dark") {
-        dockLayoutElement.classList.add("dock-layout");
-      } else {
-        // Light theme uses base rc-dock.css without dark overrides
-        dockLayoutElement.classList.add("dock-layout");
-      }
-    }
-
-    // Apply theme classes to dock container
-    const dockContainer = document.querySelector(".dock-container");
-    if (dockContainer) {
-      dockContainer.classList.remove("dock-layout-dark", "dock-layout-light");
-      dockContainer.classList.add(theme === "dark" ? "dock-layout-dark" : "dock-layout-light");
-    }
   }, [theme]);
 
   // Setup ResizeObserver for auto expand/collapse based on width
@@ -716,7 +696,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
-      <div className={`dock-container full-height ${theme === 'dark' ? 'dock-theme-dark' : 'dock-theme-light'}`}>
+      <div className={`dock-container full-height ${theme === 'dark' ? 'dock-layout-dark' : ''}`}>
         <DockLayout
           ref={dockLayoutRef}
           defaultLayout={generateDynamicLayout()}
