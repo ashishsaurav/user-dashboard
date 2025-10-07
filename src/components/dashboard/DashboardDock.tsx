@@ -627,11 +627,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       resizeObserverRef.current = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const width = entry.contentRect.width;
-
-          console.log(
-            `Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}, layout: ${layoutMode}`
-          );
-
+          
+          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}, orientation: ${navPanelOrientation}`);
+          
+          // Detect panel position and orientation
+          detectNavigationPositionAndOrientation();
+          
           // Force expand if width is above threshold (regardless of mode)
           if (
             width >= LAYOUT_SIZES.NAVIGATION_FORCE_EXPAND_WIDTH &&
