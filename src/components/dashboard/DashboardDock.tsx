@@ -609,6 +609,30 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
   }, [findNavigationPanel]);
 
+  // Add this useEffect in DashboardDock.tsx to hide/show hamburger button based on orientation
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const collapseButton = document.querySelector(".collapse-toggle-btn");
+      if (collapseButton) {
+        if (navPanelOrientation === "horizontal") {
+          // Hide button when docked top/bottom
+          (collapseButton as HTMLElement).style.display = "none";
+          console.log(
+            "🙈 Hiding collapse button - horizontal orientation (top/bottom dock)"
+          );
+        } else {
+          // Show button when docked left/right
+          (collapseButton as HTMLElement).style.display = "";
+          console.log(
+            "👁️ Showing collapse button - vertical orientation (left/right dock)"
+          );
+        }
+      }
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [navPanelOrientation]);
+
   // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
     const setupResizeObserver = () => {

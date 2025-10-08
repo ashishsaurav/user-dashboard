@@ -2799,3 +2799,14 @@
   background: var(--primary-color) !important;
   opacity: 0.5 !important;
 }
+
+/* Auto-height for navigation panel when docked top/bottom - with minimum height */
+/* .dock-panel:has(.navigation-panel.horizontal-layout) {
+  min-height: 175px !important;
+  flex: 0 0 auto !important;
+}
+
+.dock-panel:has(.navigation-panel.vertical-layout) {
+  min-width: 275px !important;
+  flex: 0 0 auto !important;
+} */
