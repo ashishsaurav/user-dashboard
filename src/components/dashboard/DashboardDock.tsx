@@ -457,32 +457,33 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   }, []);
 
   // Dock layout manager
-  const { generateDynamicLayout, getCurrentLayoutStructure } = useDockLayoutManager({
-    selectedView,
-    reportsVisible,
-    widgetsVisible,
-    isAdmin: user.role === "admin",
-    isDockCollapsed: isDockCollapsed,
-    layoutMode: layoutMode,
-    navPanelOrientation: navPanelOrientation,
-    actions: {
-      onToggleCollapse: handleToggleCollapse,
-      onNavigationManage: () => setShowNavigationModal(true),
-      onSystemSettings: () => setShowManageModal(true),
-      onReopenReports: handleReopenReports,
-      onReopenWidgets: handleReopenWidgets,
-      onAddReport: () => setShowAddReportModal(true),
-      onAddWidget: () => setShowAddWidgetModal(true),
-      onCloseReports: handleCloseReports,
-      onCloseWidgets: handleCloseWidgets,
-    },
-    content: {
-      navigation: createNavigationContent(),
-      reports: createReportsContent(),
-      widgets: createWidgetsContent(),
-      welcome: createWelcomeContent(),
-    },
-  });
+  const { generateDynamicLayout, getCurrentLayoutStructure } =
+    useDockLayoutManager({
+      selectedView,
+      reportsVisible,
+      widgetsVisible,
+      isAdmin: user.role === "admin",
+      isDockCollapsed: isDockCollapsed,
+      layoutMode: layoutMode,
+      navPanelOrientation: navPanelOrientation,
+      actions: {
+        onToggleCollapse: handleToggleCollapse,
+        onNavigationManage: () => setShowNavigationModal(true),
+        onSystemSettings: () => setShowManageModal(true),
+        onReopenReports: handleReopenReports,
+        onReopenWidgets: handleReopenWidgets,
+        onAddReport: () => setShowAddReportModal(true),
+        onAddWidget: () => setShowAddWidgetModal(true),
+        onCloseReports: handleCloseReports,
+        onCloseWidgets: handleCloseWidgets,
+      },
+      content: {
+        navigation: createNavigationContent(),
+        reports: createReportsContent(),
+        widgets: createWidgetsContent(),
+        welcome: createWelcomeContent(),
+      },
+    });
 
   // Smart update that preserves RC-Dock internal state
   const updateLayoutContent = useCallback(() => {
@@ -570,14 +571,16 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     const allPanels = Array.from(document.querySelectorAll(".dock-panel"));
     for (let i = 0; i < allPanels.length; i++) {
       const panel = allPanels[i];
-      const navTab = panel.querySelector('.dock-tab[data-dockid="navigation"]');
+      const navTab = panel.querySelector(
+        '.dock-tab[data-node-key="navigation"]'
+      );
       if (navTab) {
         return panel as HTMLElement;
       }
     }
     // Fallback: check if panel contains navigation content
     const panelWithNavContent = document
-      .querySelector('[data-dock-id*="navigation"]')
+      .querySelector('[data-node-key*="navigation"]')
       ?.closest(".dock-panel");
     return panelWithNavContent as HTMLElement | null;
   }, []);
@@ -627,12 +630,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       resizeObserverRef.current = new ResizeObserver((entries) => {
         for (const entry of entries) {
           const width = entry.contentRect.width;
-          
-          console.log(`Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}, orientation: ${navPanelOrientation}`);
-          
+
+          console.log(
+            `Navigation panel width: ${width}px, collapsed: ${isDockCollapsed}, orientation: ${navPanelOrientation}`
+          );
+
           // Detect panel position and orientation
           detectNavigationPositionAndOrientation();
-          
+
           // Force expand if width is above threshold (regardless of mode)
           if (
             width >= LAYOUT_SIZES.NAVIGATION_FORCE_EXPAND_WIDTH &&
@@ -729,18 +734,23 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     const detectWithRetry = () => {
       detectNavigationPositionAndOrientation();
     };
-    
+
     // Run detection with retries
     const timer1 = setTimeout(detectWithRetry, 100);
     const timer2 = setTimeout(detectWithRetry, 500);
     const timer3 = setTimeout(detectWithRetry, 1000);
-    
+
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
-  }, [selectedView, reportsVisible, widgetsVisible, detectNavigationPositionAndOrientation]);
+  }, [
+    selectedView,
+    reportsVisible,
+    widgetsVisible,
+    detectNavigationPositionAndOrientation,
+  ]);
 
   // Apply collapsed state to navigation panel
   useEffect(() => {

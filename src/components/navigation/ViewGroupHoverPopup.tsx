@@ -32,7 +32,7 @@ interface ViewGroupHoverPopupProps {
   onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
   onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
   // Dock position for smart popup placement
-  dockPosition?: 'left' | 'right';
+  dockPosition?: "left" | "right";
 }
 
 const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
@@ -52,7 +52,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
-  dockPosition = 'left',
+  dockPosition = "left",
 }) => {
   // Modal states
   const [editingView, setEditingView] = useState<View | null>(null);
@@ -71,6 +71,36 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     .sort((a, b) => (a.order || 0) - (b.order || 0));
 
   if (groupViews.length === 0) return null;
+
+  // Calculate popup style with dynamic positioning left/right based on available space
+  // Assume popup width approx 300px, can be replaced with ref measurement for precision
+  const popupWidth = 300;
+  const screenWidth = window.innerWidth;
+
+  let popupLeft: number | undefined = position.x;
+  let popupRight: number | undefined = undefined;
+
+  if (dockPosition === "right") {
+    const spaceRight = screenWidth - position.x;
+    if (spaceRight < popupWidth) {
+      // Not enough space on right, switch popup to left side
+      popupRight = screenWidth - position.x;
+      popupLeft = undefined;
+    }
+  } else {
+    // dockPosition left, normal placement left
+    popupLeft = position.x;
+    popupRight = undefined;
+  }
+
+  const popupStyle: React.CSSProperties = {
+    position: "fixed",
+    top: position.y,
+    left: popupLeft,
+    right: popupRight,
+    width: popupWidth,
+    zIndex: 1000,
+  };
 
   // Action handlers
   const handleEditViewGroup = () => {
@@ -185,16 +215,16 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
 
   const handleConfirmDeleteView = () => {
     if (!deletingView || !onUpdateViews || !onUpdateViewGroups) return;
-    
+
     // Remove view from all view groups
-    const updatedViewGroups = allViewGroups.map(vg => ({
+    const updatedViewGroups = allViewGroups.map((vg) => ({
       ...vg,
-      viewIds: vg.viewIds.filter(id => id !== deletingView.id)
+      viewIds: vg.viewIds.filter((id) => id !== deletingView.id),
     }));
-    
+
     // Remove view from views array
-    const updatedViews = allViews.filter(v => v.id !== deletingView.id);
-    
+    const updatedViews = allViews.filter((v) => v.id !== deletingView.id);
+
     onUpdateViews(updatedViews);
     onUpdateViewGroups(updatedViewGroups);
     setDeletingView(null);
@@ -204,7 +234,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   const canModify = user?.role === "admin" || user?.role === "user";
 
   // Check if any modal is open
-  const hasOpenModal = editingView || editingViewGroup || deletingView || deletingViewGroup;
+  const hasOpenModal =
+    editingView || editingViewGroup || deletingView || deletingViewGroup;
 
   // Handle mouse leave - don't close if modal is open
   const handleMouseLeave = (e: React.MouseEvent) => {
@@ -217,12 +248,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     <>
       <div
         className="view-group-hover-popup"
-        style={{
-          position: "fixed",
-          left: position.x,
-          top: position.y,
-          zIndex: 1000,
-        }}
+        style={popupStyle}
         onMouseEnter={onMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
