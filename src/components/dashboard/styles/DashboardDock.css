@@ -907,8 +907,8 @@
 
 /* Legacy Tab Buttons */
 .tab-btn {
-  width: 250px;
-  height: 50px;
+  width: 350px;
+  height: 45px;
   background: var(--bg-tertiary);
   border: 1px solid var(--border-color);
   border-radius: 6px;
