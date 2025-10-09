@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { View, Report, Widget } from "../../types";
-import DeleteConfirmModal from "../DeleteConfirmModal";
 import "./styles/ViewContentPanel.css";
 
 interface ViewContentPanelProps {
@@ -38,13 +37,6 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
   // NEW: Drag and drop state for widgets (cards)
   const [draggedWidget, setDraggedWidget] = useState<string | null>(null);
   const [dragOverWidget, setDragOverWidget] = useState<string | null>(null);
-
-  const [removeConfirmation, setRemoveConfirmation] = useState<{
-    isOpen: boolean;
-    itemId: string;
-    itemName: string;
-    itemType: "report" | "widget";
-  } | null>(null);
 
   // If no view is selected, show welcome message
   if (!selectedView) {
@@ -242,36 +234,6 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
     setDragOverWidget(null);
   };
 
-  const handleRemoveReportClick = (reportId: string, reportName: string) => {
-    setRemoveConfirmation({
-      isOpen: true,
-      itemId: reportId,
-      itemName: reportName,
-      itemType: "report",
-    });
-  };
-
-  const handleRemoveWidgetClick = (widgetId: string, widgetName: string) => {
-    setRemoveConfirmation({
-      isOpen: true,
-      itemId: widgetId,
-      itemName: widgetName,
-      itemType: "widget",
-    });
-  };
-
-  const handleConfirmRemove = () => {
-    if (!removeConfirmation) return;
-
-    if (removeConfirmation.itemType === "report") {
-      onRemoveReport(removeConfirmation.itemId);
-    } else {
-      onRemoveWidget(removeConfirmation.itemId);
-    }
-
-    setRemoveConfirmation(null);
-  };
-
   // Reports Section with Orderable Tabs
   if (type === "reports") {
     if (viewReports.length === 0) {
@@ -321,7 +283,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                     className="tab-action-btn close-btn"
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleRemoveReportClick(report.id, report.name);
+                      onRemoveReport(report.id);
                       if (
                         activeReportTab === report.id &&
                         viewReports.length > 1
@@ -428,14 +390,6 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
             )}
           </div>
         </div>
-        {removeConfirmation && (
-          <DeleteConfirmModal
-            onCancel={() => setRemoveConfirmation(null)}
-            onConfirm={handleConfirmRemove}
-            itemType={removeConfirmation.itemType}
-            itemName={removeConfirmation.itemName}
-          />
-        )}
       </div>
     );
   }
@@ -484,9 +438,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                 </div>
                 <button
                   className="tab-action-btn close-btn"
-                  onClick={() =>
-                    handleRemoveWidgetClick(widget.id, widget.name)
-                  }
+                  onClick={() => onRemoveWidget(widget.id)}
                   title="Remove from view"
                 >
                   <CloseIcon />
@@ -517,14 +469,6 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
           );
         })}
       </div>
-      {removeConfirmation && (
-        <DeleteConfirmModal
-          onCancel={() => setRemoveConfirmation(null)}
-          onConfirm={handleConfirmRemove}
-          itemType={removeConfirmation.itemType}
-          itemName={removeConfirmation.itemName}
-        />
-      )}
     </div>
   );
 

@@ -10,8 +10,8 @@ interface DockLayoutManagerProps {
   widgetsVisible: boolean;
   isAdmin: boolean;
   isDockCollapsed?: boolean;
-  layoutMode?: "horizontal" | "vertical"; // NEW: Support for vertical layouts
-  navPanelOrientation?: "vertical" | "horizontal"; // Navigation panel orientation
+  layoutMode?: 'horizontal' | 'vertical'; // NEW: Support for vertical layouts
+  navPanelOrientation?: 'vertical' | 'horizontal'; // Navigation panel orientation
   actions: {
     onToggleCollapse: () => void;
     onNavigationManage: () => void;
@@ -37,19 +37,19 @@ export function useDockLayoutManager({
   widgetsVisible,
   isAdmin,
   isDockCollapsed = false,
-  layoutMode = "horizontal", // NEW: Default to horizontal
-  navPanelOrientation = "vertical", // Default to vertical
+  layoutMode = 'horizontal', // NEW: Default to horizontal
+  navPanelOrientation = 'vertical', // Default to vertical
   actions,
   content,
 }: DockLayoutManagerProps) {
   const generateDynamicLayout = useCallback((): LayoutData => {
     const children: any[] = [];
 
-    // Navigation panel - adjust size based on collapsed state
-    const navSize = isDockCollapsed
-      ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH
+    // Navigation panel - adjust size based on dock collapsed state
+    const navSize = isDockCollapsed 
+      ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH 
       : LAYOUT_SIZES.NAVIGATION_PANEL_WIDTH;
-
+    
     children.push({
       tabs: [
         DockTabFactory.createNavigationTab(
@@ -64,133 +64,87 @@ export function useDockLayoutManager({
         ),
       ],
       size: navSize,
-      minSize: isDockCollapsed
-        ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH
-        : LAYOUT_SIZES.NAVIGATION_PANEL_MIN_WIDTH,
+      minSize: isDockCollapsed ? LAYOUT_SIZES.NAVIGATION_PANEL_COLLAPSED_WIDTH : LAYOUT_SIZES.NAVIGATION_PANEL_MIN_WIDTH,
       maxSize: LAYOUT_SIZES.NAVIGATION_PANEL_MAX_WIDTH,
-      group: "main",
+      group: 'main', // Enable maximize/minimize
     });
 
-    // If no view is selected, show default welcome
+    // Show welcome section when no view is selected
     if (!selectedView) {
       children.push({
-        tabs: [
-          DockTabFactory.createWelcomeTab(content.welcome, undefined, {
-            showReportsButton: false,
-            showWidgetsButton: false,
-          }),
-        ],
+        tabs: [DockTabFactory.createWelcomeTab(content.welcome)],
         size: 1300 - navSize,
-        group: "main",
+        group: 'main', // Enable maximize/minimize
       });
-
-      return {
-        dockbox: {
-          mode: "horizontal",
-          children,
-        },
-      };
-    }
-
-    // Check if view has reports or widgets
-    const hasReports =
-      selectedView.reportIds && selectedView.reportIds.length > 0;
-    const hasWidgets =
-      selectedView.widgetIds && selectedView.widgetIds.length > 0;
-
-    // Add content panels based on layout mode
-    if (layoutMode === "horizontal") {
-      // Horizontal layout: side-by-side
-
-      // Only create reports tab if view has reports AND reportsVisible is true
-      if (reportsVisible && hasReports) {
-        children.push({
-          tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
-          size: widgetsVisible && hasWidgets ? 700 : 1300 - navSize,
-          minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
-          group: "main",
-        });
-      }
-
-      // Only create widgets tab if view has widgets AND widgetsVisible is true
-      if (widgetsVisible && hasWidgets) {
-        children.push({
-          tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
-          size: reportsVisible && hasReports ? 350 : 1300 - navSize,
-          minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
-          group: "main",
-        });
-      }
     } else {
-      // Vertical layout: stacked
-      const contentChildren: any[] = [];
+      // Add content panels based on layout mode
+      if (layoutMode === 'horizontal') {
+        // Horizontal layout: side-by-side
+        if (reportsVisible) {
+          children.push({
+            tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
+            size: widgetsVisible ? 700 : 1300 - navSize,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+            group: 'main', // Enable maximize/minimize
+          });
+        }
 
-      // Only create reports tab if view has reports AND reportsVisible is true
-      if (reportsVisible && hasReports) {
-        contentChildren.push({
-          tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
-          size:
-            widgetsVisible && hasWidgets
-              ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT
-              : 800,
-          minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
-          group: "main",
-        });
+        if (widgetsVisible) {
+          children.push({
+            tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
+            size: reportsVisible ? 350 : 1300 - navSize,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+            group: 'main', // Enable maximize/minimize
+          });
+        }
+      } else {
+        // Vertical layout: stacked on top of each other
+        const contentChildren: any[] = [];
+        
+        if (reportsVisible) {
+          contentChildren.push({
+            tabs: [DockTabFactory.createReportsTab(actions, content.reports)],
+            size: widgetsVisible ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT : 800,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
+            group: 'main', // Enable maximize/minimize
+          });
+        }
+
+        if (widgetsVisible) {
+          contentChildren.push({
+            tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
+            size: reportsVisible ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT : 800,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
+            group: 'main', // Enable maximize/minimize
+          });
+        }
+
+        // Add vertical content box
+        if (contentChildren.length > 0) {
+          children.push({
+            mode: 'vertical' as const,
+            children: contentChildren,
+            size: 1300 - navSize,
+            minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+          });
+        }
       }
 
-      // Only create widgets tab if view has widgets AND widgetsVisible is true
-      if (widgetsVisible && hasWidgets) {
-        contentChildren.push({
-          tabs: [DockTabFactory.createWidgetsTab(actions, content.widgets)],
-          size:
-            reportsVisible && hasReports
-              ? LAYOUT_SIZES.DEFAULT_PANEL_HEIGHT
-              : 800,
-          minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_HEIGHT,
-          group: "main",
-        });
-      }
-
-      // Add vertical content box only if we have content
-      if (contentChildren.length > 0) {
+      // Show welcome when both sections are closed
+      if (!reportsVisible && !widgetsVisible) {
         children.push({
-          mode: "vertical" as const,
-          children: contentChildren,
+          tabs: [
+            DockTabFactory.createWelcomeTab(content.welcome, selectedView.name),
+          ],
           size: 1300 - navSize,
-          minSize: LAYOUT_SIZES.CONTENT_PANEL_MIN_WIDTH,
+          group: 'main', // Enable maximize/minimize
         });
       }
-    }
-
-    // Determine if any content panels were actually added
-    const reportsPanelAdded = reportsVisible && hasReports;
-    const widgetsPanelAdded = widgetsVisible && hasWidgets;
-    const hasAnyVisibleContent = reportsPanelAdded || widgetsPanelAdded;
-
-    // Show welcome when NO visible content panels exist
-    if (!hasAnyVisibleContent) {
-      // Determine which buttons to show based on what the view has
-      const welcomeOptions = {
-        showReportsButton: hasReports, // Show reports button if view has reports (but closed)
-        showWidgetsButton: hasWidgets, // Show widgets button if view has widgets (but closed)
-      };
-
-      children.push({
-        tabs: [
-          DockTabFactory.createWelcomeTab(
-            content.welcome,
-            selectedView.name,
-            welcomeOptions
-          ),
-        ],
-        size: 1300 - navSize,
-        group: "main",
-      });
     }
 
     return {
       dockbox: {
-        mode: "horizontal",
+        mode: "horizontal", // Top-level is always horizontal (navigation + content)
         children,
       },
     };
@@ -206,22 +160,18 @@ export function useDockLayoutManager({
     content,
   ]);
 
-  // In DockLayoutManager.tsx, update the getCurrentLayoutStructure function:
-
-  const getCurrentLayoutStructure = useCallback((): string => {
-    const hasReports =
-      selectedView?.reportIds && selectedView.reportIds.length > 0;
-    const hasWidgets =
-      selectedView?.widgetIds && selectedView.widgetIds.length > 0;
-
-    return [
-      selectedView ? selectedView.id : "no-view",
-      selectedView ? selectedView.reportIds?.length || 0 : 0, // ✅ ADD report count
-      selectedView ? selectedView.widgetIds?.length || 0 : 0, // ✅ ADD widget count
-      reportsVisible && hasReports,
-      widgetsVisible && hasWidgets,
-      layoutMode,
-    ].join("-");
+  const getCurrentLayoutStructure = useCallback(() => {
+    const panels = [];
+    // Don't include navigation collapse state - it shouldn't trigger full layout reload
+    panels.push(`layout-${layoutMode}`);
+    if (!selectedView) {
+      panels.push("welcome");
+    } else {
+      if (reportsVisible) panels.push("reports");
+      if (widgetsVisible) panels.push("widgets");
+      if (!reportsVisible && !widgetsVisible) panels.push("welcome-closed");
+    }
+    return panels.join(",");
   }, [selectedView, reportsVisible, widgetsVisible, layoutMode]);
 
   return {

@@ -432,10 +432,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       selectedView={selectedView}
       onReopenReports={handleReopenReports}
       onReopenWidgets={handleReopenWidgets}
-      onAddReport={() => setShowAddReportModal(true)} // ✅ NEW
-      onAddWidget={() => setShowAddWidgetModal(true)} // ✅ NEW
-      hasReports={selectedView?.reportIds && selectedView.reportIds.length > 0}
-      hasWidgets={selectedView?.widgetIds && selectedView.widgetIds.length > 0}
     />
   );
 
