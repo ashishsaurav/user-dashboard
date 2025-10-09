@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   View,
   ViewGroup,
@@ -12,6 +12,7 @@ import EditViewGroupModal from "../EditViewGroupModal";
 import DeleteConfirmationModal from "../DeleteConfirmationModal";
 import { useNotification } from "../NotificationProvider";
 import { DeleteIcon, EditIcon, EyeIcon, ViewGroupIcon } from "../ui/Icons";
+import ActionPopup from "../ActionPopup";
 
 interface ViewGroupHoverPopupProps {
   viewGroup: ViewGroup;
@@ -54,6 +55,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   onUpdateNavSettings,
   dockPosition = "left",
 }) => {
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // Modal states
   const [editingView, setEditingView] = useState<View | null>(null);
   const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(
@@ -63,6 +66,19 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(
     null
   );
+
+  const [hoveredItem, setHoveredItem] = useState<{
+    type: string;
+    id: string;
+    position: { x: number; y: number };
+  } | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
+  }, []);
 
   const { showSuccess, showWarning } = useNotification();
 
@@ -74,7 +90,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
 
   // Calculate popup style with dynamic positioning left/right based on available space
   // Assume popup width approx 300px, can be replaced with ref measurement for precision
-  const popupWidth = 300;
+  const popupWidth = 240;
   const screenWidth = window.innerWidth;
 
   let popupLeft: number | undefined = position.x;
@@ -100,6 +116,63 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     right: popupRight,
     width: popupWidth,
     zIndex: 1000,
+  };
+
+  const handleItemMouseEnter = (
+    e: React.MouseEvent,
+    type: string,
+    id: string
+  ) => {
+    // Clear any pending hide timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+
+    // Clear any pending show timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const POPUP_HEIGHT = 40;
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredItem({
+        type,
+        id,
+        position: {
+          x: rect.left,
+          y: rect.top - POPUP_HEIGHT - 4,
+        },
+      });
+    }, 300);
+  };
+
+  const handleItemMouseLeave = () => {
+    // Clear the show timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+
+    // Delay hiding to allow moving to popup
+    hideTimeoutRef.current = setTimeout(() => {
+      setHoveredItem(null);
+    }, 200); // 200ms grace period to move to popup
+  };
+
+  const handleActionPopupMouseEnter = () => {
+    // Cancel hiding when mouse enters popup
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+  };
+
+  const handleActionPopupMouseLeave = () => {
+    // Hide immediately when leaving popup
+    setHoveredItem(null);
   };
 
   // Action handlers
@@ -239,7 +312,13 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
 
   // Handle mouse leave - don't close if modal is open
   const handleMouseLeave = (e: React.MouseEvent) => {
-    if (!hasOpenModal && onMouseLeave) {
+    if (hasOpenModal) return;
+
+    // ✅ Don't close if we're hovering an item (action popup is showing)
+    if (hoveredItem) return;
+
+    // Otherwise call parent onMouseLeave to close the side popup
+    if (onMouseLeave) {
       onMouseLeave();
     }
   };
@@ -256,7 +335,13 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         <div className="navigation-popup-content">
           {/* View Group - Exact NavigationPanel replica */}
           <div className="nav-group nav-group-vertical">
-            <div className="nav-group-header nav-group-header-vertical">
+            <div
+              className="nav-group-header nav-group-header-vertical"
+              onMouseEnter={(e) =>
+                handleItemMouseEnter(e, "viewgroup", viewGroup.id)
+              }
+              onMouseLeave={handleItemMouseLeave}
+            >
               <div className="nav-group-info">
                 <div className="nav-group-icon">
                   <ViewGroupIcon />
@@ -266,33 +351,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
                   <span className="default-badge">Default</span>
                 )}
               </div>
-              {canModify && (
-                <div className="nav-group-actions">
-                  <button
-                    className="nav-action-btn visibility-btn"
-                    onClick={handleHideViewGroup}
-                    title="Hide from navigation"
-                  >
-                    <EyeIcon isVisible={true} />
-                  </button>
-                  <button
-                    className="nav-action-btn edit-btn"
-                    onClick={handleEditViewGroup}
-                    title="Edit view group and manage views"
-                  >
-                    <EditIcon />
-                  </button>
-                  {!viewGroup.isDefault && (
-                    <button
-                      className="nav-action-btn delete-btn"
-                      onClick={handleDeleteViewGroup}
-                      title="Delete view group"
-                    >
-                      <DeleteIcon />
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* View Group Content - Exact NavigationPanel replica */}
@@ -313,6 +371,10 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
                       isSelected ? "selected" : ""
                     }`}
                     onClick={() => onViewSelect?.(view)}
+                    onMouseEnter={(e) =>
+                      handleItemMouseEnter(e, "view", view.id)
+                    }
+                    onMouseLeave={handleItemMouseLeave}
                   >
                     <div className="nav-view-info">
                       <div className="nav-view-content">
@@ -323,40 +385,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
                         </div>
                       </div>
                     </div>
-                    {canModify && (
-                      <div className="nav-view-actions">
-                        <button
-                          className="nav-action-btn visibility-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleHideView(view);
-                          }}
-                          title="Hide from navigation"
-                        >
-                          <EyeIcon isVisible={true} />
-                        </button>
-                        <button
-                          className="nav-action-btn edit-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditView(view);
-                          }}
-                          title="Edit view"
-                        >
-                          <EditIcon />
-                        </button>
-                        <button
-                          className="nav-action-btn delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteView(view);
-                          }}
-                          title="Delete view"
-                        >
-                          <DeleteIcon />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 );
               })}
@@ -475,6 +503,50 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
           item={deletingView}
           onConfirm={handleConfirmDeleteView}
           onCancel={() => setDeletingView(null)}
+        />
+      )}
+
+      {/* ✅ NEW: Action Popup */}
+      {hoveredItem && (
+        <ActionPopup
+          onEdit={() => {
+            if (hoveredItem.type === "viewgroup") {
+              handleEditViewGroup();
+            } else {
+              const view = groupViews.find((v) => v.id === hoveredItem.id);
+              if (view) handleEditView(view);
+            }
+            setHoveredItem(null);
+          }}
+          onDelete={() => {
+            if (hoveredItem.type === "viewgroup") {
+              handleDeleteViewGroup();
+            } else {
+              const view = groupViews.find((v) => v.id === hoveredItem.id);
+              if (view) handleDeleteView(view);
+            }
+            setHoveredItem(null);
+          }}
+          onToggleVisibility={() => {
+            if (hoveredItem.type === "viewgroup") {
+              handleHideViewGroup();
+            } else {
+              const view = groupViews.find((v) => v.id === hoveredItem.id);
+              if (view) handleHideView(view);
+            }
+            setHoveredItem(null);
+          }}
+          isVisible={
+            hoveredItem.type === "viewgroup"
+              ? !userNavSettings?.hiddenViewGroups.includes(viewGroup.id)
+              : !userNavSettings?.hiddenViews.includes(hoveredItem.id)
+          }
+          showDelete={
+            hoveredItem.type === "viewgroup" ? !viewGroup.isDefault : true
+          }
+          position={hoveredItem.position}
+          onMouseEnter={handleActionPopupMouseEnter}
+          onMouseLeave={handleActionPopupMouseLeave}
         />
       )}
     </>
