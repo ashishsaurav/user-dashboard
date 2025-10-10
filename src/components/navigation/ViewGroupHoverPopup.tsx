@@ -90,7 +90,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
 
   // Calculate popup style with dynamic positioning left/right based on available space
   // Assume popup width approx 300px, can be replaced with ref measurement for precision
-  const popupWidth = 300;
+  const popupWidth = 240;
   const screenWidth = window.innerWidth;
 
   let popupLeft: number | undefined = position.x;
@@ -335,7 +335,13 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         <div className="navigation-popup-content">
           {/* View Group - Exact NavigationPanel replica */}
           <div className="nav-group nav-group-vertical">
-            <div className="nav-group-header nav-group-header-vertical">
+            <div
+              className="nav-group-header nav-group-header-vertical"
+              onMouseEnter={(e) =>
+                handleItemMouseEnter(e, "viewgroup", viewGroup.id)
+              }
+              onMouseLeave={handleItemMouseLeave}
+            >
               <div className="nav-group-info">
                 <div className="nav-group-icon">
                   <ViewGroupIcon />
@@ -345,33 +351,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
                   <span className="default-badge">Default</span>
                 )}
               </div>
-              {canModify && (
-                <div className="nav-group-actions">
-                  <button
-                    className="nav-action-btn visibility-btn"
-                    onClick={handleHideViewGroup}
-                    title="Hide from navigation"
-                  >
-                    <EyeIcon isVisible={true} />
-                  </button>
-                  <button
-                    className="nav-action-btn edit-btn"
-                    onClick={handleEditViewGroup}
-                    title="Edit view group and manage views"
-                  >
-                    <EditIcon />
-                  </button>
-                  {!viewGroup.isDefault && (
-                    <button
-                      className="nav-action-btn delete-btn"
-                      onClick={handleDeleteViewGroup}
-                      title="Delete view group"
-                    >
-                      <DeleteIcon />
-                    </button>
-                  )}
-                </div>
-              )}
             </div>
 
             {/* View Group Content - Exact NavigationPanel replica */}
@@ -392,6 +371,10 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
                       isSelected ? "selected" : ""
                     }`}
                     onClick={() => onViewSelect?.(view)}
+                    onMouseEnter={(e) =>
+                      handleItemMouseEnter(e, "view", view.id)
+                    }
+                    onMouseLeave={handleItemMouseLeave}
                   >
                     <div className="nav-view-info">
                       <div className="nav-view-content">
@@ -402,40 +385,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
                         </div>
                       </div>
                     </div>
-                    {canModify && (
-                      <div className="nav-view-actions">
-                        <button
-                          className="nav-action-btn visibility-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleHideView(view);
-                          }}
-                          title="Hide from navigation"
-                        >
-                          <EyeIcon isVisible={true} />
-                        </button>
-                        <button
-                          className="nav-action-btn edit-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleEditView(view);
-                          }}
-                          title="Edit view"
-                        >
-                          <EditIcon />
-                        </button>
-                        <button
-                          className="nav-action-btn delete-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteView(view);
-                          }}
-                          title="Delete view"
-                        >
-                          <DeleteIcon />
-                        </button>
-                      </div>
-                    )}
                   </div>
                 );
               })}
