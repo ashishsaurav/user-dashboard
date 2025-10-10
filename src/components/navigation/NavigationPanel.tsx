@@ -749,10 +749,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                     ? "nav-group-header-horizontal"
                     : "nav-group-header-vertical"
                 }`}
-                onMouseEnter={(e) =>
-                  handleMouseEnter(e, "viewgroup", viewGroup.id)
-                }
-                onMouseLeave={handleMouseLeave}
                 onClick={() =>
                   !isHorizontalLayout && toggleViewGroupExpansion(viewGroup.id)
                 }
@@ -764,6 +760,57 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                   <div className="nav-group-title">{viewGroup.name}</div>
                   {viewGroup.isDefault && (
                     <span className="default-badge">Default</span>
+                  )}
+                </div>
+                <div
+                  className="nav-group-actions"
+                  onClick={(e) => e.stopPropagation()}
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  {!isHorizontalLayout && (
+                    <button
+                      className="nav-action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleViewGroupExpansion(viewGroup.id);
+                      }}
+                    >
+                      <ChevronIcon expanded={isExpanded} />
+                    </button>
+                  )}
+                  <button
+                    className="nav-action-btn visibility-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleVisibility("viewgroup", viewGroup.id);
+                    }}
+                    title={
+                      isHidden ? "Show in navigation" : "Hide from navigation"
+                    }
+                  >
+                    <EyeIcon isVisible={!isHidden} />
+                  </button>
+                  <button
+                    className="nav-action-btn edit-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingViewGroup(viewGroup);
+                    }}
+                    title="Edit view group and manage views"
+                  >
+                    <EditIcon />
+                  </button>
+                  {!viewGroup.isDefault && (
+                    <button
+                      className="nav-action-btn delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingViewGroup(viewGroup);
+                      }}
+                      title="Delete view group"
+                    >
+                      <DeleteIcon />
+                    </button>
                   )}
                 </div>
               </div>
@@ -799,10 +846,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                             ? "nav-view-item-horizontal"
                             : "nav-view-item-vertical"
                         }`}
-                        onMouseEnter={(e) =>
-                          handleMouseEnter(e, "view", view.id)
-                        }
-                        onMouseLeave={handleMouseLeave}
                         draggable
                         onDragStart={(e) => handleDragStart(e, "view", view.id)}
                         onDragEnd={handleDragEnd}
@@ -822,6 +865,46 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                               </div>
                             )}
                           </div>
+                        </div>
+                        <div
+                          className="nav-view-actions"
+                          onClick={(e) => e.stopPropagation()}
+                          onMouseDown={(e) => e.stopPropagation()}
+                        >
+                          <button
+                            className="nav-action-btn visibility-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleVisibility("view", view.id);
+                            }}
+                            title={
+                              viewIsHidden
+                                ? "Show in navigation"
+                                : "Hide from navigation"
+                            }
+                          >
+                            <EyeIcon isVisible={!viewIsHidden} />
+                          </button>
+                          <button
+                            className="nav-action-btn edit-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingView(view);
+                            }}
+                            title="Edit view"
+                          >
+                            <EditIcon />
+                          </button>
+                          <button
+                            className="nav-action-btn delete-btn"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeletingView(view);
+                            }}
+                            title="Delete view"
+                          >
+                            <DeleteIcon />
+                          </button>
                         </div>
                       </div>
                     );
