@@ -829,6 +829,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isLoadingLayoutRef = useRef<boolean>(false);
+  const userInteractingRef = useRef<boolean>(false);
+  const lastUserInteractionRef = useRef<number>(0);
 
   // Cleanup save timeouts on unmount
   useEffect(() => {
@@ -845,6 +847,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Handle navigation panel maximize - auto expand
   const handleLayoutChange = useCallback(
     (newLayout: LayoutData) => {
+      // Mark user interaction timestamp
+      lastUserInteractionRef.current = Date.now();
+      userInteractingRef.current = true;
+      
       // Detect navigation position and orientation on layout change
       setTimeout(() => {
         detectNavigationPositionAndOrientation();
@@ -882,6 +888,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             currentSignature,
             newLayout
           );
+          // Reset user interaction flag after save completes
+          userInteractingRef.current = false;
         }, 1000);
       }
     },
@@ -1094,8 +1102,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         (widgetsVisible && !hasWidgetsPanel) ||
         (!widgetsVisible && hasWidgetsPanel);
 
-      // Don't trigger structure updates if we're currently loading a layout
-      if (needsStructureUpdate && !isLoadingLayoutRef.current) {
+      // Check if user has interacted recently (within 2 seconds)
+      const timeSinceInteraction = Date.now() - lastUserInteractionRef.current;
+      const recentlyInteracted = timeSinceInteraction < 2000;
+      
+      // Don't trigger structure updates if:
+      // 1. Currently loading a layout
+      // 2. User is actively interacting
+      // 3. User interacted within last 2 seconds (drag/dock operations)
+      const shouldSkipUpdate = isLoadingLayoutRef.current || userInteractingRef.current || recentlyInteracted;
+      
+      if (needsStructureUpdate && !shouldSkipUpdate) {
         console.log("🔧 Panel visibility changed - updating layout structure while preserving navigation");
         
         // Set loading flag
@@ -1143,8 +1160,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             console.log("✅ Structure update complete");
           }, 200);
         }, 0);
-      } else if (needsStructureUpdate && isLoadingLayoutRef.current) {
-        console.log("⏸️ Skipping structure update - layout is loading");
+      } else if (needsStructureUpdate && shouldSkipUpdate) {
+        if (isLoadingLayoutRef.current) {
+          console.log("⏸️ Skipping structure update - layout is loading");
+        } else if (userInteractingRef.current) {
+          console.log("⏸️ Skipping structure update - user is actively interacting");
+        } else if (recentlyInteracted) {
+          console.log(`⏸️ Skipping structure update - user interacted ${timeSinceInteraction}ms ago`);
+        }
       } else {
         // Only content changed, no structure update needed
         console.log("📝 Only content changed, updating content in-place");

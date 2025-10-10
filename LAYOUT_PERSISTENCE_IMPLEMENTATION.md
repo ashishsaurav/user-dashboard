@@ -382,9 +382,9 @@ The system successfully addresses your requirement:
 ---
 
 **Implementation Date:** 2025-10-10  
-**Version:** 1.1.5 (Updated with regeneration fix)  
-**Lines of Code:** ~890 lines (service + components)  
-**Lines of Documentation:** ~3,700 lines  
+**Version:** 1.1.6 (Updated with horizontal dock fix)  
+**Lines of Code:** ~900 lines (service + components)  
+**Lines of Documentation:** ~4,000 lines  
 
 ---
 
@@ -463,6 +463,19 @@ The system successfully addresses your requirement:
 - ✅ Improved panel detection with recursive search
 
 **Details:** See [Double Regeneration Fix Documentation](docs/DOUBLE_REGENERATION_FIX.md)
+
+---
+
+## 🔧 Version 1.1.6 Update - Horizontal Dock Fix
+
+**Issue Fixed:** Panels reset back to vertical when docked horizontally (top/bottom) on single-section views.
+
+**Solution:**
+- ✅ Track user interaction timestamps
+- ✅ Skip structure updates for 2 seconds after user interaction
+- ✅ Allow user's docking operations to complete before checking structure
+
+**Details:** See [Horizontal Dock Fix Documentation](docs/HORIZONTAL_DOCK_FIX.md)
 
 ---
 
