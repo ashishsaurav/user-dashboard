@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import AllReportsWidgets from "../AllReportsWidgets";
-import UserRolePermissions from "../UserRolePermissions";
-import AddReportWidget from "../AddReportWidget";
+import AllReportsWidgets from "../features/AllReportsWidgets";
+import UserRolePermissions from "../features/UserRolePermissions";
+import AddReportWidget from "../forms/AddReportWidget";
 import LayoutResetButton from "../dashboard/LayoutResetButton";
 import { testReports, testWidgets } from "../../data/testData";
 import { Report, Widget, User } from "../../types";

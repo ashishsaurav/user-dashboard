@@ -14,9 +14,9 @@ import {
   getUserNavigationData,
   initializeUserNavigationData,
 } from "../../data/testData";
-import AllViewGroupsViews from "../AllViewGroupsViews";
-import CreateViewGroup from "../CreateViewGroup";
-import CreateView from "../CreateView";
+import AllViewGroupsViews from "../features/AllViewGroupsViews";
+import CreateViewGroup from "../forms/CreateViewGroup";
+import CreateView from "../forms/CreateView";
 import "./styles/NavigationManageModal.css";
 
 interface NavigationManageModalProps {

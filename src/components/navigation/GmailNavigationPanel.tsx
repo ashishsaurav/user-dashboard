@@ -9,10 +9,10 @@ import {
 } from "../../types";
 import { useGmailNavigation } from "./useGmailNavigation";
 import ViewGroupHoverPopup from "./ViewGroupHoverPopup";
-import EditViewModal from "../EditViewModal";
-import EditViewGroupModal from "../EditViewGroupModal";
-import DeleteConfirmationModal from "../DeleteConfirmationModal";
-import { useNotification } from "../NotificationProvider";
+import EditViewModal from "../modals/EditViewModal";
+import EditViewGroupModal from "../modals/EditViewGroupModal";
+import DeleteConfirmationModal from "../modals/DeleteConfirmationModal";
+import { useNotification } from "../common/NotificationProvider";
 import "./styles/GmailNavigation.css";
 
 interface GmailNavigationPanelProps {

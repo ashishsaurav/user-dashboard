@@ -7,11 +7,11 @@ import {
   Report,
   Widget,
 } from "../../types";
-import EditViewModal from "../EditViewModal";
-import EditViewGroupModal from "../EditViewGroupModal";
-import DeleteConfirmationModal from "../DeleteConfirmationModal";
-import { useNotification } from "../NotificationProvider";
-import ActionPopup from "../ActionPopup";
+import EditViewModal from "../modals/EditViewModal";
+import EditViewGroupModal from "../modals/EditViewGroupModal";
+import DeleteConfirmationModal from "../modals/DeleteConfirmationModal";
+import { useNotification } from "../common/NotificationProvider";
+import ActionPopup from "../common/ActionPopup";
 
 interface NavigationPanelProps {
   user: User;
