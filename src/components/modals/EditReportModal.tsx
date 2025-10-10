@@ -1,6 +1,6 @@
 import React from "react";
-import { Report } from "../types";
-import { EditItemModal } from "./shared/EditItemModal";
+import { Report } from "../../types";
+import { EditItemModal } from "../shared/EditItemModal";
 
 interface EditReportModalProps {
   report: Report;

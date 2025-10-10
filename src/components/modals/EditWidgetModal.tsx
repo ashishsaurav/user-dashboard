@@ -1,6 +1,6 @@
 import React from "react";
-import { Widget } from "../types";
-import { EditItemModal } from "./shared/EditItemModal";
+import { Widget } from "../../types";
+import { EditItemModal } from "../shared/EditItemModal";
 
 interface EditWidgetModalProps {
   widget: Widget;

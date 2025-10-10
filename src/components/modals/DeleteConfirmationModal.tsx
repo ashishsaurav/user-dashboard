@@ -1,6 +1,6 @@
 import React from "react";
-import { View, ViewGroup } from "../types";
-import { ConfirmDialog, ConfirmDialogWithOptions } from "./ui/ConfirmDialog";
+import { View, ViewGroup } from "../../types";
+import { ConfirmDialog, ConfirmDialogWithOptions } from "../ui/ConfirmDialog";
 
 interface DeleteConfirmationModalProps {
   type: "view" | "viewgroup";

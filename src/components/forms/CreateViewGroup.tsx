@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { User, View, ViewGroup, UserNavigationSettings } from "../types";
-import { useNotification } from "./NotificationProvider";
+import { User, View, ViewGroup, UserNavigationSettings } from "../../types";
+import { useNotification } from "../common/NotificationProvider";
 
 interface CreateViewGroupProps {
   user: User;

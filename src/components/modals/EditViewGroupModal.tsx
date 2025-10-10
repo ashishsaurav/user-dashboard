@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { ViewGroup, View, UserNavigationSettings } from "../types";
+import { ViewGroup, View, UserNavigationSettings } from "../../types";
 
 interface EditViewGroupModalProps {
   viewGroup: ViewGroup;

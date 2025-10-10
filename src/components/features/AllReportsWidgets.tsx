@@ -1,8 +1,8 @@
 import React, { useState } from "react";
-import { Report, Widget } from "../types";
-import EditReportModal from "./EditReportModal";
-import EditWidgetModal from "./EditWidgetModal";
-import DeleteConfirmModal from "./DeleteConfirmModal";
+import { Report, Widget } from "../../types";
+import EditReportModal from "../modals/EditReportModal";
+import EditWidgetModal from "../modals/EditWidgetModal";
+import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 
 interface AllReportsWidgetsProps {
   reports: Report[];

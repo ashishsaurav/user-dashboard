@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { testUsers } from "../data/testData";
-import { Report, Widget } from "../types";
+import { testUsers } from "../../data/testData";
+import { Report, Widget } from "../../types";
 
 interface UserRolePermissionsProps {
   reports: Report[];

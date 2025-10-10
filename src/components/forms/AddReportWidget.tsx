@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { ReportFormData, WidgetFormData, Report, Widget } from "../types";
-import { useNotification } from "./NotificationProvider";
+import { ReportFormData, WidgetFormData, Report, Widget } from "../../types";
+import { useNotification } from "../common/NotificationProvider";
 
 interface AddReportWidgetProps {
   onAddItem: (item: Report | Widget) => void;

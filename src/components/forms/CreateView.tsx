@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { User, View, Report, Widget, ViewFormData, ViewGroup } from "../types";
-import { useNotification } from "./NotificationProvider";
+import { User, View, Report, Widget, ViewFormData, ViewGroup } from "../../types";
+import { useNotification } from "../common/NotificationProvider";
 
 interface CreateViewProps {
   user: User;

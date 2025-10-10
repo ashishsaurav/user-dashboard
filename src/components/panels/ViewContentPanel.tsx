@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { View, Report, Widget } from "../../types";
-import DeleteConfirmModal from "../DeleteConfirmModal";
+import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 import "./styles/ViewContentPanel.css";
 
 interface ViewContentPanelProps {

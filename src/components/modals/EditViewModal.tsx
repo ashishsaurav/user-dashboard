@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { View, Report, Widget } from "../types";
+import { View, Report, Widget } from "../../types";
 
 interface EditViewModalProps {
   view: View;
