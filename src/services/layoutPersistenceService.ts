@@ -125,6 +125,43 @@ export const generateLayoutSignature = (params: {
 };
 
 /**
+ * Helper function to sanitize layout for storage
+ * Removes React component content which can't be serialized
+ */
+const sanitizeLayoutForStorage = (layout: LayoutData): LayoutData => {
+  if (!layout) return layout;
+
+  const sanitizePanel = (panel: any): any => {
+    const sanitized = { ...panel };
+    
+    // Remove React component content from tabs
+    if (sanitized.tabs) {
+      sanitized.tabs = sanitized.tabs.map((tab: any) => ({
+        ...tab,
+        content: undefined, // Remove React components
+      }));
+    }
+    
+    // Recursively sanitize children
+    if (sanitized.children) {
+      sanitized.children = sanitized.children.map(sanitizePanel);
+    }
+    
+    return sanitized;
+  };
+
+  const sanitized = { ...layout };
+  if (sanitized.dockbox?.children) {
+    sanitized.dockbox = {
+      ...sanitized.dockbox,
+      children: sanitized.dockbox.children.map(sanitizePanel),
+    };
+  }
+  
+  return sanitized;
+};
+
+/**
  * Layout Persistence Service
  */
 export const layoutPersistenceService = {
@@ -163,6 +200,9 @@ export const layoutPersistenceService = {
 
   /**
    * Save layout customization for a specific signature
+   * 
+   * NOTE: We sanitize the layout to remove React components before saving
+   * to avoid circular reference errors during JSON serialization
    */
   saveLayout: (
     userId: string,
@@ -172,9 +212,12 @@ export const layoutPersistenceService = {
     try {
       const userLayouts = layoutPersistenceService.loadUserLayouts(userId);
 
+      // Sanitize layout to remove React components that can't be serialized
+      const sanitizedLayout = sanitizeLayoutForStorage(layout);
+
       userLayouts.layouts[signature] = {
         signature,
-        layout,
+        layout: sanitizedLayout,
         timestamp: Date.now(),
       };
 
@@ -183,7 +226,7 @@ export const layoutPersistenceService = {
 
       console.log(
         `💾 Layout saved for signature: ${signature}`,
-        layout
+        sanitizedLayout
       );
     } catch (error) {
       console.error("Error saving layout:", error);
@@ -355,6 +398,9 @@ export const layoutPersistenceService = {
   /**
    * Apply navigation panel state to a layout
    * This preserves navigation customizations when updating layout
+   * 
+   * NOTE: We modify the layout in place because React components in the layout
+   * contain circular references that can't be JSON-serialized for deep cloning.
    */
   applyNavigationState: (layout: LayoutData, navState: any): LayoutData => {
     if (!layout?.dockbox?.children || !navState) return layout;
@@ -374,8 +420,8 @@ export const layoutPersistenceService = {
       return false;
     };
 
-    const updatedLayout = JSON.parse(JSON.stringify(layout)); // Deep clone
-    applyToPanel(updatedLayout.dockbox.children);
-    return updatedLayout;
+    // Modify layout in place (no deep clone needed since we only update size properties)
+    applyToPanel(layout.dockbox.children);
+    return layout;
   },
 };

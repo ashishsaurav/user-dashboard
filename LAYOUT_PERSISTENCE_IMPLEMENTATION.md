@@ -382,9 +382,9 @@ The system successfully addresses your requirement:
 ---
 
 **Implementation Date:** 2025-10-10  
-**Version:** 1.1.1 (Updated with first-switch fix)  
-**Lines of Code:** ~800 lines (service + components)  
-**Lines of Documentation:** ~2,500 lines  
+**Version:** 1.1.2 (Updated with circular reference fix)  
+**Lines of Code:** ~850 lines (service + components)  
+**Lines of Documentation:** ~2,800 lines  
 
 ---
 
@@ -411,6 +411,19 @@ The system successfully addresses your requirement:
 - ✅ Ensures consistent behavior from first interaction
 
 **Details:** See [First Switch Fix Documentation](docs/FIRST_SWITCH_FIX.md)
+
+---
+
+## 🔧 Version 1.1.2 Update - Circular Reference Fix
+
+**Issue Fixed:** "Converting circular structure to JSON" error when saving layouts.
+
+**Solution:**
+- ✅ Sanitize layouts before saving (remove React components)
+- ✅ Avoid deep cloning in applyNavigationState (no need for clone)
+- ✅ Regenerate React content when loading saved layouts
+
+**Details:** See [Circular Reference Fix Documentation](docs/CIRCULAR_REFERENCE_FIX.md)
 
 ---
 
