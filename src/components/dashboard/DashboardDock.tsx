@@ -827,12 +827,16 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Debounce timer ref for saving layouts
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Cleanup save timeout on unmount
+  // Cleanup save timeouts on unmount
   useEffect(() => {
     return () => {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
+      }
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
       }
     };
   }, []);
@@ -859,12 +863,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       // Save layout customization when user makes changes
       if (currentSignature && newLayout) {
-        // Clear previous timeout
+        // Clear both automatic and previous user-triggered timeouts
+        if (autoSaveTimeoutRef.current) {
+          console.log("🚫 Canceling automatic save - user is interacting");
+          clearTimeout(autoSaveTimeoutRef.current);
+          autoSaveTimeoutRef.current = null;
+        }
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current);
         }
         
-        // Debounced save to avoid saving during rapid changes or automatic layout loads
+        // Debounced save to avoid saving during rapid changes
         saveTimeoutRef.current = setTimeout(() => {
           console.log("💾 Saving layout after user interaction (debounced)");
           layoutPersistenceService.saveLayout(
@@ -872,7 +881,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             currentSignature,
             newLayout
           );
-        }, 1000); // Increased to 1 second for more stability
+        }, 1000);
       }
     },
     [isDockCollapsed, detectNavigationPositionAndOrientation, currentSignature, user.name]
@@ -1015,9 +1024,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }
         
         // Save this new layout after a brief delay to avoid interfering with layout loading
-        setTimeout(() => {
-          console.log("💾 Saving new layout with preserved navigation state (delayed)");
+        // Use autoSaveTimeoutRef so it can be canceled if user interacts
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          console.log("💾 Auto-saving new layout with preserved navigation state");
           layoutPersistenceService.saveLayout(user.name, newSignature, layoutToLoad);
+          autoSaveTimeoutRef.current = null;
         }, 500);
       }
 
@@ -1075,9 +1089,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         dockLayoutRef.current.loadLayout(newLayout);
         
         // Save the updated layout after a delay to avoid interfering with user interaction
-        setTimeout(() => {
-          console.log("💾 Saving layout after panel visibility change (delayed)");
+        // Use autoSaveTimeoutRef so it can be canceled if user interacts
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          console.log("💾 Auto-saving layout after panel visibility change");
           layoutPersistenceService.saveLayout(user.name, currentSignature, newLayout);
+          autoSaveTimeoutRef.current = null;
         }, 500);
         
         // Apply collapsed state

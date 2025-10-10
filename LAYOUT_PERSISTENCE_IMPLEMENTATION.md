@@ -382,9 +382,9 @@ The system successfully addresses your requirement:
 ---
 
 **Implementation Date:** 2025-10-10  
-**Version:** 1.1.3 (Updated with interaction fix)  
-**Lines of Code:** ~860 lines (service + components)  
-**Lines of Documentation:** ~3,100 lines  
+**Version:** 1.1.4 (Updated with drag reset fix)  
+**Lines of Code:** ~870 lines (service + components)  
+**Lines of Documentation:** ~3,400 lines  
 
 ---
 
@@ -437,6 +437,19 @@ The system successfully addresses your requirement:
 - ✅ Proper timeout clearing to prevent conflicts
 
 **Details:** See [Layout Interaction Fix Documentation](docs/LAYOUT_INTERACTION_FIX.md)
+
+---
+
+## 🔧 Version 1.1.4 Update - Drag Reset Fix
+
+**Issue Fixed:** Panels reset to original position when dragging on single-section views.
+
+**Solution:**
+- ✅ Separate timeout refs for automatic vs user-triggered saves
+- ✅ Cancel automatic saves when user interacts with layout
+- ✅ User actions always take priority over automatic saves
+
+**Details:** See [Single Section Drag Fix Documentation](docs/SINGLE_SECTION_DRAG_FIX.md)
 
 ---
 
