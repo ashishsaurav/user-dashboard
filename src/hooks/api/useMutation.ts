@@ -10,7 +10,7 @@ export interface UseMutationOptions<TData, TVariables> {
   onSuccess?: (data: TData, variables: TVariables) => void;
   onError?: (error: any, variables: TVariables) => void;
   onSettled?: (data: TData | undefined, error: any, variables: TVariables) => void;
-  invalidateQueries?: string | string[];
+  invalidateQueries?: string | (string | any)[];
 }
 
 export interface UseMutationResult<TData, TVariables> {

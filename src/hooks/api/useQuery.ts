@@ -35,7 +35,7 @@ const queryCache = new Map<string, { data: any; timestamp: number }>();
  * Custom hook for data fetching with caching and refetching
  */
 export function useQuery<T>(
-  queryKey: string | string[],
+  queryKey: string | (string | any)[],
   queryFn: () => Promise<T>,
   options: UseQueryOptions<T> = {}
 ): UseQueryResult<T> {
@@ -52,7 +52,9 @@ export function useQuery<T>(
     staleTime = 0,
   } = options;
 
-  const key = Array.isArray(queryKey) ? queryKey.join(':') : queryKey;
+  const key = Array.isArray(queryKey) 
+    ? queryKey.map(k => typeof k === 'object' ? JSON.stringify(k) : String(k)).join(':')
+    : queryKey;
   
   const [data, setData] = useState<T | undefined>(() => {
     const cached = queryCache.get(key);
@@ -68,7 +70,7 @@ export function useQuery<T>(
   
   const retryCountRef = useRef(0);
   const mountedRef = useRef(true);
-  const intervalRef = useRef<NodeJS.Timeout>();
+  const intervalRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const fetchData = useCallback(async () => {
     if (!enabled) return;
@@ -182,9 +184,11 @@ export function useQuery<T>(
 /**
  * Clear query cache
  */
-export function clearQueryCache(queryKey?: string | string[]) {
+export function clearQueryCache(queryKey?: string | (string | any)[]) {
   if (queryKey) {
-    const key = Array.isArray(queryKey) ? queryKey.join(':') : queryKey;
+    const key = Array.isArray(queryKey) 
+      ? queryKey.map(k => typeof k === 'object' ? JSON.stringify(k) : String(k)).join(':')
+      : queryKey;
     queryCache.delete(key);
   } else {
     queryCache.clear();
