@@ -72,6 +72,10 @@ interface UserLayoutCustomizations {
 
 /**
  * Generate a layout signature based on current state
+ * 
+ * STRATEGY: Use a coarse-grained signature that focuses on major structural changes
+ * rather than panel visibility. This allows navigation customizations to persist
+ * when only content panels change.
  */
 export const generateLayoutSignature = (params: {
   selectedView: boolean;
@@ -94,31 +98,24 @@ export const generateLayoutSignature = (params: {
 
   const parts: string[] = [];
 
-  // Navigation is always present
+  // Navigation collapse state (kept separate to preserve across content changes)
   parts.push(isDockCollapsed ? "nav-collapsed" : "nav");
 
-  // Determine content panels
+  // Determine POTENTIAL content (not just visible)
+  // This makes signature more stable when panels are toggled
   if (!selectedView) {
-    // No view selected - show welcome
-    parts.push("welcome-noview");
+    // No view selected
+    parts.push("no-view");
   } else if (!hasReports && !hasWidgets) {
-    // View selected but no content - show welcome with add options
-    parts.push("welcome-empty");
+    // View selected but no content available
+    parts.push("empty-view");
   } else {
-    // View has content
-    const showReports = hasReports && reportsVisible;
-    const showWidgets = hasWidgets && widgetsVisible;
-
-    if (showReports && showWidgets) {
-      parts.push("reports", "widgets");
-    } else if (showReports) {
-      parts.push("reports");
-    } else if (showWidgets) {
-      parts.push("widgets");
-    } else {
-      // Both sections closed - show welcome
-      parts.push("welcome-closed");
-    }
+    // View has content - signature based on what's AVAILABLE, not just visible
+    // This way, toggling visibility doesn't change signature
+    const contentType: string[] = [];
+    if (hasReports) contentType.push("reports");
+    if (hasWidgets) contentType.push("widgets");
+    parts.push(`content-${contentType.join("-")}`);
   }
 
   // Add layout mode
@@ -326,5 +323,59 @@ export const layoutPersistenceService = {
       console.error("Error importing layouts:", error);
       return false;
     }
+  },
+
+  /**
+   * Extract navigation panel state from a layout
+   * This allows preserving navigation customizations across layout changes
+   */
+  extractNavigationState: (layout: LayoutData): any => {
+    if (!layout?.dockbox?.children) return null;
+
+    const findNavPanel = (children: any[]): any => {
+      for (const child of children) {
+        if (child.tabs?.some((tab: any) => tab.id === "navigation")) {
+          return {
+            size: child.size,
+            minSize: child.minSize,
+            maxSize: child.maxSize,
+          };
+        }
+        if (child.children) {
+          const found = findNavPanel(child.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+
+    return findNavPanel(layout.dockbox.children);
+  },
+
+  /**
+   * Apply navigation panel state to a layout
+   * This preserves navigation customizations when updating layout
+   */
+  applyNavigationState: (layout: LayoutData, navState: any): LayoutData => {
+    if (!layout?.dockbox?.children || !navState) return layout;
+
+    const applyToPanel = (children: any[]): boolean => {
+      for (const child of children) {
+        if (child.tabs?.some((tab: any) => tab.id === "navigation")) {
+          if (navState.size !== undefined) child.size = navState.size;
+          if (navState.minSize !== undefined) child.minSize = navState.minSize;
+          if (navState.maxSize !== undefined) child.maxSize = navState.maxSize;
+          return true;
+        }
+        if (child.children && applyToPanel(child.children)) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    const updatedLayout = JSON.parse(JSON.stringify(layout)); // Deep clone
+    applyToPanel(updatedLayout.dockbox.children);
+    return updatedLayout;
   },
 };

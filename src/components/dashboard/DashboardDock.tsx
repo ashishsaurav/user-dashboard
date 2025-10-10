@@ -935,6 +935,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         `🔄 Layout signature changed: "${previousSignatureRef.current}" → "${newSignature}"`
       );
 
+      // Extract current navigation state before changing layout
+      const currentLayout = dockLayoutRef.current.getLayout();
+      const navState = layoutPersistenceService.extractNavigationState(currentLayout);
+      console.log("📍 Extracted navigation state:", navState);
+
       // Try to load saved layout for this signature
       const savedLayout = layoutPersistenceService.loadLayout(
         user.name,
@@ -981,6 +986,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           `🆕 No saved layout found, generating default for signature: "${newSignature}"`
         );
         layoutToLoad = generateDynamicLayout();
+        
+        // Apply previous navigation state to new layout
+        if (navState) {
+          console.log("🔧 Applying previous navigation state to new layout");
+          layoutToLoad = layoutPersistenceService.applyNavigationState(
+            layoutToLoad,
+            navState
+          );
+        }
       }
 
       // Load the layout
@@ -1002,9 +1016,56 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }
       }, 0);
     } else {
-      // Signature hasn't changed - only update content
-      console.log("📝 Only content changed, updating content in-place");
-      updateLayoutContent();
+      // Signature hasn't changed - check if we need to update layout structure for panel visibility
+      const currentLayout = dockLayoutRef.current.getLayout();
+      const hasReportsPanel = currentLayout?.dockbox?.children?.some((child: any) =>
+        child.tabs?.some((tab: any) => tab.id === "reports") ||
+        child.children?.some((c: any) => c.tabs?.some((tab: any) => tab.id === "reports"))
+      );
+      const hasWidgetsPanel = currentLayout?.dockbox?.children?.some((child: any) =>
+        child.tabs?.some((tab: any) => tab.id === "widgets") ||
+        child.children?.some((c: any) => c.tabs?.some((tab: any) => tab.id === "widgets"))
+      );
+
+      const needsStructureUpdate =
+        (reportsVisible && !hasReportsPanel) ||
+        (!reportsVisible && hasReportsPanel) ||
+        (widgetsVisible && !hasWidgetsPanel) ||
+        (!widgetsVisible && hasWidgetsPanel);
+
+      if (needsStructureUpdate) {
+        console.log("🔧 Panel visibility changed - updating layout structure while preserving navigation");
+        
+        // Extract current navigation state
+        const navState = layoutPersistenceService.extractNavigationState(currentLayout);
+        
+        // Generate new layout with correct panel visibility
+        let newLayout = generateDynamicLayout();
+        
+        // Apply navigation state to preserve customizations
+        if (navState) {
+          newLayout = layoutPersistenceService.applyNavigationState(newLayout, navState);
+        }
+        
+        // Load the updated layout
+        dockLayoutRef.current.loadLayout(newLayout);
+        
+        // Apply collapsed state
+        setTimeout(() => {
+          const navigationPanel = findNavigationPanel();
+          if (navigationPanel) {
+            if (isDockCollapsed) {
+              navigationPanel.setAttribute("data-collapsed", "true");
+            } else {
+              navigationPanel.removeAttribute("data-collapsed");
+            }
+          }
+        }, 0);
+      } else {
+        // Only content changed, no structure update needed
+        console.log("📝 Only content changed, updating content in-place");
+        updateLayoutContent();
+      }
     }
   }, [
     selectedView,

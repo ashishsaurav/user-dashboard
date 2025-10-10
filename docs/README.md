@@ -49,6 +49,46 @@ Welcome to the User Dashboard documentation! This directory contains comprehensi
 
 ---
 
+### 4. [Panel Visibility Fix](./PANEL_VISIBILITY_FIX.md)
+**Fix for navigation panel reset issue**
+
+- Problem description
+- Solution explanation
+- Code changes
+- Before/after comparison
+- Testing guide
+- Flow diagrams
+
+📖 **Read this if:** You want to understand how panel visibility changes are handled
+
+---
+
+### 5. [Testing Checklist](./TESTING_CHECKLIST.md)
+**Comprehensive testing guide**
+
+- 10 visual test cases
+- Quick smoke test (1 minute)
+- Expected results for each test
+- Issue reporting template
+- Sign-off section
+
+📖 **Read this if:** You need to test the implementation
+
+---
+
+### 6. [Architecture Diagram](./ARCHITECTURE_DIAGRAM.md)
+**Visual system architecture**
+
+- System architecture diagram
+- Data flow diagrams
+- Component interaction
+- State management flow
+- Type system overview
+
+📖 **Read this if:** You want visual understanding of the system
+
+---
+
 ## 🎯 Where to Start?
 
 ### For Users
@@ -76,7 +116,10 @@ docs/
 ├── README.md                                  ← You are here
 ├── LAYOUT_PERSISTENCE.md                      ← Full documentation
 ├── IMPLEMENTATION_SUMMARY.md                  ← Implementation details
-└── LAYOUT_PERSISTENCE_QUICK_REFERENCE.md      ← Quick reference
+├── LAYOUT_PERSISTENCE_QUICK_REFERENCE.md      ← Quick reference
+├── PANEL_VISIBILITY_FIX.md                    ← Panel visibility fix
+├── TESTING_CHECKLIST.md                       ← Testing guide
+└── ARCHITECTURE_DIAGRAM.md                    ← Visual diagrams
 ```
 
 ---

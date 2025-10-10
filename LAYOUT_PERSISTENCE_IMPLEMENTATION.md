@@ -382,9 +382,22 @@ The system successfully addresses your requirement:
 ---
 
 **Implementation Date:** 2025-10-10  
-**Version:** 1.0.0  
-**Lines of Code:** ~735 lines (service + components)  
-**Lines of Documentation:** ~1,810 lines  
+**Version:** 1.1.0 (Updated with panel visibility fix)  
+**Lines of Code:** ~800 lines (service + components)  
+**Lines of Documentation:** ~2,200 lines  
+
+---
+
+## 🔧 Version 1.1.0 Update - Panel Visibility Fix
+
+**Issue Fixed:** Navigation panel customizations were being lost when toggling report/widget panels.
+
+**Solution:**
+- ✅ Changed to coarse-grained signatures (based on available content, not visible content)
+- ✅ Added navigation state extraction and preservation
+- ✅ Smart layout updates that preserve navigation customizations
+
+**Details:** See [Panel Visibility Fix Documentation](docs/PANEL_VISIBILITY_FIX.md)
 
 ---
 
