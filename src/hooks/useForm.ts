@@ -1,8 +1,8 @@
 import { useState, useCallback } from "react";
 
-export interface FormValidation<T> {
+export type FormValidation<T> = {
   [K in keyof T]?: (value: T[K]) => string | undefined;
-}
+};
 
 export interface UseFormOptions<T> {
   initialValues: T;
