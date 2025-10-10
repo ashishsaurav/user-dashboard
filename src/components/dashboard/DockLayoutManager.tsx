@@ -206,24 +206,25 @@ export function useDockLayoutManager({
     content,
   ]);
 
-  // In DockLayoutManager.tsx, update the getCurrentLayoutStructure function:
-
   const getCurrentLayoutStructure = useCallback((): string => {
-    const hasReports =
-      selectedView?.reportIds && selectedView.reportIds.length > 0;
-    const hasWidgets =
-      selectedView?.widgetIds && selectedView.widgetIds.length > 0;
+    const panels = [];
+    panels.push(`layout-${layoutMode}`);
 
-    return [
-      selectedView ? selectedView.id : "no-view",
-      selectedView ? selectedView.reportIds?.length || 0 : 0, // ✅ ADD report count
-      selectedView ? selectedView.widgetIds?.length || 0 : 0, // ✅ ADD widget count
-      reportsVisible && hasReports,
-      widgetsVisible && hasWidgets,
-      layoutMode,
-    ].join("-");
+    if (!selectedView) {
+      panels.push("welcome");
+    } else {
+      const hasReports =
+        selectedView.reportIds && selectedView.reportIds.length > 0;
+      const hasWidgets =
+        selectedView.widgetIds && selectedView.widgetIds.length > 0;
+
+      if (reportsVisible && hasReports) panels.push("reports");
+      if (widgetsVisible && hasWidgets) panels.push("widgets");
+      if (!reportsVisible && !widgetsVisible) panels.push("welcome-closed");
+    }
+
+    return panels.join(",");
   }, [selectedView, reportsVisible, widgetsVisible, layoutMode]);
-
   return {
     generateDynamicLayout,
     getCurrentLayoutStructure,
