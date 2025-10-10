@@ -28,6 +28,11 @@ import WelcomeContent from "./WelcomeContent";
 import ThemeToggle from "./ThemeToggle";
 import { useDockLayoutManager } from "./DockLayoutManager";
 import { LAYOUT_SIZES } from "../../constants/layout";
+import {
+  layoutPersistenceService,
+  generateLayoutSignature,
+  LayoutSignature,
+} from "../../services/layoutPersistenceService";
 import "./styles/DashboardDock.css";
 import "./styles/GmailDockIntegration.css";
 
@@ -75,6 +80,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Track layout structure to detect when we need full reload
   const [layoutStructure, setLayoutStructure] = useState<string>("");
+
+  // Track current layout signature for persistence
+  const [currentSignature, setCurrentSignature] = useState<LayoutSignature>("");
+  const previousSignatureRef = useRef<LayoutSignature>("");
 
   // RC-DOCK REF for updates
   const dockLayoutRef = useRef<DockLayout>(null);
@@ -197,6 +206,30 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
     setNavigationUpdateTrigger((prev) => prev + 1);
   };
+
+  // Compute current layout signature based on state
+  const computeCurrentSignature = useCallback((): LayoutSignature => {
+    const hasReports =
+      selectedView?.reportIds && selectedView.reportIds.length > 0;
+    const hasWidgets =
+      selectedView?.widgetIds && selectedView.widgetIds.length > 0;
+
+    return generateLayoutSignature({
+      selectedView: !!selectedView,
+      hasReports: !!hasReports,
+      hasWidgets: !!hasWidgets,
+      reportsVisible,
+      widgetsVisible,
+      layoutMode,
+      isDockCollapsed,
+    });
+  }, [
+    selectedView,
+    reportsVisible,
+    widgetsVisible,
+    layoutMode,
+    isDockCollapsed,
+  ]);
 
   // Enhanced view selection handler - auto-show sections when view selected
   const handleViewSelect = (view: View) => {
@@ -792,9 +825,32 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed, findNavigationPanel]);
 
+  // Debounce timer ref for saving layouts
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoadingLayoutRef = useRef<boolean>(false);
+  const userInteractingRef = useRef<boolean>(false);
+  const lastUserInteractionRef = useRef<number>(0);
+
+  // Cleanup save timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      if (autoSaveTimeoutRef.current) {
+        clearTimeout(autoSaveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Handle navigation panel maximize - auto expand
   const handleLayoutChange = useCallback(
     (newLayout: LayoutData) => {
+      // Mark user interaction timestamp
+      lastUserInteractionRef.current = Date.now();
+      userInteractingRef.current = true;
+      
       // Detect navigation position and orientation on layout change
       setTimeout(() => {
         detectNavigationPositionAndOrientation();
@@ -811,8 +867,33 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         console.log("🔼 Navigation maximized - auto-expanding");
         setIsDockCollapsed(false);
       }
+
+      // Save layout customization when user makes changes
+      if (currentSignature && newLayout) {
+        // Clear both automatic and previous user-triggered timeouts
+        if (autoSaveTimeoutRef.current) {
+          console.log("🚫 Canceling automatic save - user is interacting");
+          clearTimeout(autoSaveTimeoutRef.current);
+          autoSaveTimeoutRef.current = null;
+        }
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        
+        // Debounced save to avoid saving during rapid changes
+        saveTimeoutRef.current = setTimeout(() => {
+          console.log("💾 Saving layout after user interaction (debounced)");
+          layoutPersistenceService.saveLayout(
+            user.name,
+            currentSignature,
+            newLayout
+          );
+          // Reset user interaction flag after save completes
+          userInteractingRef.current = false;
+        }, 1000);
+      }
     },
-    [isDockCollapsed, detectNavigationPositionAndOrientation]
+    [isDockCollapsed, detectNavigationPositionAndOrientation, currentSignature, user.name]
   );
 
   // Helper function to find navigation panel in layout data
@@ -873,22 +954,105 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed, findNavigationPanel, findNavigationPanelInLayout]);
 
-  // Smart layout management - only reload on structural changes
+  // Smart layout management with persistence - reload on structural changes
   useEffect(() => {
     if (!dockLayoutRef.current) return;
 
-    const newStructure = getCurrentLayoutStructure();
+    // Compute current layout signature
+    const newSignature = computeCurrentSignature();
+    const signatureChanged = newSignature !== previousSignatureRef.current;
 
-    if (newStructure !== layoutStructure) {
+    console.log(
+      `🔍 Layout Check - Current: "${newSignature}", Previous: "${previousSignatureRef.current}", Changed: ${signatureChanged}`
+    );
+
+    if (signatureChanged) {
       console.log(
-        "Layout structure changed:",
-        layoutStructure,
-        "->",
-        newStructure
+        `🔄 Layout signature changed: "${previousSignatureRef.current}" → "${newSignature}"`
       );
-      const newLayout = generateDynamicLayout();
-      dockLayoutRef.current.loadLayout(newLayout);
-      setLayoutStructure(newStructure);
+
+      // Extract current navigation state before changing layout
+      const currentLayout = dockLayoutRef.current.getLayout();
+      const navState = layoutPersistenceService.extractNavigationState(currentLayout);
+      console.log("📍 Extracted navigation state:", navState);
+
+      // Try to load saved layout for this signature
+      const savedLayout = layoutPersistenceService.loadLayout(
+        user.name,
+        newSignature
+      );
+
+      let layoutToLoad: LayoutData;
+
+      if (savedLayout) {
+        console.log(
+          `✅ Restoring saved layout for signature: "${newSignature}"`
+        );
+        layoutToLoad = savedLayout;
+
+        // Update content in the saved layout to reflect current state
+        // This ensures the content is fresh even though structure is preserved
+        const updatePanelContent = (panels: any[]) => {
+          panels.forEach((panel: any) => {
+            if (panel.tabs && panel.tabs[0]) {
+              const tabId = panel.tabs[0].id;
+
+              if (tabId === "navigation") {
+                panel.tabs[0].content = createNavigationContent();
+              } else if (tabId === "reports") {
+                panel.tabs[0].content = createReportsContent();
+              } else if (tabId === "widgets") {
+                panel.tabs[0].content = createWidgetsContent();
+              } else if (tabId.startsWith("welcome")) {
+                panel.tabs[0].content = createWelcomeContent();
+              }
+            }
+            // Recursively update nested panels
+            if (panel.children) {
+              updatePanelContent(panel.children);
+            }
+          });
+        };
+
+        if (layoutToLoad?.dockbox?.children) {
+          updatePanelContent(layoutToLoad.dockbox.children);
+        }
+      } else {
+        console.log(
+          `🆕 No saved layout found, generating default for signature: "${newSignature}"`
+        );
+        layoutToLoad = generateDynamicLayout();
+        
+        // Apply previous navigation state to new layout
+        if (navState) {
+          console.log("🔧 Applying previous navigation state to new layout");
+          layoutToLoad = layoutPersistenceService.applyNavigationState(
+            layoutToLoad,
+            navState
+          );
+        }
+        
+        // Save this new layout after a brief delay to avoid interfering with layout loading
+        // Use autoSaveTimeoutRef so it can be canceled if user interacts
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          console.log("💾 Auto-saving new layout with preserved navigation state");
+          layoutPersistenceService.saveLayout(user.name, newSignature, layoutToLoad);
+          autoSaveTimeoutRef.current = null;
+        }, 500);
+      }
+
+      // Set loading flag to prevent structure updates during load
+      isLoadingLayoutRef.current = true;
+      
+      // Load the layout
+      dockLayoutRef.current.loadLayout(layoutToLoad);
+
+      // Update state
+      setCurrentSignature(newSignature);
+      previousSignatureRef.current = newSignature;
 
       // Apply collapsed state after layout loads
       setTimeout(() => {
@@ -900,18 +1064,132 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             navigationPanel.removeAttribute("data-collapsed");
           }
         }
+        
+        // Reset loading flag after layout has settled
+        setTimeout(() => {
+          isLoadingLayoutRef.current = false;
+          console.log("✅ Layout load complete, structure updates enabled");
+        }, 200);
       }, 0);
     } else {
-      console.log("Only content changed, updating content");
-      updateLayoutContent();
+      // Signature hasn't changed - check if we need to update layout structure for panel visibility
+      const currentLayout = dockLayoutRef.current.getLayout();
+      
+      // Helper to recursively search for panels in layout
+      const findPanelInLayout = (children: any[], panelId: string): boolean => {
+        if (!children) return false;
+        return children.some((child: any) => {
+          if (child.tabs?.some((tab: any) => tab.id === panelId)) {
+            return true;
+          }
+          if (child.children) {
+            return findPanelInLayout(child.children, panelId);
+          }
+          return false;
+        });
+      };
+      
+      const hasReportsPanel = currentLayout?.dockbox?.children 
+        ? findPanelInLayout(currentLayout.dockbox.children, "reports")
+        : false;
+      const hasWidgetsPanel = currentLayout?.dockbox?.children
+        ? findPanelInLayout(currentLayout.dockbox.children, "widgets")
+        : false;
+
+      const needsStructureUpdate =
+        (reportsVisible && !hasReportsPanel) ||
+        (!reportsVisible && hasReportsPanel) ||
+        (widgetsVisible && !hasWidgetsPanel) ||
+        (!widgetsVisible && hasWidgetsPanel);
+
+      // Check if user has interacted recently (within 2 seconds)
+      const timeSinceInteraction = Date.now() - lastUserInteractionRef.current;
+      const recentlyInteracted = timeSinceInteraction < 2000;
+      
+      // Don't trigger structure updates if:
+      // 1. Currently loading a layout
+      // 2. User is actively interacting
+      // 3. User interacted within last 2 seconds (drag/dock operations)
+      const shouldSkipUpdate = isLoadingLayoutRef.current || userInteractingRef.current || recentlyInteracted;
+      
+      if (needsStructureUpdate && !shouldSkipUpdate) {
+        console.log("🔧 Panel visibility changed - updating layout structure while preserving navigation");
+        
+        // Set loading flag
+        isLoadingLayoutRef.current = true;
+        
+        // Extract current navigation state
+        const navState = layoutPersistenceService.extractNavigationState(currentLayout);
+        
+        // Generate new layout with correct panel visibility
+        let newLayout = generateDynamicLayout();
+        
+        // Apply navigation state to preserve customizations
+        if (navState) {
+          newLayout = layoutPersistenceService.applyNavigationState(newLayout, navState);
+        }
+        
+        // Load the updated layout
+        dockLayoutRef.current.loadLayout(newLayout);
+        
+        // Save the updated layout after a delay to avoid interfering with user interaction
+        // Use autoSaveTimeoutRef so it can be canceled if user interacts
+        if (autoSaveTimeoutRef.current) {
+          clearTimeout(autoSaveTimeoutRef.current);
+        }
+        autoSaveTimeoutRef.current = setTimeout(() => {
+          console.log("💾 Auto-saving layout after panel visibility change");
+          layoutPersistenceService.saveLayout(user.name, currentSignature, newLayout);
+          autoSaveTimeoutRef.current = null;
+        }, 500);
+        
+        // Apply collapsed state and reset loading flag
+        setTimeout(() => {
+          const navigationPanel = findNavigationPanel();
+          if (navigationPanel) {
+            if (isDockCollapsed) {
+              navigationPanel.setAttribute("data-collapsed", "true");
+            } else {
+              navigationPanel.removeAttribute("data-collapsed");
+            }
+          }
+          
+          // Reset loading flag after layout has settled
+          setTimeout(() => {
+            isLoadingLayoutRef.current = false;
+            console.log("✅ Structure update complete");
+          }, 200);
+        }, 0);
+      } else if (needsStructureUpdate && shouldSkipUpdate) {
+        if (isLoadingLayoutRef.current) {
+          console.log("⏸️ Skipping structure update - layout is loading");
+        } else if (userInteractingRef.current) {
+          console.log("⏸️ Skipping structure update - user is actively interacting");
+        } else if (recentlyInteracted) {
+          console.log(`⏸️ Skipping structure update - user interacted ${timeSinceInteraction}ms ago`);
+        }
+      } else {
+        // Only content changed, no structure update needed
+        console.log("📝 Only content changed, updating content in-place");
+        updateLayoutContent();
+      }
     }
   }, [
     selectedView,
     reportsVisible,
     widgetsVisible,
     layoutMode,
+    isDockCollapsed,
     navigationUpdateTrigger,
+    computeCurrentSignature,
     findNavigationPanel,
+    createNavigationContent,
+    createReportsContent,
+    createWidgetsContent,
+    createWelcomeContent,
+    generateDynamicLayout,
+    updateLayoutContent,
+    user.name,
   ]);
 
   return (
@@ -935,7 +1213,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       {/* Modals */}
       {showManageModal && (
-        <ManageModal onClose={() => setShowManageModal(false)} />
+        <ManageModal user={user} onClose={() => setShowManageModal(false)} />
       )}
 
       {showNavigationModal && (
