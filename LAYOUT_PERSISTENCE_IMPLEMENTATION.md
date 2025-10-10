@@ -382,9 +382,9 @@ The system successfully addresses your requirement:
 ---
 
 **Implementation Date:** 2025-10-10  
-**Version:** 1.1.4 (Updated with drag reset fix)  
-**Lines of Code:** ~870 lines (service + components)  
-**Lines of Documentation:** ~3,400 lines  
+**Version:** 1.1.5 (Updated with regeneration fix)  
+**Lines of Code:** ~890 lines (service + components)  
+**Lines of Documentation:** ~3,700 lines  
 
 ---
 
@@ -450,6 +450,19 @@ The system successfully addresses your requirement:
 - ✅ User actions always take priority over automatic saves
 
 **Details:** See [Single Section Drag Fix Documentation](docs/SINGLE_SECTION_DRAG_FIX.md)
+
+---
+
+## 🔧 Version 1.1.5 Update - Double Regeneration Fix
+
+**Issue Fixed:** Layout regenerating multiple times on load, causing flickering and interference with drag operations.
+
+**Solution:**
+- ✅ Added loading flag to prevent updates during layout load
+- ✅ 200ms settling period before enabling structure updates
+- ✅ Improved panel detection with recursive search
+
+**Details:** See [Double Regeneration Fix Documentation](docs/DOUBLE_REGENERATION_FIX.md)
 
 ---
 

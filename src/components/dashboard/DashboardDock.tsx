@@ -828,6 +828,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Debounce timer ref for saving layouts
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isLoadingLayoutRef = useRef<boolean>(false);
 
   // Cleanup save timeouts on unmount
   useEffect(() => {
@@ -1035,6 +1036,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }, 500);
       }
 
+      // Set loading flag to prevent structure updates during load
+      isLoadingLayoutRef.current = true;
+      
       // Load the layout
       dockLayoutRef.current.loadLayout(layoutToLoad);
 
@@ -1052,18 +1056,37 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             navigationPanel.removeAttribute("data-collapsed");
           }
         }
+        
+        // Reset loading flag after layout has settled
+        setTimeout(() => {
+          isLoadingLayoutRef.current = false;
+          console.log("✅ Layout load complete, structure updates enabled");
+        }, 200);
       }, 0);
     } else {
       // Signature hasn't changed - check if we need to update layout structure for panel visibility
       const currentLayout = dockLayoutRef.current.getLayout();
-      const hasReportsPanel = currentLayout?.dockbox?.children?.some((child: any) =>
-        child.tabs?.some((tab: any) => tab.id === "reports") ||
-        child.children?.some((c: any) => c.tabs?.some((tab: any) => tab.id === "reports"))
-      );
-      const hasWidgetsPanel = currentLayout?.dockbox?.children?.some((child: any) =>
-        child.tabs?.some((tab: any) => tab.id === "widgets") ||
-        child.children?.some((c: any) => c.tabs?.some((tab: any) => tab.id === "widgets"))
-      );
+      
+      // Helper to recursively search for panels in layout
+      const findPanelInLayout = (children: any[], panelId: string): boolean => {
+        if (!children) return false;
+        return children.some((child: any) => {
+          if (child.tabs?.some((tab: any) => tab.id === panelId)) {
+            return true;
+          }
+          if (child.children) {
+            return findPanelInLayout(child.children, panelId);
+          }
+          return false;
+        });
+      };
+      
+      const hasReportsPanel = currentLayout?.dockbox?.children 
+        ? findPanelInLayout(currentLayout.dockbox.children, "reports")
+        : false;
+      const hasWidgetsPanel = currentLayout?.dockbox?.children
+        ? findPanelInLayout(currentLayout.dockbox.children, "widgets")
+        : false;
 
       const needsStructureUpdate =
         (reportsVisible && !hasReportsPanel) ||
@@ -1071,8 +1094,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         (widgetsVisible && !hasWidgetsPanel) ||
         (!widgetsVisible && hasWidgetsPanel);
 
-      if (needsStructureUpdate) {
+      // Don't trigger structure updates if we're currently loading a layout
+      if (needsStructureUpdate && !isLoadingLayoutRef.current) {
         console.log("🔧 Panel visibility changed - updating layout structure while preserving navigation");
+        
+        // Set loading flag
+        isLoadingLayoutRef.current = true;
         
         // Extract current navigation state
         const navState = layoutPersistenceService.extractNavigationState(currentLayout);
@@ -1099,7 +1126,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           autoSaveTimeoutRef.current = null;
         }, 500);
         
-        // Apply collapsed state
+        // Apply collapsed state and reset loading flag
         setTimeout(() => {
           const navigationPanel = findNavigationPanel();
           if (navigationPanel) {
@@ -1109,7 +1136,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               navigationPanel.removeAttribute("data-collapsed");
             }
           }
+          
+          // Reset loading flag after layout has settled
+          setTimeout(() => {
+            isLoadingLayoutRef.current = false;
+            console.log("✅ Structure update complete");
+          }, 200);
         }, 0);
+      } else if (needsStructureUpdate && isLoadingLayoutRef.current) {
+        console.log("⏸️ Skipping structure update - layout is loading");
       } else {
         // Only content changed, no structure update needed
         console.log("📝 Only content changed, updating content in-place");
