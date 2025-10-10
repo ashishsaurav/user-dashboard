@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import Login from "./components/auth/Login";
-import DashboardDock from "./components/dashboard/DashboardDock"; // Import the new dock
 import { User } from "./types";
 import { ThemeProvider } from "./contexts/ThemeContext";
-import NotificationProvider from "./components/NotificationProvider";
+import { Login, DashboardDock, NotificationProvider } from "./components";
 import "./App.css";
 
 const App: React.FC = () => {

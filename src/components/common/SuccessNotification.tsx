@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import "./shared/styles/SuccessNotification.css";
+import "./styles/SuccessNotification.css";
 
 interface SuccessNotificationProps {
   message: string;
