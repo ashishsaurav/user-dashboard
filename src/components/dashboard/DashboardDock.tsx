@@ -825,6 +825,18 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed, findNavigationPanel]);
 
+  // Debounce timer ref for saving layouts
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Cleanup save timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
   // Handle navigation panel maximize - auto expand
   const handleLayoutChange = useCallback(
     (newLayout: LayoutData) => {
@@ -847,14 +859,20 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       // Save layout customization when user makes changes
       if (currentSignature && newLayout) {
-        // Use a debounced save to avoid saving during rapid changes
-        setTimeout(() => {
+        // Clear previous timeout
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        
+        // Debounced save to avoid saving during rapid changes or automatic layout loads
+        saveTimeoutRef.current = setTimeout(() => {
+          console.log("💾 Saving layout after user interaction (debounced)");
           layoutPersistenceService.saveLayout(
             user.name,
             currentSignature,
             newLayout
           );
-        }, 500);
+        }, 1000); // Increased to 1 second for more stability
       }
     },
     [isDockCollapsed, detectNavigationPositionAndOrientation, currentSignature, user.name]
@@ -996,9 +1014,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           );
         }
         
-        // Save this new layout immediately so it's available for next time
-        console.log("💾 Saving new layout with preserved navigation state");
-        layoutPersistenceService.saveLayout(user.name, newSignature, layoutToLoad);
+        // Save this new layout after a brief delay to avoid interfering with layout loading
+        setTimeout(() => {
+          console.log("💾 Saving new layout with preserved navigation state (delayed)");
+          layoutPersistenceService.saveLayout(user.name, newSignature, layoutToLoad);
+        }, 500);
       }
 
       // Load the layout
@@ -1051,12 +1071,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           newLayout = layoutPersistenceService.applyNavigationState(newLayout, navState);
         }
         
-        // Save the updated layout immediately
-        console.log("💾 Saving layout after panel visibility change");
-        layoutPersistenceService.saveLayout(user.name, currentSignature, newLayout);
-        
         // Load the updated layout
         dockLayoutRef.current.loadLayout(newLayout);
+        
+        // Save the updated layout after a delay to avoid interfering with user interaction
+        setTimeout(() => {
+          console.log("💾 Saving layout after panel visibility change (delayed)");
+          layoutPersistenceService.saveLayout(user.name, currentSignature, newLayout);
+        }, 500);
         
         // Apply collapsed state
         setTimeout(() => {
