@@ -2483,7 +2483,6 @@
   background: var(--bg-primary);
   overflow-x: auto;
   overflow-y: hidden;
-  max-height: 60px; /* Limit height for horizontal layout */
 }
 
 .nav-group-content-vertical {
@@ -2570,22 +2569,12 @@
   text-overflow: ellipsis;
 }
 
-/* Hide meta info in horizontal layout */
-.nav-view-item-horizontal .nav-view-meta {
-  display: none;
-}
-
 .nav-view-item-vertical .nav-view-meta {
   font-size: 11px;
   color: var(--text-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-/* Horizontal Actions */
-.nav-view-item-horizontal .nav-view-actions {
-  display: none; /* Hide actions in horizontal to save space */
 }
 
 .nav-view-item-vertical .nav-view-actions {

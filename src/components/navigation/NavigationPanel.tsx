@@ -735,7 +735,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                   ? "nav-group-horizontal"
                   : "nav-group-vertical"
               }`}
-              draggable={!isHorizontalLayout} // Disable drag in horizontal mode for simplicity
+              draggable={true}
               onDragStart={(e) => handleDragStart(e, "viewgroup", viewGroup.id)}
               onDragEnd={handleDragEnd}
               onDragOver={handleDragOver}
@@ -767,17 +767,16 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                   onClick={(e) => e.stopPropagation()}
                   onMouseDown={(e) => e.stopPropagation()}
                 >
-                  {!isHorizontalLayout && (
-                    <button
-                      className="nav-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleViewGroupExpansion(viewGroup.id);
-                      }}
-                    >
-                      <ChevronIcon expanded={isExpanded} />
-                    </button>
-                  )}
+                  <button
+                    className="nav-action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleViewGroupExpansion(viewGroup.id);
+                    }}
+                  >
+                    <ChevronIcon expanded={isExpanded} />
+                  </button>
+
                   <button
                     className="nav-action-btn visibility-btn"
                     onClick={(e) => {
@@ -858,12 +857,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                         <div className="nav-view-info">
                           <div className="nav-view-content">
                             <div className="nav-view-title">{view.name}</div>
-                            {!isHorizontalLayout && (
-                              <div className="nav-view-meta">
-                                {viewReports.length} Reports,{" "}
-                                {viewWidgets.length} Widgets
-                              </div>
-                            )}
+                            <div className="nav-view-meta">
+                              {viewReports.length} Reports, {viewWidgets.length}{" "}
+                              Widgets
+                            </div>
                           </div>
                         </div>
                         <div
