@@ -89,19 +89,6 @@ Welcome to the User Dashboard documentation! This directory contains comprehensi
 
 ---
 
-### 7. [First Switch Fix](./FIRST_SWITCH_FIX.md)
-**Fix for first-time switch behavior**
-
-- Problem description
-- Root cause analysis
-- Solution implementation
-- Before/after comparison
-- Console log examples
-
-📖 **Read this if:** You noticed layouts only persisting on second switch
-
----
-
 ## 🎯 Where to Start?
 
 ### For Users

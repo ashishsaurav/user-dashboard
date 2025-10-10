@@ -995,10 +995,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             navState
           );
         }
-        
-        // Save this new layout immediately so it's available for next time
-        console.log("💾 Saving new layout with preserved navigation state");
-        layoutPersistenceService.saveLayout(user.name, newSignature, layoutToLoad);
       }
 
       // Load the layout
@@ -1050,10 +1046,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         if (navState) {
           newLayout = layoutPersistenceService.applyNavigationState(newLayout, navState);
         }
-        
-        // Save the updated layout immediately
-        console.log("💾 Saving layout after panel visibility change");
-        layoutPersistenceService.saveLayout(user.name, currentSignature, newLayout);
         
         // Load the updated layout
         dockLayoutRef.current.loadLayout(newLayout);

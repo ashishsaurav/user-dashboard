@@ -382,9 +382,9 @@ The system successfully addresses your requirement:
 ---
 
 **Implementation Date:** 2025-10-10  
-**Version:** 1.1.1 (Updated with first-switch fix)  
+**Version:** 1.1.0 (Updated with panel visibility fix)  
 **Lines of Code:** ~800 lines (service + components)  
-**Lines of Documentation:** ~2,500 lines  
+**Lines of Documentation:** ~2,200 lines  
 
 ---
 
@@ -398,19 +398,6 @@ The system successfully addresses your requirement:
 - ✅ Smart layout updates that preserve navigation customizations
 
 **Details:** See [Panel Visibility Fix Documentation](docs/PANEL_VISIBILITY_FIX.md)
-
----
-
-## 🔧 Version 1.1.1 Update - First Switch Fix
-
-**Issue Fixed:** Navigation customizations only persisted on second switch to a new view, not the first.
-
-**Solution:**
-- ✅ Immediately save newly generated layouts with preserved navigation state
-- ✅ Applied to both view switches and panel visibility changes
-- ✅ Ensures consistent behavior from first interaction
-
-**Details:** See [First Switch Fix Documentation](docs/FIRST_SWITCH_FIX.md)
 
 ---
 
