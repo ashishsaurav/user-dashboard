@@ -11,6 +11,7 @@ import EditViewModal from "../EditViewModal";
 import EditViewGroupModal from "../EditViewGroupModal";
 import DeleteConfirmationModal from "../DeleteConfirmationModal";
 import { useNotification } from "../NotificationProvider";
+import ActionPopup from "../ActionPopup";
 
 interface NavigationPanelProps {
   user: User;
@@ -519,6 +520,75 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     setDeletingViewGroup(null);
   };
 
+  const [hoveredItem, setHoveredItem] = useState<{
+    type: string;
+    id: string;
+    position: { x: number; y: number };
+  } | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleMouseEnter = (e: React.MouseEvent, type: string, id: string) => {
+    // Clear any pending hide timeout
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+
+    // Clear any pending show timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const POPUP_HEIGHT = 40;
+
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredItem({
+        type,
+        id,
+        position: {
+          x: rect.left,
+          y: rect.top - POPUP_HEIGHT - 4,
+        },
+      });
+    }, 300);
+  };
+
+  const handleMouseLeave = () => {
+    // Clear the show timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+
+    // Delay hiding to allow moving to popup
+    hideTimeoutRef.current = setTimeout(() => {
+      setHoveredItem(null);
+    }, 200); // 200ms grace period to move to popup
+  };
+
+  const handlePopupMouseEnter = () => {
+    // Cancel hiding when mouse enters popup
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
+  };
+
+  const handlePopupMouseLeave = () => {
+    // Hide immediately when leaving popup
+    setHoveredItem(null);
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
+  }, []);
+
   // Icons
   const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
     <svg
@@ -679,6 +749,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                     ? "nav-group-header-horizontal"
                     : "nav-group-header-vertical"
                 }`}
+                onMouseEnter={(e) =>
+                  handleMouseEnter(e, "viewgroup", viewGroup.id)
+                }
+                onMouseLeave={handleMouseLeave}
                 onClick={() =>
                   !isHorizontalLayout && toggleViewGroupExpansion(viewGroup.id)
                 }
@@ -690,57 +764,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                   <div className="nav-group-title">{viewGroup.name}</div>
                   {viewGroup.isDefault && (
                     <span className="default-badge">Default</span>
-                  )}
-                </div>
-                <div
-                  className="nav-group-actions"
-                  onClick={(e) => e.stopPropagation()}
-                  onMouseDown={(e) => e.stopPropagation()}
-                >
-                  {!isHorizontalLayout && (
-                    <button
-                      className="nav-action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleViewGroupExpansion(viewGroup.id);
-                      }}
-                    >
-                      <ChevronIcon expanded={isExpanded} />
-                    </button>
-                  )}
-                  <button
-                    className="nav-action-btn visibility-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleToggleVisibility("viewgroup", viewGroup.id);
-                    }}
-                    title={
-                      isHidden ? "Show in navigation" : "Hide from navigation"
-                    }
-                  >
-                    <EyeIcon isVisible={!isHidden} />
-                  </button>
-                  <button
-                    className="nav-action-btn edit-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingViewGroup(viewGroup);
-                    }}
-                    title="Edit view group and manage views"
-                  >
-                    <EditIcon />
-                  </button>
-                  {!viewGroup.isDefault && (
-                    <button
-                      className="nav-action-btn delete-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setDeletingViewGroup(viewGroup);
-                      }}
-                      title="Delete view group"
-                    >
-                      <DeleteIcon />
-                    </button>
                   )}
                 </div>
               </div>
@@ -776,6 +799,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                             ? "nav-view-item-horizontal"
                             : "nav-view-item-vertical"
                         }`}
+                        onMouseEnter={(e) =>
+                          handleMouseEnter(e, "view", view.id)
+                        }
+                        onMouseLeave={handleMouseLeave}
                         draggable
                         onDragStart={(e) => handleDragStart(e, "view", view.id)}
                         onDragEnd={handleDragEnd}
@@ -795,46 +822,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                               </div>
                             )}
                           </div>
-                        </div>
-                        <div
-                          className="nav-view-actions"
-                          onClick={(e) => e.stopPropagation()}
-                          onMouseDown={(e) => e.stopPropagation()}
-                        >
-                          <button
-                            className="nav-action-btn visibility-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleVisibility("view", view.id);
-                            }}
-                            title={
-                              viewIsHidden
-                                ? "Show in navigation"
-                                : "Hide from navigation"
-                            }
-                          >
-                            <EyeIcon isVisible={!viewIsHidden} />
-                          </button>
-                          <button
-                            className="nav-action-btn edit-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingView(view);
-                            }}
-                            title="Edit view"
-                          >
-                            <EditIcon />
-                          </button>
-                          <button
-                            className="nav-action-btn delete-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDeletingView(view);
-                            }}
-                            title="Delete view"
-                          >
-                            <DeleteIcon />
-                          </button>
                         </div>
                       </div>
                     );
@@ -911,6 +898,52 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             setDeletingView(null);
           }}
           onCancel={() => setDeletingView(null)}
+        />
+      )}
+
+      {hoveredItem && (
+        <ActionPopup
+          onEdit={() => {
+            if (hoveredItem.type === "viewgroup") {
+              const group = viewGroups.find((g) => g.id === hoveredItem.id);
+              if (group) setEditingViewGroup(group);
+            } else {
+              const view = views.find((v) => v.id === hoveredItem.id);
+              if (view) setEditingView(view);
+            }
+            setHoveredItem(null);
+          }}
+          onDelete={() => {
+            if (hoveredItem.type === "viewgroup") {
+              const group = viewGroups.find((g) => g.id === hoveredItem.id);
+              if (group && !group.isDefault) setDeletingViewGroup(group);
+            } else {
+              const view = views.find((v) => v.id === hoveredItem.id);
+              if (view) setDeletingView(view);
+            }
+            setHoveredItem(null);
+          }}
+          onToggleVisibility={() => {
+            handleToggleVisibility(
+              hoveredItem.type as "view" | "viewgroup",
+              hoveredItem.id
+            );
+            setHoveredItem(null);
+          }}
+          isVisible={
+            hoveredItem.type === "viewgroup"
+              ? viewGroups.find((g) => g.id === hoveredItem.id)?.isVisible ??
+                true
+              : views.find((v) => v.id === hoveredItem.id)?.isVisible ?? true
+          }
+          showDelete={
+            hoveredItem.type === "viewgroup"
+              ? !viewGroups.find((g) => g.id === hoveredItem.id)?.isDefault
+              : true
+          }
+          position={hoveredItem.position}
+          onMouseEnter={handlePopupMouseEnter} // ✅ NEW
+          onMouseLeave={handlePopupMouseLeave} // ✅ NEW
         />
       )}
     </div>
