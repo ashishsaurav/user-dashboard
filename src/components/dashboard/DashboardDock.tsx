@@ -28,6 +28,11 @@ import WelcomeContent from "./WelcomeContent";
 import ThemeToggle from "./ThemeToggle";
 import { useDockLayoutManager } from "./DockLayoutManager";
 import { LAYOUT_SIZES } from "../../constants/layout";
+import {
+  layoutPersistenceService,
+  generateLayoutSignature,
+  LayoutSignature,
+} from "../../services/layoutPersistenceService";
 import "./styles/DashboardDock.css";
 import "./styles/GmailDockIntegration.css";
 
@@ -75,6 +80,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Track layout structure to detect when we need full reload
   const [layoutStructure, setLayoutStructure] = useState<string>("");
+
+  // Track current layout signature for persistence
+  const [currentSignature, setCurrentSignature] = useState<LayoutSignature>("");
+  const previousSignatureRef = useRef<LayoutSignature>("");
 
   // RC-DOCK REF for updates
   const dockLayoutRef = useRef<DockLayout>(null);
@@ -197,6 +206,30 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
     setNavigationUpdateTrigger((prev) => prev + 1);
   };
+
+  // Compute current layout signature based on state
+  const computeCurrentSignature = useCallback((): LayoutSignature => {
+    const hasReports =
+      selectedView?.reportIds && selectedView.reportIds.length > 0;
+    const hasWidgets =
+      selectedView?.widgetIds && selectedView.widgetIds.length > 0;
+
+    return generateLayoutSignature({
+      selectedView: !!selectedView,
+      hasReports: !!hasReports,
+      hasWidgets: !!hasWidgets,
+      reportsVisible,
+      widgetsVisible,
+      layoutMode,
+      isDockCollapsed,
+    });
+  }, [
+    selectedView,
+    reportsVisible,
+    widgetsVisible,
+    layoutMode,
+    isDockCollapsed,
+  ]);
 
   // Enhanced view selection handler - auto-show sections when view selected
   const handleViewSelect = (view: View) => {
@@ -811,8 +844,20 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         console.log("🔼 Navigation maximized - auto-expanding");
         setIsDockCollapsed(false);
       }
+
+      // Save layout customization when user makes changes
+      if (currentSignature && newLayout) {
+        // Use a debounced save to avoid saving during rapid changes
+        setTimeout(() => {
+          layoutPersistenceService.saveLayout(
+            user.name,
+            currentSignature,
+            newLayout
+          );
+        }, 500);
+      }
     },
-    [isDockCollapsed, detectNavigationPositionAndOrientation]
+    [isDockCollapsed, detectNavigationPositionAndOrientation, currentSignature, user.name]
   );
 
   // Helper function to find navigation panel in layout data
@@ -873,22 +918,77 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   }, [isDockCollapsed, findNavigationPanel, findNavigationPanelInLayout]);
 
-  // Smart layout management - only reload on structural changes
+  // Smart layout management with persistence - reload on structural changes
   useEffect(() => {
     if (!dockLayoutRef.current) return;
 
-    const newStructure = getCurrentLayoutStructure();
+    // Compute current layout signature
+    const newSignature = computeCurrentSignature();
+    const signatureChanged = newSignature !== previousSignatureRef.current;
 
-    if (newStructure !== layoutStructure) {
+    console.log(
+      `🔍 Layout Check - Current: "${newSignature}", Previous: "${previousSignatureRef.current}", Changed: ${signatureChanged}`
+    );
+
+    if (signatureChanged) {
       console.log(
-        "Layout structure changed:",
-        layoutStructure,
-        "->",
-        newStructure
+        `🔄 Layout signature changed: "${previousSignatureRef.current}" → "${newSignature}"`
       );
-      const newLayout = generateDynamicLayout();
-      dockLayoutRef.current.loadLayout(newLayout);
-      setLayoutStructure(newStructure);
+
+      // Try to load saved layout for this signature
+      const savedLayout = layoutPersistenceService.loadLayout(
+        user.name,
+        newSignature
+      );
+
+      let layoutToLoad: LayoutData;
+
+      if (savedLayout) {
+        console.log(
+          `✅ Restoring saved layout for signature: "${newSignature}"`
+        );
+        layoutToLoad = savedLayout;
+
+        // Update content in the saved layout to reflect current state
+        // This ensures the content is fresh even though structure is preserved
+        const updatePanelContent = (panels: any[]) => {
+          panels.forEach((panel: any) => {
+            if (panel.tabs && panel.tabs[0]) {
+              const tabId = panel.tabs[0].id;
+
+              if (tabId === "navigation") {
+                panel.tabs[0].content = createNavigationContent();
+              } else if (tabId === "reports") {
+                panel.tabs[0].content = createReportsContent();
+              } else if (tabId === "widgets") {
+                panel.tabs[0].content = createWidgetsContent();
+              } else if (tabId.startsWith("welcome")) {
+                panel.tabs[0].content = createWelcomeContent();
+              }
+            }
+            // Recursively update nested panels
+            if (panel.children) {
+              updatePanelContent(panel.children);
+            }
+          });
+        };
+
+        if (layoutToLoad?.dockbox?.children) {
+          updatePanelContent(layoutToLoad.dockbox.children);
+        }
+      } else {
+        console.log(
+          `🆕 No saved layout found, generating default for signature: "${newSignature}"`
+        );
+        layoutToLoad = generateDynamicLayout();
+      }
+
+      // Load the layout
+      dockLayoutRef.current.loadLayout(layoutToLoad);
+
+      // Update state
+      setCurrentSignature(newSignature);
+      previousSignatureRef.current = newSignature;
 
       // Apply collapsed state after layout loads
       setTimeout(() => {
@@ -902,7 +1002,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }
       }, 0);
     } else {
-      console.log("Only content changed, updating content");
+      // Signature hasn't changed - only update content
+      console.log("📝 Only content changed, updating content in-place");
       updateLayoutContent();
     }
   }, [
@@ -910,8 +1011,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     reportsVisible,
     widgetsVisible,
     layoutMode,
+    isDockCollapsed,
     navigationUpdateTrigger,
+    computeCurrentSignature,
     findNavigationPanel,
+    createNavigationContent,
+    createReportsContent,
+    createWidgetsContent,
+    createWelcomeContent,
+    generateDynamicLayout,
+    updateLayoutContent,
+    user.name,
   ]);
 
   return (
@@ -935,7 +1045,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       {/* Modals */}
       {showManageModal && (
-        <ManageModal onClose={() => setShowManageModal(false)} />
+        <ManageModal user={user} onClose={() => setShowManageModal(false)} />
       )}
 
       {showNavigationModal && (
