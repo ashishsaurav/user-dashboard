@@ -22,7 +22,7 @@ export class ReportsService {
    */
   async getAllReports(): Promise<Report[]> {
     const reports = await apiClient.get<ReportDto[]>(API_ENDPOINTS.REPORTS.LIST);
-    return reports.map(this.transformToFrontend);
+    return reports.map(this.transformToFrontend.bind(this));
   }
 
   /**
@@ -92,7 +92,9 @@ export class ReportsService {
       name: dto.reportName,
       url: dto.reportUrl || '',
       type: 'Report',
-      userRoles: [], // This is role-based, so we don't need this array anymore
+      // Note: userRoles is managed via backend RoleReports table, not returned in DTO
+      // To populate this, we'd need a separate API endpoint to fetch role assignments
+      userRoles: [],
     };
   }
 }

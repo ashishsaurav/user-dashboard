@@ -22,7 +22,7 @@ export class WidgetsService {
    */
   async getAllWidgets(): Promise<Widget[]> {
     const widgets = await apiClient.get<WidgetDto[]>(API_ENDPOINTS.WIDGETS.LIST);
-    return widgets.map(this.transformToFrontend);
+    return widgets.map(this.transformToFrontend.bind(this));
   }
 
   /**
@@ -92,7 +92,9 @@ export class WidgetsService {
       name: dto.widgetName,
       url: '', // Widgets don't have URLs in the backend
       type: 'Widget',
-      userRoles: [], // Role-based, not needed
+      // Note: userRoles is managed via backend RoleWidgets table, not returned in DTO
+      // To populate this, we'd need a separate API endpoint to fetch role assignments
+      userRoles: [],
     };
   }
 }

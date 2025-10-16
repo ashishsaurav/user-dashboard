@@ -100,12 +100,56 @@ const ManageModal: React.FC<ManageModalProps> = ({
             />
           )}
           {activeTab === "permissions" && (
-            <UserRolePermissions
-              reports={reports}
-              widgets={widgets}
-              onUpdateReports={setReports}
-              onUpdateWidgets={setWidgets}
-            />
+            <div style={{ 
+              padding: "40px 20px", 
+              textAlign: "center",
+              color: "var(--text-secondary)" 
+            }}>
+              <div style={{ 
+                maxWidth: "600px", 
+                margin: "0 auto",
+                padding: "40px",
+                backgroundColor: "var(--bg-secondary)",
+                borderRadius: "12px",
+                border: "1px solid var(--border-color)"
+              }}>
+                <div style={{ fontSize: "48px", marginBottom: "20px" }}>🔐</div>
+                <h3 style={{ 
+                  color: "var(--text-primary)", 
+                  marginBottom: "16px",
+                  fontSize: "20px" 
+                }}>
+                  Role Permissions Management
+                </h3>
+                <p style={{ 
+                  lineHeight: "1.6", 
+                  marginBottom: "20px",
+                  color: "var(--text-secondary)" 
+                }}>
+                  This feature requires backend API support for role-based permission management.
+                </p>
+                <div style={{
+                  padding: "16px",
+                  backgroundColor: "var(--bg-primary)",
+                  borderRadius: "8px",
+                  textAlign: "left",
+                  fontSize: "14px",
+                  lineHeight: "1.8"
+                }}>
+                  <p style={{ marginBottom: "12px", fontWeight: 500 }}>
+                    <strong>Current Status:</strong>
+                  </p>
+                  <ul style={{ margin: 0, paddingLeft: "20px" }}>
+                    <li>✅ Role-based access control is working</li>
+                    <li>✅ Permissions are managed via database tables (RoleReports, RoleWidgets)</li>
+                    <li>⏳ UI for editing role permissions requires additional API endpoints</li>
+                  </ul>
+                  <p style={{ marginTop: "16px", fontSize: "13px", opacity: 0.8 }}>
+                    <strong>To enable this feature:</strong> Add backend endpoints to fetch and update role assignments.
+                  </p>
+                </div>
+              </div>
+            </div>
           )}
           {activeTab === "add" && <AddReportWidget onAddItem={handleAddItem} />}
           {activeTab === "layout" && user && (
