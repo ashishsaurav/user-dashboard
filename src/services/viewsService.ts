@@ -192,13 +192,15 @@ export class ViewsService {
 
   /**
    * Transform backend DTO to frontend type
+   * Note: Backend returns ALL reports/widgets in the view,
+   * but frontend will filter by role-accessible ones
    */
   private transformToFrontend(dto: ViewDto): View {
     return {
       id: dto.viewId,
       name: dto.name,
-      reportIds: dto.reports.map((r) => r.reportId),
-      widgetIds: dto.widgets.map((w) => w.widgetId),
+      reportIds: dto.reports?.map((r) => r.reportId) || [],
+      widgetIds: dto.widgets?.map((w) => w.widgetId) || [],
       isVisible: dto.isVisible,
       order: dto.orderIndex,
       createdBy: dto.createdBy || dto.userId,

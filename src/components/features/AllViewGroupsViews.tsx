@@ -725,6 +725,21 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
                         const viewWidgets = view.widgetIds
                           .map((id) => widgets.find((w) => w.id === id))
                           .filter(Boolean);
+                        
+                        // Debug: Log count mismatch
+                        if (view.reportIds.length !== viewReports.length || view.widgetIds.length !== viewWidgets.length) {
+                          console.log(`⚠️ AllViewGroupsViews - Count mismatch for "${view.name}":`, {
+                            totalReportIds: view.reportIds.length,
+                            accessibleReports: viewReports.length,
+                            totalWidgetIds: view.widgetIds.length,
+                            accessibleWidgets: viewWidgets.length,
+                            reportIds: view.reportIds,
+                            accessibleReportIds: viewReports.map(r => r.id),
+                            widgetIds: view.widgetIds,
+                            accessibleWidgetIds: viewWidgets.map(w => w.id)
+                          });
+                        }
+                        
                         const isViewDragOver = dragOverItem?.id === view.id;
                         const dragPosition = dragOverItem?.position;
 
