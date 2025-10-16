@@ -1,78 +1,79 @@
-import { View, ViewGroup, UserNavigationSettings } from "../types";
-import { storageService } from "./storageService";
+/**
+ * Navigation Service
+ * Handles navigation settings API calls
+ */
 
-export const navigationService = {
-  getViews: (userId: string): View[] => {
-    return storageService.get<View[]>("navigationViews", userId) || [];
-  },
+import { apiClient } from './apiClient';
+import { API_ENDPOINTS } from '../config/api.config';
+import { UserNavigationSettings } from '../types';
 
-  saveViews: (userId: string, views: View[]): void => {
-    const sortedViews = [...views].sort(
-      (a, b) => (a.order || 0) - (b.order || 0)
+interface NavigationSettingDto {
+  id: number;
+  userId: string;
+  viewGroupOrder: string[];
+  viewOrders: Record<string, string[]>;
+  hiddenViewGroups: string[];
+  hiddenViews: string[];
+}
+
+export class NavigationService {
+  /**
+   * Get navigation settings for user
+   */
+  async getNavigationSettings(userId: string): Promise<UserNavigationSettings> {
+    const settings = await apiClient.get<NavigationSettingDto>(
+      API_ENDPOINTS.NAVIGATION.GET(userId)
     );
-    storageService.set("navigationViews", sortedViews, userId);
-  },
+    return this.transformToFrontend(settings);
+  }
 
-  getViewGroups: (userId: string): ViewGroup[] => {
-    return storageService.get<ViewGroup[]>("navigationViewGroups", userId) || [];
-  },
-
-  saveViewGroups: (userId: string, viewGroups: ViewGroup[]): void => {
-    const sortedGroups = [...viewGroups].sort(
-      (a, b) => (a.order || 0) - (b.order || 0)
-    );
-    storageService.set("navigationViewGroups", sortedGroups, userId);
-  },
-
-  getNavSettings: (userId: string): UserNavigationSettings | null => {
-    return storageService.get<UserNavigationSettings>(
-      "navigationSettings",
-      userId
-    );
-  },
-
-  saveNavSettings: (
+  /**
+   * Update navigation settings
+   */
+  async updateNavigationSettings(
     userId: string,
     settings: UserNavigationSettings
-  ): void => {
-    storageService.set("navigationSettings", settings, userId);
-  },
-
-  addView: (userId: string, view: View): void => {
-    const views = navigationService.getViews(userId);
-    navigationService.saveViews(userId, [...views, view]);
-  },
-
-  updateView: (userId: string, updatedView: View): void => {
-    const views = navigationService.getViews(userId);
-    const updatedViews = views.map((v) =>
-      v.id === updatedView.id ? updatedView : v
+  ): Promise<UserNavigationSettings> {
+    const dto = this.transformToBackend(settings);
+    const updated = await apiClient.put<NavigationSettingDto>(
+      API_ENDPOINTS.NAVIGATION.UPDATE(userId),
+      dto
     );
-    navigationService.saveViews(userId, updatedViews);
-  },
+    return this.transformToFrontend(updated);
+  }
 
-  deleteView: (userId: string, viewId: string): void => {
-    const views = navigationService.getViews(userId);
-    const filteredViews = views.filter((v) => v.id !== viewId);
-    navigationService.saveViews(userId, filteredViews);
-  },
+  /**
+   * Reset navigation settings
+   */
+  async resetNavigationSettings(userId: string): Promise<void> {
+    await apiClient.delete(API_ENDPOINTS.NAVIGATION.RESET(userId));
+  }
 
-  addViewGroup: (userId: string, viewGroup: ViewGroup): void => {
-    const viewGroups = navigationService.getViewGroups(userId);
-    navigationService.saveViewGroups(userId, [...viewGroups, viewGroup]);
-  },
+  /**
+   * Transform backend DTO to frontend type
+   */
+  private transformToFrontend(dto: NavigationSettingDto): UserNavigationSettings {
+    return {
+      userId: dto.userId,
+      viewGroupOrder: dto.viewGroupOrder || [],
+      viewOrders: dto.viewOrders || {},
+      hiddenViewGroups: dto.hiddenViewGroups || [],
+      hiddenViews: dto.hiddenViews || [],
+    };
+  }
 
-  updateViewGroup: (userId: string, updatedViewGroup: ViewGroup): void => {
-    const viewGroups = navigationService.getViewGroups(userId);
-    const updatedViewGroups = viewGroups.map((vg) =>
-      vg.id === updatedViewGroup.id ? updatedViewGroup : vg
-    );
-    navigationService.saveViewGroups(userId, updatedViewGroups);
-  },
+  /**
+   * Transform frontend type to backend DTO
+   */
+  private transformToBackend(settings: UserNavigationSettings) {
+    return {
+      viewGroupOrder: settings.viewGroupOrder,
+      viewOrders: settings.viewOrders,
+      hiddenViewGroups: settings.hiddenViewGroups,
+      hiddenViews: settings.hiddenViews,
+    };
+  }
+}
 
-  deleteViewGroup: (userId: string, viewGroupId: string): void => {
-    const viewGroups = navigationService.getViewGroups(userId);
-    const filteredViewGroups = viewGroups.filter((vg) => vg.id !== viewGroupId);
-    navigationService.saveViewGroups(userId, filteredViewGroups);
-  },
-};
+export const navigationService = new NavigationService();
+export default navigationService;
