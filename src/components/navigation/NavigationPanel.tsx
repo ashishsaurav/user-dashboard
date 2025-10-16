@@ -40,16 +40,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   onViewSelect,
   selectedView,
 }) => {
-  // Debug logging
-  useEffect(() => {
-    console.log('🧭 NavigationPanel - Received data:', {
-      viewGroups: viewGroups.length,
-      views: views.length,
-      viewGroupsData: viewGroups,
-      viewsData: views
-    });
-  }, [viewGroups, views]);
-
   // Local state
   const [expandedViewGroups, setExpandedViewGroups] = useState<{
     [key: string]: boolean;
@@ -137,29 +127,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   // Get viewgroup views with proper ordering
   const getViewGroupViews = (viewGroupId: string): View[] => {
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
-    if (!viewGroup) {
-      console.log('⚠️ ViewGroup not found:', viewGroupId);
-      return [];
-    }
-    
-    console.log(`🔍 Getting views for group "${viewGroup.name}":`, {
-      viewGroupId,
-      viewIds: viewGroup.viewIds,
-      totalViews: views.length
-    });
-    
+    if (!viewGroup) return [];
     const groupViews = viewGroup.viewIds
-      .map((viewId) => {
-        const view = views.find((v) => v.id === viewId);
-        if (!view) {
-          console.log(`⚠️ View not found: ${viewId}`);
-        }
-        return view;
-      })
+      .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean) as View[];
-      
-    console.log(`✅ Found ${groupViews.length} views for group "${viewGroup.name}"`);
-    
     return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
   };
 

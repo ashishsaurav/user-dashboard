@@ -28,14 +28,7 @@ export class ViewGroupsService {
     const viewGroups = await apiClient.get<ViewGroupDto[]>(
       API_ENDPOINTS.VIEW_GROUPS.BY_USER(userId)
     );
-    
-    console.log('📦 ViewGroups from backend:', viewGroups);
-    
-    const transformed = viewGroups.map(this.transformToFrontend.bind(this));
-    
-    console.log('✅ ViewGroups transformed:', transformed);
-    
-    return transformed;
+    return viewGroups.map(this.transformToFrontend.bind(this));
   }
 
   /**
