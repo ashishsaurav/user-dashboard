@@ -5,8 +5,12 @@
 
 import { useQuery } from './useQuery';
 import { useMutation } from './useMutation';
-import { widgetRepository, WidgetListParams } from '../../services/api/repositories';
+import { widgetsService } from '../../services/widgetsService';
 import { Widget, WidgetFormData } from '../../types';
+
+export interface WidgetListParams {
+  roleId?: string;
+}
 
 /**
  * Fetch all widgets
@@ -14,7 +18,9 @@ import { Widget, WidgetFormData } from '../../types';
 export function useWidgets(params?: WidgetListParams) {
   return useQuery(
     ['widgets', params],
-    () => widgetRepository.getAll(params),
+    () => params?.roleId 
+      ? widgetsService.getWidgetsByRole(params.roleId) 
+      : widgetsService.getAllWidgets(),
     {
       staleTime: 2 * 60 * 1000, // 2 minutes
     }
@@ -27,7 +33,7 @@ export function useWidgets(params?: WidgetListParams) {
 export function useWidget(id: string, enabled: boolean = true) {
   return useQuery(
     ['widgets', id],
-    () => widgetRepository.getById(id),
+    () => widgetsService.getWidget(id),
     {
       enabled: enabled && !!id,
       staleTime: 5 * 60 * 1000, // 5 minutes
@@ -39,8 +45,8 @@ export function useWidget(id: string, enabled: boolean = true) {
  * Create widget mutation
  */
 export function useCreateWidget() {
-  return useMutation<Widget, WidgetFormData>(
-    (data) => widgetRepository.create(data),
+  return useMutation<Widget, { widgetName: string; widgetDescription?: string; widgetType?: string }>(
+    (data) => widgetsService.createWidget(data),
     {
       invalidateQueries: 'widgets',
     }
@@ -51,8 +57,8 @@ export function useCreateWidget() {
  * Update widget mutation
  */
 export function useUpdateWidget() {
-  return useMutation<Widget, { id: string; data: Partial<WidgetFormData> }>(
-    ({ id, data }) => widgetRepository.update(id, data),
+  return useMutation<Widget, { id: string; data: { widgetName: string; widgetDescription?: string; widgetType?: string } }>(
+    ({ id, data }) => widgetsService.updateWidget(id, data),
     {
       invalidateQueries: 'widgets',
     }
@@ -64,7 +70,7 @@ export function useUpdateWidget() {
  */
 export function useDeleteWidget() {
   return useMutation<void, string>(
-    (id) => widgetRepository.delete(id),
+    (id) => widgetsService.deleteWidget(id),
     {
       invalidateQueries: 'widgets',
     }
