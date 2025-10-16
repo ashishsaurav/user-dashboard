@@ -11,45 +11,36 @@ import "./styles/ManageModal.css";
 interface ManageModalProps {
   onClose: () => void;
   user?: User;
+  reports?: Report[];  // ✅ From API
+  widgets?: Widget[];  // ✅ From API
 }
 
 type TabType = "all" | "permissions" | "add" | "layout";
 
-const ManageModal: React.FC<ManageModalProps> = ({ onClose, user }) => {
+const ManageModal: React.FC<ManageModalProps> = ({ 
+  onClose, 
+  user, 
+  reports: apiReports = [], 
+  widgets: apiWidgets = [] 
+}) => {
   const [activeTab, setActiveTab] = useState<TabType>("all");
 
-  // Shared state for reports and widgets
-  const [reports, setReports] = useState<Report[]>([]);
-  const [widgets, setWidgets] = useState<Widget[]>([]);
+  // ✅ Use reports and widgets from API (fallback to testData only if not provided)
+  const [reports, setReports] = useState<Report[]>(apiReports.length > 0 ? apiReports : testReports);
+  const [widgets, setWidgets] = useState<Widget[]>(apiWidgets.length > 0 ? apiWidgets : testWidgets);
 
-  // Initialize data from sessionStorage or testData
+  // Update local state when API data changes
   useEffect(() => {
-    const savedReports = sessionStorage.getItem("reports");
-    const savedWidgets = sessionStorage.getItem("widgets");
-
-    if (savedReports && savedWidgets) {
-      setReports(JSON.parse(savedReports));
-      setWidgets(JSON.parse(savedWidgets));
-    } else {
-      setReports(testReports);
-      setWidgets(testWidgets);
-      sessionStorage.setItem("reports", JSON.stringify(testReports));
-      sessionStorage.setItem("widgets", JSON.stringify(testWidgets));
+    if (apiReports.length > 0) {
+      setReports(apiReports);
     }
-  }, []);
-
-  // Save to sessionStorage whenever data changes
-  useEffect(() => {
-    if (reports.length > 0) {
-      sessionStorage.setItem("reports", JSON.stringify(reports));
-    }
-  }, [reports]);
+  }, [apiReports]);
 
   useEffect(() => {
-    if (widgets.length > 0) {
-      sessionStorage.setItem("widgets", JSON.stringify(widgets));
+    if (apiWidgets.length > 0) {
+      setWidgets(apiWidgets);
     }
-  }, [widgets]);
+  }, [apiWidgets]);
 
   // Add new item (from Add tab)
   const handleAddItem = (newItem: Report | Widget) => {

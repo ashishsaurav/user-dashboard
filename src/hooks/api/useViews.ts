@@ -5,7 +5,7 @@
 
 import { useQuery } from './useQuery';
 import { useMutation } from './useMutation';
-import { viewRepository } from '../../services/api/repositories';
+import { viewsService } from '../../services/viewsService';
 import { View, ViewFormData } from '../../types';
 
 /**
@@ -14,7 +14,7 @@ import { View, ViewFormData } from '../../types';
 export function useUserViews(userId: string, enabled: boolean = true) {
   return useQuery(
     ['views', 'user', userId],
-    () => viewRepository.getByUser(userId),
+    () => viewsService.getUserViews(userId),
     {
       enabled: enabled && !!userId,
       staleTime: 1 * 60 * 1000, // 1 minute
@@ -25,12 +25,12 @@ export function useUserViews(userId: string, enabled: boolean = true) {
 /**
  * Fetch single view by ID
  */
-export function useView(id: string, enabled: boolean = true) {
+export function useView(id: string, userId: string, enabled: boolean = true) {
   return useQuery(
     ['views', id],
-    () => viewRepository.getById(id),
+    () => viewsService.getView(id, userId),
     {
-      enabled: enabled && !!id,
+      enabled: enabled && !!id && !!userId,
       staleTime: 5 * 60 * 1000, // 5 minutes
     }
   );
@@ -40,8 +40,8 @@ export function useView(id: string, enabled: boolean = true) {
  * Create view mutation
  */
 export function useCreateView() {
-  return useMutation<View, ViewFormData & { createdBy: string }>(
-    (data) => viewRepository.create(data),
+  return useMutation<View, { userId: string; data: ViewFormData }>(
+    ({ userId, data }) => viewsService.createView(userId, data),
     {
       invalidateQueries: 'views',
     }
@@ -52,8 +52,8 @@ export function useCreateView() {
  * Update view mutation
  */
 export function useUpdateView() {
-  return useMutation<View, { id: string; data: Partial<ViewFormData> }>(
-    ({ id, data }) => viewRepository.update(id, data),
+  return useMutation<View, { id: string; userId: string; data: any }>(
+    ({ id, userId, data }) => viewsService.updateView(id, userId, data),
     {
       invalidateQueries: 'views',
     }
@@ -64,20 +64,8 @@ export function useUpdateView() {
  * Delete view mutation
  */
 export function useDeleteView() {
-  return useMutation<void, string>(
-    (id) => viewRepository.delete(id),
-    {
-      invalidateQueries: 'views',
-    }
-  );
-}
-
-/**
- * Reorder views mutation
- */
-export function useReorderViews() {
-  return useMutation<void, string[]>(
-    (viewIds) => viewRepository.reorder(viewIds),
+  return useMutation<void, { id: string; userId: string }>(
+    ({ id, userId }) => viewsService.deleteView(id, userId),
     {
       invalidateQueries: 'views',
     }
