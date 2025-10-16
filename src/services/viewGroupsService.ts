@@ -17,7 +17,7 @@ interface ViewGroupDto {
   createdBy?: string;
   createdAt: string;
   updatedAt: string;
-  viewIds: string[];
+  views: Array<{ viewId: string; name: string; [key: string]: any }>;
 }
 
 export class ViewGroupsService {
@@ -28,7 +28,14 @@ export class ViewGroupsService {
     const viewGroups = await apiClient.get<ViewGroupDto[]>(
       API_ENDPOINTS.VIEW_GROUPS.BY_USER(userId)
     );
-    return viewGroups.map(this.transformToFrontend);
+    
+    console.log('📦 ViewGroups from backend:', viewGroups);
+    
+    const transformed = viewGroups.map(this.transformToFrontend.bind(this));
+    
+    console.log('✅ ViewGroups transformed:', transformed);
+    
+    return transformed;
   }
 
   /**
@@ -161,7 +168,7 @@ export class ViewGroupsService {
     return {
       id: dto.viewGroupId,
       name: dto.name,
-      viewIds: dto.viewIds || [],
+      viewIds: dto.views?.map(v => v.viewId) || [], // Extract viewIds from Views array
       isVisible: dto.isVisible,
       order: dto.orderIndex,
       isDefault: dto.isDefault,
