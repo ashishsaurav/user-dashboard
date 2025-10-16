@@ -728,16 +728,11 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
                         
                         // Debug: Log count mismatch
                         if (view.reportIds.length !== viewReports.length || view.widgetIds.length !== viewWidgets.length) {
-                          console.log(`⚠️ AllViewGroupsViews - Count mismatch for "${view.name}":`, {
-                            totalReportIds: view.reportIds.length,
-                            accessibleReports: viewReports.length,
-                            totalWidgetIds: view.widgetIds.length,
-                            accessibleWidgets: viewWidgets.length,
-                            reportIds: view.reportIds,
-                            accessibleReportIds: viewReports.map(r => r.id),
-                            widgetIds: view.widgetIds,
-                            accessibleWidgetIds: viewWidgets.map(w => w.id)
-                          });
+                          console.warn(`⚠️ AllViewGroupsViews Modal - "${view.name}":`);
+                          console.warn(`  Reports: ${viewReports.length}/${view.reportIds.length} accessible`);
+                          console.warn(`  Widgets: ${viewWidgets.length}/${view.widgetIds.length} accessible`);
+                          console.warn(`  Missing Reports:`, view.reportIds.filter(id => !reports.find(r => r.id === id)));
+                          console.warn(`  Missing Widgets:`, view.widgetIds.filter(id => !widgets.find(w => w.id === id)));
                         }
                         
                         const isViewDragOver = dragOverItem?.id === view.id;
