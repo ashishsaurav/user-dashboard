@@ -32,7 +32,15 @@ export class ReportsService {
     const reports = await apiClient.get<ReportDto[]>(
       API_ENDPOINTS.REPORTS.BY_ROLE(roleId)
     );
-    return reports.map(this.transformToFrontend);
+    
+    console.log(`📊 Reports from backend for role "${roleId}":`, reports);
+    console.log(`📊 Report IDs:`, reports.map(r => r.reportId));
+    
+    const transformed = reports.map(this.transformToFrontend.bind(this));
+    
+    console.log(`📊 Transformed reports:`, transformed.map(r => ({ id: r.id, name: r.name })));
+    
+    return transformed;
   }
 
   /**
