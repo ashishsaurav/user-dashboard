@@ -46,18 +46,7 @@ export class ViewsService {
     const views = await apiClient.get<ViewDto[]>(
       API_ENDPOINTS.VIEWS.BY_USER(userId)
     );
-    
-    console.log(`📊 Views from backend for user "${userId}":`, views);
-    
-    const transformed = views.map(this.transformToFrontend.bind(this));
-    
-    console.log(`📊 Transformed views:`, transformed.map(v => ({ 
-      name: v.name, 
-      reportIds: v.reportIds, 
-      widgetIds: v.widgetIds 
-    })));
-    
-    return transformed;
+    return views.map(this.transformToFrontend.bind(this));
   }
 
   /**

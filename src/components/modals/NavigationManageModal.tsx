@@ -8,12 +8,7 @@ import {
   Widget,
   UserNavigationData,
 } from "../../types";
-import {
-  testReports,
-  testWidgets,
-  getUserNavigationData,
-  initializeUserNavigationData,
-} from "../../data/testData";
+// No longer needed - using API data passed as props
 import AllViewGroupsViews from "../features/AllViewGroupsViews";
 import CreateViewGroup from "../forms/CreateViewGroup";
 import CreateView from "../forms/CreateView";
@@ -30,6 +25,8 @@ interface NavigationManageModalProps {
   views: View[];
   viewGroups: ViewGroup[];
   userNavSettings: UserNavigationSettings[];
+  reports: Report[];  // ✅ From API
+  widgets: Widget[];  // ✅ From API
 }
 
 type NavTabType = "all" | "createGroup" | "createView";
@@ -45,35 +42,14 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
   views,
   viewGroups,
   userNavSettings,
+  reports,  // ✅ From API
+  widgets,  // ✅ From API
 }) => {
   const [activeTab, setActiveTab] = useState<NavTabType>("all");
 
-  // Get user's accessible reports and widgets based on permissions from main manage modal
-  const getUserAccessibleReports = () => {
-    // Get reports from the main manage modal (reports that exist in the system)
-    const savedReports = sessionStorage.getItem("reports");
-    const systemReports = savedReports ? JSON.parse(savedReports) : testReports;
-
-    if (user.role === "admin") {
-      return systemReports;
-    }
-    return systemReports.filter((report: Report) =>
-      report.userRoles.includes(user.role)
-    );
-  };
-
-  const getUserAccessibleWidgets = () => {
-    // Get widgets from the main manage modal (widgets that exist in the system)
-    const savedWidgets = sessionStorage.getItem("widgets");
-    const systemWidgets = savedWidgets ? JSON.parse(savedWidgets) : testWidgets;
-
-    if (user.role === "admin") {
-      return systemWidgets;
-    }
-    return systemWidgets.filter((widget: Widget) =>
-      widget.userRoles.includes(user.role)
-    );
-  };
+  // ✅ Use reports and widgets from API (already filtered by role)
+  const getUserAccessibleReports = () => reports;
+  const getUserAccessibleWidgets = () => widgets;
 
   // Close icon
   const CloseIcon = () => (

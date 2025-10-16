@@ -50,10 +50,6 @@ export function useApiData(user: User | null) {
       setState(prev => ({ ...prev, loading: true, error: null }));
 
       try {
-        console.log('👤 User details:', { id: user.name, email: user.email, role: user.role });
-        console.log('🔑 Fetching reports for roleId:', user.role);
-        console.log('🔑 Fetching widgets for roleId:', user.role);
-        
         // Load all data in parallel
         const [reports, widgets, views, viewGroups, navSettings] = await Promise.all([
           reportsService.getReportsByRole(user.role),

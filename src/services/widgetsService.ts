@@ -32,15 +32,7 @@ export class WidgetsService {
     const widgets = await apiClient.get<WidgetDto[]>(
       API_ENDPOINTS.WIDGETS.BY_ROLE(roleId)
     );
-    
-    console.log(`📊 Widgets from backend for role "${roleId}":`, widgets);
-    console.log(`📊 Widget IDs:`, widgets.map(w => w.widgetId));
-    
-    const transformed = widgets.map(this.transformToFrontend.bind(this));
-    
-    console.log(`📊 Transformed widgets:`, transformed.map(w => ({ id: w.id, name: w.name })));
-    
-    return transformed;
+    return widgets.map(this.transformToFrontend.bind(this));
   }
 
   /**

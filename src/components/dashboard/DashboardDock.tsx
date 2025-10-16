@@ -1212,7 +1212,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       {/* Modals */}
       {showManageModal && (
-        <ManageModal user={user} onClose={() => setShowManageModal(false)} />
+        <ManageModal 
+          user={user} 
+          onClose={() => setShowManageModal(false)} 
+          reports={reports}  
+          widgets={widgets}  
+        />
       )}
 
       {showNavigationModal && (
@@ -1242,6 +1247,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           views={views}
           viewGroups={viewGroups}
           userNavSettings={navSettings ? [navSettings] : []}
+          reports={getUserAccessibleReports()}  
+          widgets={getUserAccessibleWidgets()}  
         />
       )}
 

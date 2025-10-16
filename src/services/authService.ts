@@ -26,9 +26,6 @@ export class AuthService {
       { email }
     );
 
-    console.log('🔐 Login Response from backend:', response);
-    console.log('🔑 RoleId from backend:', response.roleId);
-
     // Transform backend response to frontend User type
     const user: User = {
       name: response.userId,
@@ -36,9 +33,6 @@ export class AuthService {
       password: '', // Not needed on frontend
       role: response.roleId as 'admin' | 'user' | 'viewer',
     };
-
-    console.log('👤 Transformed User object:', user);
-    console.log('👤 User role to be used for API calls:', user.role);
 
     // Store user in sessionStorage
     sessionStorage.setItem(API_CONFIG.AUTH.USER_KEY, JSON.stringify(user));
