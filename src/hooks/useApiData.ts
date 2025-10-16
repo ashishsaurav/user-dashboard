@@ -75,6 +75,9 @@ export function useApiData(user: User | null) {
           views: views.length,
           viewGroups: viewGroups.length,
         });
+        
+        console.log('🔍 ViewGroups details:', viewGroups);
+        console.log('🔍 Views details:', views);
       } catch (error: any) {
         console.error('❌ Error loading API data:', error);
         setState(prev => ({

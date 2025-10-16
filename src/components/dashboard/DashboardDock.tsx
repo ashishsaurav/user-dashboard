@@ -118,18 +118,21 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Update local state when API data changes
   useEffect(() => {
     if (apiViews.length > 0) {
+      console.log('📥 DashboardDock - Setting views from API:', apiViews);
       setViews(apiViews);
     }
   }, [apiViews]);
 
   useEffect(() => {
     if (apiViewGroups.length > 0) {
+      console.log('📥 DashboardDock - Setting viewGroups from API:', apiViewGroups);
       setViewGroups(apiViewGroups);
     }
   }, [apiViewGroups]);
 
   useEffect(() => {
     if (apiNavSettings) {
+      console.log('📥 DashboardDock - Setting navSettings from API:', apiNavSettings);
       setNavSettings(apiNavSettings);
     }
   }, [apiNavSettings]);
