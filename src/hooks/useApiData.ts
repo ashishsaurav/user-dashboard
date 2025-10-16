@@ -75,6 +75,33 @@ export function useApiData(user: User | null) {
           views: views.length,
           viewGroups: viewGroups.length,
         });
+        
+        // Debug: Show first view details
+        if (views.length > 0) {
+          const firstView = views[0];
+          console.log('🔍 Sample View Data:', {
+            name: firstView.name,
+            reportIds: firstView.reportIds,
+            widgetIds: firstView.widgetIds,
+            totalReports: firstView.reportIds.length,
+            totalWidgets: firstView.widgetIds.length
+          });
+          
+          console.log('🔍 Available Reports:', reports.map(r => ({ id: r.id, name: r.name })));
+          console.log('🔍 Available Widgets:', widgets.map(w => ({ id: w.id, name: w.name })));
+          
+          // Check which IDs are missing
+          const missingReports = firstView.reportIds.filter(id => !reports.find(r => r.id === id));
+          const missingWidgets = firstView.widgetIds.filter(id => !widgets.find(w => w.id === id));
+          
+          if (missingReports.length > 0 || missingWidgets.length > 0) {
+            console.warn('⚠️ View has items user cannot access:', {
+              view: firstView.name,
+              missingReports,
+              missingWidgets
+            });
+          }
+        }
       } catch (error: any) {
         console.error('❌ Error loading API data:', error);
         setState(prev => ({
