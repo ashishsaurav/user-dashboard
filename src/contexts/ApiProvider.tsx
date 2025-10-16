@@ -4,8 +4,8 @@
  */
 
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { apiClient } from '../services/api/apiClient';
-import { authService } from '../services/api/authService';
+import { apiClient } from '../services/apiClient';
+import { authService } from '../services/authService';
 import { User } from '../types';
 
 interface ApiContextValue {
@@ -37,7 +37,7 @@ export function ApiProvider({ children }: ApiProviderProps) {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const currentUser = await authService.initialize();
+        const currentUser = authService.getCurrentUser();
         setUser(currentUser);
       } catch (error) {
         console.error('Failed to initialize auth:', error);
