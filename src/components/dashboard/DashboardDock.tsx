@@ -10,12 +10,7 @@ import {
   Report,
   Widget,
 } from "../../types";
-import {
-  testReports,
-  testWidgets,
-  getUserNavigationData,
-  initializeUserNavigationData,
-} from "../../data/testData";
+import { useApiData } from "../../hooks/useApiData";
 import { useTheme } from "../../contexts/ThemeContext";
 import ManageModal from "../modals/ManageModal";
 import NavigationManageModal from "../modals/NavigationManageModal";
@@ -42,6 +37,20 @@ interface DashboardDockProps {
 }
 
 const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
+  // Load data from API
+  const {
+    reports,
+    widgets,
+    views: apiViews,
+    viewGroups: apiViewGroups,
+    navSettings: apiNavSettings,
+    loading: apiLoading,
+    error: apiError,
+    refetchViews,
+    refetchViewGroups,
+    refetchNavSettings,
+  } = useApiData(user);
+
   // Modal states
   const [showManageModal, setShowManageModal] = useState(false);
   const [showNavigationModal, setShowNavigationModal] = useState(false);
@@ -93,76 +102,37 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const isManualToggleRef = useRef<boolean>(false);
   const isLayoutChangingRef = useRef<boolean>(false);
 
-  // State management for views, viewGroups, and navigation settings
-  const [views, setViews] = useState<View[]>(() => {
-    const savedViews = sessionStorage.getItem(`navigationViews_${user.name}`);
-    if (savedViews) {
-      return JSON.parse(savedViews);
+  // State management for views, viewGroups, and navigation settings from API
+  const [views, setViews] = useState<View[]>(apiViews);
+  const [viewGroups, setViewGroups] = useState<ViewGroup[]>(apiViewGroups);
+  const [navSettings, setNavSettings] = useState<UserNavigationSettings>(
+    apiNavSettings || {
+      userId: user.name,
+      viewGroupOrder: [],
+      viewOrders: {},
+      hiddenViewGroups: [],
+      hiddenViews: [],
     }
-    const defaultData = getUserNavigationData(user.name);
-    if (defaultData) {
-      const defaultViews = defaultData.views;
-      sessionStorage.setItem(
-        `navigationViews_${user.name}`,
-        JSON.stringify(defaultViews)
-      );
-      return defaultViews;
-    }
-    const newUserData = initializeUserNavigationData(user.name);
-    sessionStorage.setItem(
-      `navigationViews_${user.name}`,
-      JSON.stringify(newUserData.views)
-    );
-    return newUserData.views;
-  });
+  );
 
-  const [viewGroups, setViewGroups] = useState<ViewGroup[]>(() => {
-    const savedGroups = sessionStorage.getItem(
-      `navigationViewGroups_${user.name}`
-    );
-    if (savedGroups) {
-      return JSON.parse(savedGroups);
+  // Update local state when API data changes
+  useEffect(() => {
+    if (apiViews.length > 0) {
+      setViews(apiViews);
     }
-    const defaultData = getUserNavigationData(user.name);
-    if (defaultData) {
-      const defaultViewGroups = defaultData.viewGroups;
-      sessionStorage.setItem(
-        `navigationViewGroups_${user.name}`,
-        JSON.stringify(defaultViewGroups)
-      );
-      return defaultViewGroups;
-    }
-    const newUserData = initializeUserNavigationData(user.name);
-    sessionStorage.setItem(
-      `navigationViewGroups_${user.name}`,
-      JSON.stringify(newUserData.viewGroups)
-    );
-    return newUserData.viewGroups;
-  });
+  }, [apiViews]);
 
-  const [navSettings, setNavSettings] = useState<UserNavigationSettings>(() => {
-    const savedSettings = sessionStorage.getItem(
-      `navigationSettings_${user.name}`
-    );
-    if (savedSettings) {
-      return JSON.parse(savedSettings);
+  useEffect(() => {
+    if (apiViewGroups.length > 0) {
+      setViewGroups(apiViewGroups);
     }
-    const defaultData = getUserNavigationData(user.name);
-    if (defaultData) {
-      const defaultSettings = defaultData.navigationSettings;
-      sessionStorage.setItem(
-        `navigationSettings_${user.name}`,
-        JSON.stringify(defaultSettings)
-      );
-      return defaultSettings;
+  }, [apiViewGroups]);
+
+  useEffect(() => {
+    if (apiNavSettings) {
+      setNavSettings(apiNavSettings);
     }
-    const newUserData = initializeUserNavigationData(user.name);
-    sessionStorage.setItem(
-      `navigationSettings_${user.name}`,
-      JSON.stringify(newUserData.navigationSettings)
-    );
-    return newUserData.navigationSettings;
-  });
+  }, [apiNavSettings]);
 
   // Enhanced state handlers
   const handleUpdateViews = (updatedViews: View[]) => {
@@ -170,10 +140,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       (a, b) => (a.order || 0) - (b.order || 0)
     );
     setViews(sortedViews);
-    sessionStorage.setItem(
-      `navigationViews_${user.name}`,
-      JSON.stringify(sortedViews)
-    );
     setNavigationUpdateTrigger((prev) => prev + 1);
 
     if (selectedView) {
@@ -184,6 +150,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         setSelectedView(updatedSelectedView);
       }
     }
+    
+    // Optionally refetch from API to sync
+    refetchViews();
   };
 
   const handleUpdateViewGroups = (updatedViewGroups: ViewGroup[]) => {
@@ -191,20 +160,18 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       (a, b) => (a.order || 0) - (b.order || 0)
     );
     setViewGroups(sortedGroups);
-    sessionStorage.setItem(
-      `navigationViewGroups_${user.name}`,
-      JSON.stringify(sortedGroups)
-    );
     setNavigationUpdateTrigger((prev) => prev + 1);
+    
+    // Optionally refetch from API to sync
+    refetchViewGroups();
   };
 
   const handleUpdateNavSettings = (settings: UserNavigationSettings) => {
     setNavSettings(settings);
-    sessionStorage.setItem(
-      `navigationSettings_${user.name}`,
-      JSON.stringify(settings)
-    );
     setNavigationUpdateTrigger((prev) => prev + 1);
+    
+    // Optionally refetch from API to sync
+    refetchNavSettings();
   };
 
   // Compute current layout signature based on state
@@ -362,29 +329,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     setSelectedView(updatedView);
   };
 
-  // Get accessible reports and widgets
+  // Get accessible reports and widgets from API
   const getUserAccessibleReports = (): Report[] => {
-    const savedReports = sessionStorage.getItem("reports");
-    const systemReports: Report[] = savedReports
-      ? JSON.parse(savedReports)
-      : testReports;
-    return user.role === "admin"
-      ? systemReports
-      : systemReports.filter((report: Report) =>
-          report.userRoles.includes(user.role)
-        );
+    return reports; // Already filtered by role from API
   };
 
   const getUserAccessibleWidgets = (): Widget[] => {
-    const savedWidgets = sessionStorage.getItem("widgets");
-    const systemWidgets: Widget[] = savedWidgets
-      ? JSON.parse(savedWidgets)
-      : testWidgets;
-    return user.role === "admin"
-      ? systemWidgets
-      : systemWidgets.filter((widget: Widget) =>
-          widget.userRoles.includes(user.role)
-        );
+    return widgets; // Already filtered by role from API
   };
 
   // Content creators
@@ -1191,6 +1142,54 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     updateLayoutContent,
     user.name,
   ]);
+
+  // Show loading state
+  if (apiLoading) {
+    return (
+      <div className="dashboard-dock modern" data-theme={theme}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '100vh',
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <div style={{ fontSize: '18px', color: '#666' }}>Loading dashboard...</div>
+          <div style={{ fontSize: '14px', color: '#999' }}>Fetching your data from server</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (apiError) {
+    return (
+      <div className="dashboard-dock modern" data-theme={theme}>
+        <div style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          height: '100vh',
+          flexDirection: 'column',
+          gap: '20px'
+        }}>
+          <div style={{ fontSize: '18px', color: '#f44336' }}>Error loading dashboard</div>
+          <div style={{ fontSize: '14px', color: '#999' }}>{apiError}</div>
+          <button onClick={() => window.location.reload()} style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            cursor: 'pointer',
+            borderRadius: '4px',
+            border: '1px solid #ccc',
+            background: '#fff'
+          }}>
+            Reload
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-dock modern" data-theme={theme}>
