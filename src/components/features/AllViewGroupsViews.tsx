@@ -721,10 +721,10 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
                         const viewIsHidden = isItemHidden("view", view.id);
                         const viewReports = view.reportIds
                           .map((id) => reports.find((r) => r.id === id))
-                          .filter(Boolean);
+                          .filter((r): r is Report => r !== undefined);
                         const viewWidgets = view.widgetIds
                           .map((id) => widgets.find((w) => w.id === id))
-                          .filter(Boolean);
+                          .filter((w): w is Widget => w !== undefined);
                         
                         // Debug: Log count mismatch
                         if (view.reportIds.length !== viewReports.length || view.widgetIds.length !== viewWidgets.length) {
