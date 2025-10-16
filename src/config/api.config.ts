@@ -5,8 +5,8 @@
  */
 
 export const API_CONFIG = {
-  // Base URL - .NET Core backend (adjust port as needed)
-  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://localhost:7153/api',
+  // Base URL - .NET Core backend
+  BASE_URL: process.env.REACT_APP_API_BASE_URL || 'https://localhost:7273/api',
   
   // Timeout settings (in milliseconds)
   TIMEOUT: 30000, // 30 seconds
