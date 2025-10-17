@@ -8,9 +8,6 @@ interface EditReportModalProps {
   onClose: () => void;
 }
 
-/**
- * @deprecated Use EditItemModal from shared/EditItemModal instead
- */
 const EditReportModal: React.FC<EditReportModalProps> = ({
   report,
   onSave,

@@ -1,14 +1,9 @@
-/**
- * AddReportWidget Component - API-Connected Version
- * Creates new reports and widgets using backend API
- */
-
 import React, { useState } from "react";
 import { reportsService } from "../../services/reportsService";
 import { widgetsService } from "../../services/widgetsService";
 import { useNotification } from "../common/NotificationProvider";
 
-interface AddReportWidgetApiProps {
+interface AddReportWidgetProps {
   onItemAdded?: () => void;
 }
 
@@ -19,7 +14,7 @@ interface FormData {
   url: string;
 }
 
-const AddReportWidgetApi: React.FC<AddReportWidgetApiProps> = ({ onItemAdded }) => {
+const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
   const [formType, setFormType] = useState<FormType>("report");
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -197,12 +192,26 @@ const AddReportWidgetApi: React.FC<AddReportWidgetApiProps> = ({ onItemAdded }) 
                 border: "1px solid var(--border-color)",
               }}
             >
-              <h4 style={{ marginBottom: "8px", color: "var(--text-primary)", fontSize: "14px" }}>
+              <h4
+                style={{
+                  marginBottom: "8px",
+                  color: "var(--text-primary)",
+                  fontSize: "14px",
+                }}
+              >
                 📝 Note about Permissions
               </h4>
-              <p style={{ margin: 0, color: "var(--text-secondary)", fontSize: "13px", lineHeight: "1.6" }}>
-                After creating the {formType}, use the "User Role Permissions" tab to assign it to specific roles (admin, user, viewer).
-                By default, new items are not assigned to any role.
+              <p
+                style={{
+                  margin: 0,
+                  color: "var(--text-secondary)",
+                  fontSize: "13px",
+                  lineHeight: "1.6",
+                }}
+              >
+                After creating the {formType}, use the "User Role Permissions"
+                tab to assign it to specific roles (admin, user, viewer). By
+                default, new items are not assigned to any role.
               </p>
             </div>
           </div>
@@ -215,15 +224,11 @@ const AddReportWidgetApi: React.FC<AddReportWidgetApiProps> = ({ onItemAdded }) 
           title={`Add ${formType === "report" ? "Report" : "Widget"}`}
           disabled={loading}
         >
-          {loading ? (
-            <span>...</span>
-          ) : (
-            <AddIcon />
-          )}
+          {loading ? <span>...</span> : <AddIcon />}
         </button>
       </div>
     </div>
   );
 };
 
-export default AddReportWidgetApi;
+export default AddReportWidget;

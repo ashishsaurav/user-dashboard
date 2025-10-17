@@ -1,17 +1,5 @@
-/**
- * AllViewGroupsViews Component - API-Connected Version
- * Manages views and view groups with ordering, show/hide, and CRUD operations
- * UI matches the original AllViewGroupsViews component
- */
-
 import React, { useState } from "react";
-import {
-  User,
-  View,
-  ViewGroup,
-  Report,
-  Widget,
-} from "../../types";
+import { User, View, ViewGroup, Report, Widget } from "../../types";
 import { viewsService } from "../../services/viewsService";
 import { viewGroupsService } from "../../services/viewGroupsService";
 import EditViewModal from "../modals/EditViewModal";
@@ -19,7 +7,7 @@ import EditViewGroupModal from "../modals/EditViewGroupModal";
 import DeleteConfirmationModal from "../modals/DeleteConfirmationModal";
 import { useNotification } from "../common/NotificationProvider";
 
-interface AllViewGroupsViewsApiProps {
+interface AllViewGroupsViewsProps {
   user: User;
   views: View[];
   viewGroups: ViewGroup[];
@@ -28,7 +16,7 @@ interface AllViewGroupsViewsApiProps {
   onRefresh: () => void;
 }
 
-const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
+const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
   user,
   views,
   viewGroups,
@@ -40,8 +28,12 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
     [key: string]: boolean;
   }>({});
   const [editingView, setEditingView] = useState<View | null>(null);
-  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(null);
-  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(null);
+  const [editingViewGroup, setEditingViewGroup] = useState<ViewGroup | null>(
+    null
+  );
+  const [deletingViewGroup, setDeletingViewGroup] = useState<ViewGroup | null>(
+    null
+  );
   const [deletingView, setDeletingView] = useState<View | null>(null);
   const [draggedItem, setDraggedItem] = useState<{
     type: "view" | "viewgroup";
@@ -81,7 +73,10 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
         isDefault: updatedViewGroup.isDefault,
         orderIndex: updatedViewGroup.order,
       });
-      showSuccess("View group updated", `"${updatedViewGroup.name}" has been saved`);
+      showSuccess(
+        "View group updated",
+        `"${updatedViewGroup.name}" has been saved`
+      );
       setEditingViewGroup(null);
       onRefresh();
     } catch (error) {
@@ -113,7 +108,10 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
 
     try {
       await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
-      showSuccess("View group deleted", `"${deletingViewGroup.name}" has been removed`);
+      showSuccess(
+        "View group deleted",
+        `"${deletingViewGroup.name}" has been removed`
+      );
       setDeletingViewGroup(null);
       onRefresh();
     } catch (error) {
@@ -187,9 +185,9 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
     if (!draggedItem || !dragOverItem) return;
 
     // For now, show success message
-    // Full implementation would call reorder API
+    // Full implementation would call reorder
     showSuccess("Drag and drop", "Use up/down buttons for now");
-    
+
     setDraggedItem(null);
     setDragOverItem(null);
   };
@@ -245,12 +243,26 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
 
   const EyeIcon = ({ isVisible }: { isVisible: boolean }) =>
     isVisible ? (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
     ) : (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
         <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
         <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
         <line x1="1" y1="1" x2="23" y2="23" />
@@ -258,21 +270,42 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
     );
 
   const EditIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
       <path d="m18.5 2.5 2.1 2.1L12 13.2l-3.3.8.8-3.3L18.5 2.5z" />
     </svg>
   );
 
   const DeleteIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <polyline points="3,6 5,6 21,6" />
       <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2" />
     </svg>
   );
 
   const DragIcon = () => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
       <circle cx="9" cy="12" r="1" />
       <circle cx="9" cy="5" r="1" />
       <circle cx="9" cy="19" r="1" />
@@ -302,10 +335,14 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
                 key={viewGroup.id}
                 className={`view-group-card ${isDragOver ? "drag-over" : ""}`}
                 draggable={true}
-                onDragStart={(e) => handleDragStart(e, "viewgroup", viewGroup.id)}
+                onDragStart={(e) =>
+                  handleDragStart(e, "viewgroup", viewGroup.id)
+                }
                 onDragEnd={handleDragEnd}
                 onDragOver={handleDragOver}
-                onDragEnter={(e) => handleDragEnter(e, viewGroup.id, "viewgroup")}
+                onDragEnter={(e) =>
+                  handleDragEnter(e, viewGroup.id, "viewgroup")
+                }
                 onDragLeave={handleDragLeave}
                 onDrop={(e) => handleDrop(e, viewGroup.id, "viewgroup")}
               >
@@ -341,12 +378,18 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
                     </button>
 
                     <button
-                      className={`visibility-btn ${!viewGroup.isVisible ? "hidden" : "visible"}`}
+                      className={`visibility-btn ${
+                        !viewGroup.isVisible ? "hidden" : "visible"
+                      }`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleVisibility("viewgroup", viewGroup.id);
                       }}
-                      title={viewGroup.isVisible ? "Hide from navigation" : "Show in navigation"}
+                      title={
+                        viewGroup.isVisible
+                          ? "Hide from navigation"
+                          : "Show in navigation"
+                      }
                     >
                       <EyeIcon isVisible={viewGroup.isVisible} />
                     </button>
@@ -398,14 +441,26 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
                         return (
                           <div
                             key={view.id}
-                            className={`view-item ${isViewDragOver ? "drag-over" : ""} ${
-                              isViewDragOver && dragPosition === "top" ? "drag-over-top" : ""
-                            } ${isViewDragOver && dragPosition === "bottom" ? "drag-over-bottom" : ""}`}
+                            className={`view-item ${
+                              isViewDragOver ? "drag-over" : ""
+                            } ${
+                              isViewDragOver && dragPosition === "top"
+                                ? "drag-over-top"
+                                : ""
+                            } ${
+                              isViewDragOver && dragPosition === "bottom"
+                                ? "drag-over-bottom"
+                                : ""
+                            }`}
                             draggable={true}
-                            onDragStart={(e) => handleDragStart(e, "view", view.id)}
+                            onDragStart={(e) =>
+                              handleDragStart(e, "view", view.id)
+                            }
                             onDragEnd={handleDragEnd}
                             onDragOver={handleDragOver}
-                            onDragEnter={(e) => handleDragEnter(e, view.id, "view")}
+                            onDragEnter={(e) =>
+                              handleDragEnter(e, view.id, "view")
+                            }
                             onDragLeave={handleDragLeave}
                             onDrop={(e) => handleDrop(e, view.id, "view")}
                           >
@@ -414,7 +469,8 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
                               <div className="view-details">
                                 <span className="view-name">{view.name}</span>
                                 <span className="view-content">
-                                  {viewReports.length} Reports, {viewWidgets.length} Widgets
+                                  {viewReports.length} Reports,{" "}
+                                  {viewWidgets.length} Widgets
                                 </span>
                               </div>
                             </div>
@@ -430,9 +486,17 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
                               </button>
 
                               <button
-                                className={`visibility-btn ${!view.isVisible ? "hidden" : "visible"}`}
-                                onClick={() => handleToggleVisibility("view", view.id)}
-                                title={view.isVisible ? "Hide from navigation" : "Show in navigation"}
+                                className={`visibility-btn ${
+                                  !view.isVisible ? "hidden" : "visible"
+                                }`}
+                                onClick={() =>
+                                  handleToggleVisibility("view", view.id)
+                                }
+                                title={
+                                  view.isVisible
+                                    ? "Hide from navigation"
+                                    : "Show in navigation"
+                                }
                               >
                                 <EyeIcon isVisible={view.isVisible} />
                               </button>
@@ -509,7 +573,10 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
   );
 
   // Helper function for toggle visibility
-  async function handleToggleVisibility(type: "view" | "viewgroup", id: string) {
+  async function handleToggleVisibility(
+    type: "view" | "viewgroup",
+    id: string
+  ) {
     try {
       if (type === "viewgroup") {
         const vg = viewGroups.find((v) => v.id === id);
@@ -547,4 +614,4 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
   }
 };
 
-export default AllViewGroupsViewsApi;
+export default AllViewGroupsViews;

@@ -1,8 +1,3 @@
-/**
- * AllReportsWidgets Component - API-Connected Version
- * Manages reports and widgets with full CRUD operations via backend API
- */
-
 import React, { useState, useEffect } from "react";
 import { Report, Widget } from "../../types";
 import { reportsService } from "../../services/reportsService";
@@ -12,11 +7,11 @@ import EditReportModal from "../modals/EditReportModal";
 import EditWidgetModal from "../modals/EditWidgetModal";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 
-interface AllReportsWidgetsApiProps {
+interface AllReportsWidgetsProps {
   onRefreshData?: () => void;
 }
 
-const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
+const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
   onRefreshData,
 }) => {
   const [editingReport, setEditingReport] = useState<Report | null>(null);
@@ -69,10 +64,16 @@ const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
     try {
       if (deleteConfirm.type === "report") {
         await reportsService.deleteReport(deleteConfirm.id);
-        showSuccess("Report deleted", `"${deleteConfirm.name}" has been removed`);
+        showSuccess(
+          "Report deleted",
+          `"${deleteConfirm.name}" has been removed`
+        );
       } else {
         await widgetsService.deleteWidget(deleteConfirm.id);
-        showSuccess("Widget deleted", `"${deleteConfirm.name}" has been removed`);
+        showSuccess(
+          "Widget deleted",
+          `"${deleteConfirm.name}" has been removed`
+        );
       }
 
       setDeleteConfirm(null);
@@ -91,10 +92,7 @@ const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
       }
     } catch (error) {
       console.error("Failed to delete:", error);
-      showError(
-        `Failed to delete ${deleteConfirm.type}`,
-        "Please try again"
-      );
+      showError(`Failed to delete ${deleteConfirm.type}`, "Please try again");
     } finally {
       setLoading(false);
     }
@@ -364,4 +362,4 @@ const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
   );
 };
 
-export default AllReportsWidgetsApi;
+export default AllReportsWidgets;

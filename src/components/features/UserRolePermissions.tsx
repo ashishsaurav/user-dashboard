@@ -1,15 +1,10 @@
-/**
- * UserRolePermissions Component - API-Connected Version
- * Manages role-based report and widget permissions with backend API integration
- */
-
 import React, { useState, useEffect } from "react";
 import { Report, Widget } from "../../types";
 import { reportsService } from "../../services/reportsService";
 import { widgetsService } from "../../services/widgetsService";
 import { useNotification } from "../common/NotificationProvider";
 
-interface UserRolePermissionsApiProps {
+interface UserRolePermissionsProps {
   userRole: string;
   onRefreshData?: () => void;
 }
@@ -20,7 +15,7 @@ interface RoleAssignment {
   widgetIds: string[];
 }
 
-const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
+const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
   userRole,
   onRefreshData,
 }) => {
@@ -28,7 +23,9 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
   const [roleAssignments, setRoleAssignments] = useState<{
     [key: string]: RoleAssignment;
   }>({});
-  const [expandedCards, setExpandedCards] = useState<{ [key: string]: boolean }>({
+  const [expandedCards, setExpandedCards] = useState<{
+    [key: string]: boolean;
+  }>({
     admin: true,
     user: true,
     viewer: true,
@@ -58,11 +55,11 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
 
         // Fetch role assignments for each role
         const assignments: { [key: string]: RoleAssignment } = {};
-        
+
         for (const role of userRoles) {
           const roleReports = await reportsService.getReportsByRole(role);
           const roleWidgets = await widgetsService.getWidgetsByRole(role);
-          
+
           assignments[role] = {
             roleId: role,
             reportIds: roleReports.map((r) => r.id),
@@ -88,8 +85,12 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
       reportIds: [],
       widgetIds: [],
     };
-    const roleReports = allReports.filter((r) => assignment.reportIds.includes(r.id));
-    const roleWidgets = allWidgets.filter((w) => assignment.widgetIds.includes(w.id));
+    const roleReports = allReports.filter((r) =>
+      assignment.reportIds.includes(r.id)
+    );
+    const roleWidgets = allWidgets.filter((w) =>
+      assignment.widgetIds.includes(w.id)
+    );
     return { reports: roleReports, widgets: roleWidgets };
   };
 
@@ -327,13 +328,17 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
                 onClick={() => toggleCardExpansion(role)}
               >
                 <div className="role-info">
-                  <div className={`role-icon ${isAdmin ? "admin-role-icon" : ""}`}>
+                  <div
+                    className={`role-icon ${isAdmin ? "admin-role-icon" : ""}`}
+                  >
                     <UserIcon />
                   </div>
                   <div>
                     <h3 className="role-name">
                       {role.charAt(0).toUpperCase() + role.slice(1)} Role
-                      {isAdmin && <span className="admin-badge">Full Access</span>}
+                      {isAdmin && (
+                        <span className="admin-badge">Full Access</span>
+                      )}
                     </h3>
                     <div className="role-summary">
                       <span className="summary-text">
@@ -465,8 +470,10 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
   onClose,
   loading = false,
 }) => {
-  const [selectedReportIds, setSelectedReportIds] = useState<string[]>(assignedReportIds);
-  const [selectedWidgetIds, setSelectedWidgetIds] = useState<string[]>(assignedWidgetIds);
+  const [selectedReportIds, setSelectedReportIds] =
+    useState<string[]>(assignedReportIds);
+  const [selectedWidgetIds, setSelectedWidgetIds] =
+    useState<string[]>(assignedWidgetIds);
 
   const handleReportToggle = (reportId: string, checked: boolean) => {
     if (checked) {
@@ -533,7 +540,11 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
               <p>Add or remove reports and widgets for this role</p>
             </div>
           </div>
-          <button className="modern-close-btn" onClick={onClose} disabled={loading}>
+          <button
+            className="modern-close-btn"
+            onClick={onClose}
+            disabled={loading}
+          >
             <CloseIcon />
           </button>
         </div>
@@ -608,4 +619,4 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
   );
 };
 
-export default UserRolePermissionsApi;
+export default UserRolePermissions;

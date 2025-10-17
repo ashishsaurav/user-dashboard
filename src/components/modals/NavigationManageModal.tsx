@@ -8,7 +8,7 @@ import {
   Widget,
   UserNavigationData,
 } from "../../types";
-import AllViewGroupsViewsApi from "../features/AllViewGroupsViewsApi";
+import AllViewGroupsViewsApi from "../features/AllViewGroupsViews";
 import CreateViewGroup from "../forms/CreateViewGroup";
 import CreateView from "../forms/CreateView";
 import "./styles/NavigationManageModal.css";
@@ -24,8 +24,8 @@ interface NavigationManageModalProps {
   views: View[];
   viewGroups: ViewGroup[];
   userNavSettings: UserNavigationSettings[];
-  reports: Report[];  // ✅ From API
-  widgets: Widget[];  // ✅ From API
+  reports: Report[]; // ✅ From API
+  widgets: Widget[]; // ✅ From API
 }
 
 type NavTabType = "all" | "createGroup" | "createView";
@@ -41,8 +41,8 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
   views,
   viewGroups,
   userNavSettings,
-  reports,  // ✅ From API
-  widgets,  // ✅ From API
+  reports, // ✅ From API
+  widgets, // ✅ From API
 }) => {
   const [activeTab, setActiveTab] = useState<NavTabType>("all");
 
