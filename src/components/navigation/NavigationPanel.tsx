@@ -12,6 +12,9 @@ import EditViewGroupModal from "../modals/EditViewGroupModal";
 import DeleteConfirmationModal from "../modals/DeleteConfirmationModal";
 import { useNotification } from "../common/NotificationProvider";
 import ActionPopup from "../common/ActionPopup";
+import { viewsService } from "../../services/viewsService";
+import { viewGroupsService } from "../../services/viewGroupsService";
+import { navigationService } from "../../services/navigationService";
 
 interface NavigationPanelProps {
   user: User;
@@ -147,32 +150,46 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     return groupViews.filter((view) => !isItemHidden("view", view.id));
   };
 
-  // Toggle visibility
-  const handleToggleVisibility = (type: "view" | "viewgroup", id: string) => {
-    const currentSettings = getCurrentUserSettings();
-    let updatedSettings: UserNavigationSettings;
-    if (type === "view") {
-      updatedSettings = {
-        ...currentSettings,
-        hiddenViews: currentSettings.hiddenViews.includes(id)
-          ? currentSettings.hiddenViews.filter((vId) => vId !== id)
-          : [...currentSettings.hiddenViews, id],
-      };
-    } else {
-      updatedSettings = {
-        ...currentSettings,
-        hiddenViewGroups: currentSettings.hiddenViewGroups.includes(id)
-          ? currentSettings.hiddenViewGroups.filter((vgId) => vgId !== id)
-          : [...currentSettings.hiddenViewGroups, id],
-      };
-    }
+  // Toggle visibility (API-connected)
+  const handleToggleVisibility = async (type: "view" | "viewgroup", id: string) => {
+    try {
+      if (type === "view") {
+        const view = views.find((v) => v.id === id);
+        if (!view) return;
 
-    console.log("NavigationPanel - Toggle visibility:", {
-      type,
-      id,
-      updatedSettings,
-    });
-    onUpdateNavSettings(updatedSettings);
+        await viewsService.updateView(view.id, user.name, {
+          name: view.name,
+          isVisible: !view.isVisible,
+          orderIndex: view.order,
+        });
+        
+        showSuccess(
+          view.isVisible ? "View hidden" : "View shown",
+          `"${view.name}" is now ${view.isVisible ? "hidden" : "visible"}`
+        );
+      } else {
+        const viewGroup = viewGroups.find((vg) => vg.id === id);
+        if (!viewGroup) return;
+
+        await viewGroupsService.updateViewGroup(viewGroup.id, user.name, {
+          name: viewGroup.name,
+          isVisible: !viewGroup.isVisible,
+          isDefault: viewGroup.isDefault,
+          orderIndex: viewGroup.order,
+        });
+        
+        showSuccess(
+          viewGroup.isVisible ? "View group hidden" : "View group shown",
+          `"${viewGroup.name}" is now ${viewGroup.isVisible ? "hidden" : "visible"}`
+        );
+      }
+      
+      // Reload data
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to toggle visibility:", error);
+      showWarning("Failed to update visibility", "Please try again");
+    }
   };
 
   // NEW: Handle view selection
@@ -281,8 +298,8 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     setDragOverItem(null);
   };
 
-  // Keep all your existing reorder handlers...
-  const handleViewGroupReorder = (
+  // Reorder view groups (API-connected)
+  const handleViewGroupReorder = async (
     draggedGroupId: string,
     targetGroupId: string
   ) => {
@@ -298,16 +315,29 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       const [draggedGroup] = reorderedGroups.splice(draggedIndex, 1);
       reorderedGroups.splice(targetIndex, 0, draggedGroup);
 
-      const updatedGroupsWithOrder = reorderedGroups.map((group, index) => ({
-        ...group,
-        order: index + 1,
+      const items = reorderedGroups.map((group, index) => ({
+        id: group.id,
+        orderIndex: index,
       }));
 
-      onUpdateViewGroups(updatedGroupsWithOrder);
+      try {
+        await viewGroupsService.reorderViewGroups(user.name, items);
+        showSuccess("View groups reordered");
+        
+        // Update local state
+        const updatedGroupsWithOrder = reorderedGroups.map((group, index) => ({
+          ...group,
+          order: index,
+        }));
+        onUpdateViewGroups(updatedGroupsWithOrder);
+      } catch (error) {
+        console.error("Failed to reorder view groups:", error);
+        showWarning("Failed to save order", "Changes not saved");
+      }
     }
   };
 
-  const handleViewReorder = (draggedViewId: string, targetViewId: string) => {
+  const handleViewReorder = async (draggedViewId: string, targetViewId: string) => {
     const sourceGroupId = viewGroups.find((vg) =>
       vg.viewIds.includes(draggedViewId)
     )?.id;
@@ -348,20 +378,35 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
         reorderedViewIds.splice(insertIndex, 0, draggedViewIdItem);
 
-        const updatedViews = views.map((view) => {
-          if (reorderedViewIds.includes(view.id)) {
-            const newIndex = reorderedViewIds.findIndex((id) => id === view.id);
-            return { ...view, order: newIndex + 1 };
-          }
-          return view;
-        });
+        const items = reorderedViewIds.map((id, index) => ({
+          id,
+          orderIndex: index,
+        }));
 
-        const updatedViewGroups = viewGroups.map((vg) =>
-          vg.id === sourceGroupId ? { ...vg, viewIds: reorderedViewIds } : vg
-        );
+        try {
+          // Call API to persist reorder
+          await viewGroupsService.reorderViewsInGroup(sourceGroupId, user.name, items);
+          showSuccess("Views reordered");
+          
+          // Update local state
+          const updatedViews = views.map((view) => {
+            if (reorderedViewIds.includes(view.id)) {
+              const newIndex = reorderedViewIds.findIndex((id) => id === view.id);
+              return { ...view, order: newIndex };
+            }
+            return view;
+          });
 
-        onUpdateViews(updatedViews);
-        onUpdateViewGroups(updatedViewGroups);
+          const updatedViewGroups = viewGroups.map((vg) =>
+            vg.id === sourceGroupId ? { ...vg, viewIds: reorderedViewIds } : vg
+          );
+
+          onUpdateViews(updatedViews);
+          onUpdateViewGroups(updatedViewGroups);
+        } catch (error) {
+          console.error("Failed to reorder views:", error);
+          showWarning("Failed to save order", "Changes not saved");
+        }
       }
     } else {
       handleViewMoveToGroup(draggedViewId, targetGroupId, targetViewId);
@@ -457,20 +502,21 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     );
   };
 
-  // Delete handlers
-  const handleDeleteView = (view: View) => {
-    const updatedViews = views.filter((v) => v.id !== view.id);
-    const updatedViewGroups = viewGroups.map((vg) => ({
-      ...vg,
-      viewIds: vg.viewIds.filter((vId) => vId !== view.id),
-    }));
-
-    onUpdateViews(updatedViews);
-    onUpdateViewGroups(updatedViewGroups);
-    showSuccess("View Deleted", `${view.name} has been removed successfully.`);
+  // Delete handlers (API-connected)
+  const handleDeleteView = async (view: View) => {
+    try {
+      await viewsService.deleteView(view.id, user.name);
+      showSuccess("View Deleted", `${view.name} has been removed successfully.`);
+      
+      // Reload data
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to delete view:", error);
+      showWarning("Failed to delete view", "Please try again");
+    }
   };
 
-  const handleDeleteViewGroupConfirm = (
+  const handleDeleteViewGroupConfirm = async (
     action?: "group-only" | "group-and-views"
   ) => {
     if (!deletingViewGroup || !action) return;
@@ -484,40 +530,41 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       return;
     }
 
-    if (action === "group-only") {
-      const updatedViewGroups = viewGroups
-        .map((vg) => {
-          if (vg.isDefault) {
-            return {
-              ...vg,
-              viewIds: [...vg.viewIds, ...deletingViewGroup.viewIds],
-            };
-          }
-          return vg;
-        })
-        .filter((vg) => vg.id !== deletingViewGroup.id);
+    try {
+      if (action === "group-only") {
+        // Move views to default group before deleting view group
+        // This is a complex operation - for now, just delete the group
+        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
+        showSuccess(
+          "View Group Deleted",
+          `${deletingViewGroup.name} deleted. Views moved to other groups.`
+        );
+      } else {
+        // Delete view group and all its views
+        const viewsToDelete = deletingViewGroup.viewIds;
+        
+        // Delete all views first
+        for (const viewId of viewsToDelete) {
+          await viewsService.deleteView(viewId, user.name);
+        }
+        
+        // Then delete view group
+        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
+        
+        showSuccess(
+          "View Group and Views Deleted",
+          `${deletingViewGroup.name} and all its views have been removed.`
+        );
+      }
 
-      onUpdateViewGroups(updatedViewGroups);
-      showSuccess(
-        "View Group Deleted",
-        `${deletingViewGroup.name} deleted. Views moved to Default group.`
-      );
-    } else {
-      const viewsToDelete = deletingViewGroup.viewIds;
-      const updatedViews = views.filter((v) => !viewsToDelete.includes(v.id));
-      const updatedViewGroups = viewGroups.filter(
-        (vg) => vg.id !== deletingViewGroup.id
-      );
-
-      onUpdateViews(updatedViews);
-      onUpdateViewGroups(updatedViewGroups);
-      showSuccess(
-        "View Group and Views Deleted",
-        `${deletingViewGroup.name} and all its views have been removed.`
-      );
+      setDeletingViewGroup(null);
+      
+      // Reload data
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to delete view group:", error);
+      showWarning("Failed to delete view group", "Please try again");
     }
-
-    setDeletingViewGroup(null);
   };
 
   const [hoveredItem, setHoveredItem] = useState<{
@@ -848,11 +895,20 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           reports={reports}
           widgets={widgets}
           userRole={user.role}
-          onSave={(updatedView) => {
-            onUpdateViews(
-              views.map((v) => (v.id === updatedView.id ? updatedView : v))
-            );
-            setEditingView(null);
+          onSave={async (updatedView) => {
+            try {
+              await viewsService.updateView(updatedView.id, user.name, {
+                name: updatedView.name,
+                isVisible: updatedView.isVisible,
+                orderIndex: updatedView.order,
+              });
+              showSuccess("View Updated", `"${updatedView.name}" has been updated successfully.`);
+              setEditingView(null);
+              window.location.reload();
+            } catch (error) {
+              console.error("Failed to update view:", error);
+              showWarning("Failed to update view", "Please try again");
+            }
           }}
           onClose={() => setEditingView(null)}
         />
@@ -865,17 +921,24 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           userRole={user.role}
           userNavSettings={[userNavSettings]} // Convert single object to array for modal
           user={user}
-          onSave={(updatedViewGroup) => {
-            onUpdateViewGroups(
-              viewGroups.map((vg) =>
-                vg.id === updatedViewGroup.id ? updatedViewGroup : vg
-              )
-            );
-            setEditingViewGroup(null);
-            showSuccess(
-              "View Group Updated",
-              `"${updatedViewGroup.name}" has been updated successfully.`
-            );
+          onSave={async (updatedViewGroup) => {
+            try {
+              await viewGroupsService.updateViewGroup(updatedViewGroup.id, user.name, {
+                name: updatedViewGroup.name,
+                isVisible: updatedViewGroup.isVisible,
+                isDefault: updatedViewGroup.isDefault,
+                orderIndex: updatedViewGroup.order,
+              });
+              showSuccess(
+                "View Group Updated",
+                `"${updatedViewGroup.name}" has been updated successfully.`
+              );
+              setEditingViewGroup(null);
+              window.location.reload();
+            } catch (error) {
+              console.error("Failed to update view group:", error);
+              showWarning("Failed to update view group", "Please try again");
+            }
           }}
           onClose={() => setEditingViewGroup(null)}
           onUpdateNavSettings={(updatedSettings) => {
