@@ -1,21 +1,18 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Report, Widget } from "../../types";
+import { reportsService } from "../../services/reportsService";
+import { widgetsService } from "../../services/widgetsService";
+import { useNotification } from "../common/NotificationProvider";
 import EditReportModal from "../modals/EditReportModal";
 import EditWidgetModal from "../modals/EditWidgetModal";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 
 interface AllReportsWidgetsProps {
-  reports: Report[];
-  widgets: Widget[];
-  onUpdateReports: (reports: Report[]) => void;
-  onUpdateWidgets: (widgets: Widget[]) => void;
+  onRefreshData?: () => void;
 }
 
 const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
-  reports,
-  widgets,
-  onUpdateReports,
-  onUpdateWidgets,
+  onRefreshData,
 }) => {
   const [editingReport, setEditingReport] = useState<Report | null>(null);
   const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
@@ -24,6 +21,33 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
     id: string;
     name: string;
   } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [widgets, setWidgets] = useState<Widget[]>([]);
+
+  const { showSuccess, showError } = useNotification();
+
+  // Fetch all reports and widgets (admin only)
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [allReports, allWidgets] = await Promise.all([
+          reportsService.getAllReports(),
+          widgetsService.getAllWidgets(),
+        ]);
+        setReports(allReports);
+        setWidgets(allWidgets);
+      } catch (error) {
+        console.error("Failed to fetch reports/widgets:", error);
+        showError("Failed to load data", "Please refresh the page");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleDeleteConfirm = (
     type: "report" | "widget",
@@ -33,17 +57,45 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
     setDeleteConfirm({ type, id, name });
   };
 
-  const handleDeleteExecute = () => {
+  const handleDeleteExecute = async () => {
     if (!deleteConfirm) return;
 
-    if (deleteConfirm.type === "report") {
-      const updatedReports = reports.filter((r) => r.id !== deleteConfirm.id);
-      onUpdateReports(updatedReports);
-    } else {
-      const updatedWidgets = widgets.filter((w) => w.id !== deleteConfirm.id);
-      onUpdateWidgets(updatedWidgets);
+    setLoading(true);
+    try {
+      if (deleteConfirm.type === "report") {
+        await reportsService.deleteReport(deleteConfirm.id);
+        showSuccess(
+          "Report deleted",
+          `"${deleteConfirm.name}" has been removed`
+        );
+      } else {
+        await widgetsService.deleteWidget(deleteConfirm.id);
+        showSuccess(
+          "Widget deleted",
+          `"${deleteConfirm.name}" has been removed`
+        );
+      }
+
+      setDeleteConfirm(null);
+
+      // Reload data
+      const [allReports, allWidgets] = await Promise.all([
+        reportsService.getAllReports(),
+        widgetsService.getAllWidgets(),
+      ]);
+      setReports(allReports);
+      setWidgets(allWidgets);
+
+      // Also refresh parent if needed
+      if (onRefreshData) {
+        onRefreshData();
+      }
+    } catch (error) {
+      console.error("Failed to delete:", error);
+      showError(`Failed to delete ${deleteConfirm.type}`, "Please try again");
+    } finally {
+      setLoading(false);
     }
-    setDeleteConfirm(null);
   };
 
   const handleEditReport = (report: Report) => {
@@ -54,20 +106,58 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
     setEditingWidget(widget);
   };
 
-  const handleSaveReport = (updatedReport: Report) => {
-    const updatedReports = reports.map((r) =>
-      r.id === updatedReport.id ? updatedReport : r
-    );
-    onUpdateReports(updatedReports);
-    setEditingReport(null);
+  const handleSaveReport = async (updatedReport: Report) => {
+    setLoading(true);
+    try {
+      await reportsService.updateReport(updatedReport.id, {
+        reportName: updatedReport.name,
+        reportUrl: updatedReport.url,
+      });
+
+      showSuccess("Report updated", `"${updatedReport.name}" has been saved`);
+      setEditingReport(null);
+
+      // Reload data
+      const allReports = await reportsService.getAllReports();
+      setReports(allReports);
+
+      // Also refresh parent if needed
+      if (onRefreshData) {
+        onRefreshData();
+      }
+    } catch (error) {
+      console.error("Failed to update report:", error);
+      showError("Failed to update report", "Please try again");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSaveWidget = (updatedWidget: Widget) => {
-    const updatedWidgets = widgets.map((w) =>
-      w.id === updatedWidget.id ? updatedWidget : w
-    );
-    onUpdateWidgets(updatedWidgets);
-    setEditingWidget(null);
+  const handleSaveWidget = async (updatedWidget: Widget) => {
+    setLoading(true);
+    try {
+      await widgetsService.updateWidget(updatedWidget.id, {
+        widgetName: updatedWidget.name,
+        widgetUrl: updatedWidget.url,
+      });
+
+      showSuccess("Widget updated", `"${updatedWidget.name}" has been saved`);
+      setEditingWidget(null);
+
+      // Reload data
+      const allWidgets = await widgetsService.getAllWidgets();
+      setWidgets(allWidgets);
+
+      // Also refresh parent if needed
+      if (onRefreshData) {
+        onRefreshData();
+      }
+    } catch (error) {
+      console.error("Failed to update widget:", error);
+      showError("Failed to update widget", "Please try again");
+    } finally {
+      setLoading(false);
+    }
   };
 
   // SVG Icons
@@ -162,6 +252,7 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
                       className="edit-btn-compact"
                       onClick={() => handleEditReport(report)}
                       title="Edit Report"
+                      disabled={loading}
                     >
                       <EditIcon />
                     </button>
@@ -171,6 +262,7 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
                         handleDeleteConfirm("report", report.id, report.name)
                       }
                       title="Delete Report"
+                      disabled={loading}
                     >
                       <DeleteIcon />
                     </button>
@@ -212,6 +304,7 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
                       className="edit-btn-compact"
                       onClick={() => handleEditWidget(widget)}
                       title="Edit Widget"
+                      disabled={loading}
                     >
                       <EditIcon />
                     </button>
@@ -221,6 +314,7 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
                         handleDeleteConfirm("widget", widget.id, widget.name)
                       }
                       title="Delete Widget"
+                      disabled={loading}
                     >
                       <DeleteIcon />
                     </button>
@@ -238,7 +332,7 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
         </div>
       </div>
 
-      {/* Edit Modals - Popup Style */}
+      {/* Edit Modals */}
       {editingReport && (
         <EditReportModal
           report={editingReport}

@@ -1,24 +1,28 @@
-import React, { useState } from "react";
-import { testUsers } from "../../data/testData";
+import React, { useState, useEffect } from "react";
 import { Report, Widget } from "../../types";
+import { reportsService } from "../../services/reportsService";
+import { widgetsService } from "../../services/widgetsService";
+import { useNotification } from "../common/NotificationProvider";
 
 interface UserRolePermissionsProps {
-  reports: Report[];
-  widgets: Widget[];
-  onUpdateReports: (reports: Report[]) => void;
-  onUpdateWidgets: (widgets: Widget[]) => void;
+  userRole: string;
+  onRefreshData?: () => void;
+}
+
+interface RoleAssignment {
+  roleId: string;
+  reportIds: string[];
+  widgetIds: string[];
 }
 
 const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
-  reports,
-  widgets,
-  onUpdateReports,
-  onUpdateWidgets,
+  userRole,
+  onRefreshData,
 }) => {
-  const [editingRole, setEditingRole] = useState<{
-    role: string;
-    items: { reports: Report[]; widgets: Widget[] };
-  } | null>(null);
+  const [editingRole, setEditingRole] = useState<string | null>(null);
+  const [roleAssignments, setRoleAssignments] = useState<{
+    [key: string]: RoleAssignment;
+  }>({});
   const [expandedCards, setExpandedCards] = useState<{
     [key: string]: boolean;
   }>({
@@ -26,36 +30,154 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
     user: true,
     viewer: true,
   });
+  const [loading, setLoading] = useState(false);
+  const [allReports, setAllReports] = useState<Report[]>([]);
+  const [allWidgets, setAllWidgets] = useState<Widget[]>([]);
 
-  // Get unique user roles
-  const userRoles = Array.from(new Set(testUsers.map((user) => user.role)));
+  const { showSuccess, showError } = useNotification();
+
+  const userRoles = ["admin", "user", "viewer"];
+
+  // Fetch all reports, widgets, and role assignments (admin only)
+  useEffect(() => {
+    if (userRole !== "admin") return;
+
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        // Fetch all reports (not filtered by role)
+        const allReportsData = await reportsService.getAllReports();
+        setAllReports(allReportsData);
+
+        // Fetch all widgets (not filtered by role)
+        const allWidgetsData = await widgetsService.getAllWidgets();
+        setAllWidgets(allWidgetsData);
+
+        // Fetch role assignments for each role
+        const assignments: { [key: string]: RoleAssignment } = {};
+
+        for (const role of userRoles) {
+          const roleReports = await reportsService.getReportsByRole(role);
+          const roleWidgets = await widgetsService.getWidgetsByRole(role);
+
+          assignments[role] = {
+            roleId: role,
+            reportIds: roleReports.map((r) => r.id),
+            widgetIds: roleWidgets.map((w) => w.id),
+          };
+        }
+
+        setRoleAssignments(assignments);
+      } catch (error) {
+        console.error("Failed to fetch role permissions:", error);
+        showError("Failed to load role permissions", "Please refresh the page");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, [userRole]);
 
   const getRolePermissions = (role: string) => {
-    const roleReports = reports.filter((r) => r.userRoles.includes(role));
-    const roleWidgets = widgets.filter((w) => w.userRoles.includes(role));
+    const assignment = roleAssignments[role] || {
+      roleId: role,
+      reportIds: [],
+      widgetIds: [],
+    };
+    const roleReports = allReports.filter((r) =>
+      assignment.reportIds.includes(r.id)
+    );
+    const roleWidgets = allWidgets.filter((w) =>
+      assignment.widgetIds.includes(w.id)
+    );
     return { reports: roleReports, widgets: roleWidgets };
   };
 
   const handleEditRole = (role: string) => {
-    // Prevent editing admin role
     if (role === "admin") {
-      alert(
-        "Admin role permissions cannot be edited. Admin has access to all reports and widgets."
+      showError(
+        "Admin role cannot be edited",
+        "Admin has access to all reports and widgets"
       );
       return;
     }
-
-    const roleItems = getRolePermissions(role);
-    setEditingRole({ role, items: roleItems });
+    setEditingRole(role);
   };
 
-  const handleSaveRole = (
-    updatedReports: Report[],
-    updatedWidgets: Widget[]
+  const handleSaveRole = async (
+    role: string,
+    selectedReportIds: string[],
+    selectedWidgetIds: string[]
   ) => {
-    onUpdateReports(updatedReports);
-    onUpdateWidgets(updatedWidgets);
-    setEditingRole(null);
+    setLoading(true);
+    try {
+      // Get current assignments
+      const current = roleAssignments[role] || { reportIds: [], widgetIds: [] };
+
+      // Reports: Determine what to assign/unassign
+      const reportsToAssign = selectedReportIds.filter(
+        (id) => !current.reportIds.includes(id)
+      );
+      const reportsToUnassign = current.reportIds.filter(
+        (id) => !selectedReportIds.includes(id)
+      );
+
+      // Widgets: Determine what to assign/unassign
+      const widgetsToAssign = selectedWidgetIds.filter(
+        (id) => !current.widgetIds.includes(id)
+      );
+      const widgetsToUnassign = current.widgetIds.filter(
+        (id) => !selectedWidgetIds.includes(id)
+      );
+
+      // Assign reports
+      for (const reportId of reportsToAssign) {
+        await reportsService.assignReportToRole(role, reportId);
+      }
+
+      // Unassign reports
+      for (const reportId of reportsToUnassign) {
+        await reportsService.unassignReportFromRole(role, reportId);
+      }
+
+      // Assign widgets
+      for (const widgetId of widgetsToAssign) {
+        await widgetsService.assignWidgetToRole(role, widgetId);
+      }
+
+      // Unassign widgets
+      for (const widgetId of widgetsToUnassign) {
+        await widgetsService.unassignWidgetFromRole(role, widgetId);
+      }
+
+      // Update local state
+      setRoleAssignments({
+        ...roleAssignments,
+        [role]: {
+          roleId: role,
+          reportIds: selectedReportIds,
+          widgetIds: selectedWidgetIds,
+        },
+      });
+
+      showSuccess(
+        "Role permissions updated",
+        `${role} permissions have been saved successfully`
+      );
+
+      setEditingRole(null);
+
+      // Refresh data if callback provided
+      if (onRefreshData) {
+        onRefreshData();
+      }
+    } catch (error) {
+      console.error("Failed to update role permissions:", error);
+      showError("Failed to update permissions", "Please try again");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const toggleCardExpansion = (role: string) => {
@@ -65,6 +187,7 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
     }));
   };
 
+  // Icons
   const UserIcon = () => (
     <svg
       width="20"
@@ -154,6 +277,32 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
     </svg>
   );
 
+  // Show loading state
+  if (loading && allReports.length === 0) {
+    return (
+      <div className="modern-permissions-container">
+        <div className="permissions-header">
+          <h2>User Role Permissions</h2>
+          <p>Loading role permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if not admin
+  if (userRole !== "admin") {
+    return (
+      <div className="modern-permissions-container">
+        <div className="permissions-header">
+          <h2>User Role Permissions</h2>
+          <p style={{ color: "var(--error-color)" }}>
+            Only administrators can manage role permissions.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="modern-permissions-container">
       <div className="permissions-header">
@@ -208,7 +357,7 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
                     >
                       <LockIcon />
                     </div>
-                  ) : (
+                  ) : userRole === "admin" ? (
                     <button
                       className="edit-role-btn-compact"
                       onClick={(e) => {
@@ -219,7 +368,7 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
                     >
                       <EditIcon />
                     </button>
-                  )}
+                  ) : null}
                   <div className="expand-indicator">
                     <ChevronIcon expanded={isExpanded} />
                   </div>
@@ -282,72 +431,69 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
         })}
       </div>
 
-      {/* Edit Role Modal - Only for non-admin roles */}
-      {editingRole && editingRole.role !== "admin" && (
+      {/* Edit Role Modal */}
+      {editingRole && userRole === "admin" && (
         <EditRolePermissionsModal
-          role={editingRole.role}
-          currentReports={reports}
-          currentWidgets={widgets}
+          role={editingRole}
+          currentReports={allReports}
+          currentWidgets={allWidgets}
+          assignedReportIds={roleAssignments[editingRole]?.reportIds || []}
+          assignedWidgetIds={roleAssignments[editingRole]?.widgetIds || []}
           onSave={handleSaveRole}
           onClose={() => setEditingRole(null)}
+          loading={loading}
         />
       )}
     </div>
   );
 };
 
-// Edit Role Permissions Modal Component (unchanged)
+// Edit Role Permissions Modal
 interface EditRolePermissionsModalProps {
   role: string;
   currentReports: Report[];
   currentWidgets: Widget[];
-  onSave: (reports: Report[], widgets: Widget[]) => void;
+  assignedReportIds: string[];
+  assignedWidgetIds: string[];
+  onSave: (role: string, reportIds: string[], widgetIds: string[]) => void;
   onClose: () => void;
+  loading?: boolean;
 }
 
 const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
   role,
   currentReports,
   currentWidgets,
+  assignedReportIds,
+  assignedWidgetIds,
   onSave,
   onClose,
+  loading = false,
 }) => {
-  const [reports, setReports] = useState<Report[]>(currentReports);
-  const [widgets, setWidgets] = useState<Widget[]>(currentWidgets);
+  const [selectedReportIds, setSelectedReportIds] =
+    useState<string[]>(assignedReportIds);
+  const [selectedWidgetIds, setSelectedWidgetIds] =
+    useState<string[]>(assignedWidgetIds);
 
   const handleReportToggle = (reportId: string, checked: boolean) => {
-    setReports(
-      reports.map((report) =>
-        report.id === reportId
-          ? {
-              ...report,
-              userRoles: checked
-                ? [...report.userRoles, role]
-                : report.userRoles.filter((r) => r !== role),
-            }
-          : report
-      )
-    );
+    if (checked) {
+      setSelectedReportIds([...selectedReportIds, reportId]);
+    } else {
+      setSelectedReportIds(selectedReportIds.filter((id) => id !== reportId));
+    }
   };
 
   const handleWidgetToggle = (widgetId: string, checked: boolean) => {
-    setWidgets(
-      widgets.map((widget) =>
-        widget.id === widgetId
-          ? {
-              ...widget,
-              userRoles: checked
-                ? [...widget.userRoles, role]
-                : widget.userRoles.filter((r) => r !== role),
-            }
-          : widget
-      )
-    );
+    if (checked) {
+      setSelectedWidgetIds([...selectedWidgetIds, widgetId]);
+    } else {
+      setSelectedWidgetIds(selectedWidgetIds.filter((id) => id !== widgetId));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(reports, widgets);
+    onSave(role, selectedReportIds, selectedWidgetIds);
   };
 
   const CloseIcon = () => (
@@ -394,7 +540,11 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
               <p>Add or remove reports and widgets for this role</p>
             </div>
           </div>
-          <button className="modern-close-btn" onClick={onClose}>
+          <button
+            className="modern-close-btn"
+            onClick={onClose}
+            disabled={loading}
+          >
             <CloseIcon />
           </button>
         </div>
@@ -402,16 +552,19 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
         <div className="modern-modal-content">
           <form onSubmit={handleSubmit} className="modern-form">
             <div className="form-section">
-              <h3 className="section-title">Reports</h3>
+              <h3 className="section-title">
+                Reports ({selectedReportIds.length} selected)
+              </h3>
               <div className="items-selection-grid">
-                {reports.map((report) => (
+                {currentReports.map((report) => (
                   <label key={report.id} className="modern-checkbox">
                     <input
                       type="checkbox"
-                      checked={report.userRoles.includes(role)}
+                      checked={selectedReportIds.includes(report.id)}
                       onChange={(e) =>
                         handleReportToggle(report.id, e.target.checked)
                       }
+                      disabled={loading}
                     />
                     <span className="checkmark"></span>
                     <span className="checkbox-label">{report.name}</span>
@@ -421,16 +574,19 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
             </div>
 
             <div className="form-section">
-              <h3 className="section-title">Widgets</h3>
+              <h3 className="section-title">
+                Widgets ({selectedWidgetIds.length} selected)
+              </h3>
               <div className="items-selection-grid">
-                {widgets.map((widget) => (
+                {currentWidgets.map((widget) => (
                   <label key={widget.id} className="modern-checkbox">
                     <input
                       type="checkbox"
-                      checked={widget.userRoles.includes(role)}
+                      checked={selectedWidgetIds.includes(widget.id)}
                       onChange={(e) =>
                         handleWidgetToggle(widget.id, e.target.checked)
                       }
+                      disabled={loading}
                     />
                     <span className="checkmark"></span>
                     <span className="checkbox-label">{widget.name}</span>
@@ -444,11 +600,16 @@ const EditRolePermissionsModal: React.FC<EditRolePermissionsModalProps> = ({
                 type="button"
                 className="modal-btn modal-btn-secondary"
                 onClick={onClose}
+                disabled={loading}
               >
                 Cancel
               </button>
-              <button type="submit" className="modal-btn modal-btn-primary">
-                Save Changes
+              <button
+                type="submit"
+                className="modal-btn modal-btn-primary"
+                disabled={loading}
+              >
+                {loading ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </form>

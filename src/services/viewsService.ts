@@ -10,7 +10,6 @@ import { View, Report, Widget } from '../types';
 interface ReportDto {
   reportId: string;
   reportName: string;
-  reportDescription?: string;
   reportUrl?: string;
   isActive: boolean;
   orderIndex?: number;
@@ -19,7 +18,7 @@ interface ReportDto {
 interface WidgetDto {
   widgetId: string;
   widgetName: string;
-  widgetDescription?: string;
+  widgetUrl?: string;
   widgetType?: string;
   isActive: boolean;
   orderIndex?: number;

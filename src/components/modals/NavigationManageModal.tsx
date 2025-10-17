@@ -8,8 +8,7 @@ import {
   Widget,
   UserNavigationData,
 } from "../../types";
-// No longer needed - using API data passed as props
-import AllViewGroupsViews from "../features/AllViewGroupsViews";
+import AllViewGroupsViewsApi from "../features/AllViewGroupsViews";
 import CreateViewGroup from "../forms/CreateViewGroup";
 import CreateView from "../forms/CreateView";
 import "./styles/NavigationManageModal.css";
@@ -25,8 +24,8 @@ interface NavigationManageModalProps {
   views: View[];
   viewGroups: ViewGroup[];
   userNavSettings: UserNavigationSettings[];
-  reports: Report[];  // ✅ From API
-  widgets: Widget[];  // ✅ From API
+  reports: Report[]; // ✅ From API
+  widgets: Widget[]; // ✅ From API
 }
 
 type NavTabType = "all" | "createGroup" | "createView";
@@ -42,8 +41,8 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
   views,
   viewGroups,
   userNavSettings,
-  reports,  // ✅ From API
-  widgets,  // ✅ From API
+  reports, // ✅ From API
+  widgets, // ✅ From API
 }) => {
   const [activeTab, setActiveTab] = useState<NavTabType>("all");
 
@@ -99,19 +98,16 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
 
         <div className="modal-content">
           {activeTab === "all" && (
-            <AllViewGroupsViews
+            <AllViewGroupsViewsApi
               user={user}
               views={views}
               viewGroups={viewGroups}
-              userNavSettings={userNavSettings}
               reports={getUserAccessibleReports()}
               widgets={getUserAccessibleWidgets()}
-              onUpdateViews={onUpdateViews}
-              onUpdateViewGroups={onUpdateViewGroups}
-              onUpdateNavSettings={(settingsArr) => {
-                if (Array.isArray(settingsArr) && settingsArr.length > 0) {
-                  onUpdateNavSettings(settingsArr[0]);
-                }
+              onRefresh={() => {
+                // Trigger parent refresh
+                onClose();
+                window.location.reload();
               }}
             />
           )}

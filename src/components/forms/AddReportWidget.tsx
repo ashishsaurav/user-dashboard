@@ -1,83 +1,71 @@
 import React, { useState } from "react";
-import { ReportFormData, WidgetFormData, Report, Widget } from "../../types";
+import { reportsService } from "../../services/reportsService";
+import { widgetsService } from "../../services/widgetsService";
 import { useNotification } from "../common/NotificationProvider";
 
 interface AddReportWidgetProps {
-  onAddItem: (item: Report | Widget) => void;
+  onItemAdded?: () => void;
 }
 
 type FormType = "report" | "widget";
 
-const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onAddItem }) => {
+interface FormData {
+  name: string;
+  url: string;
+}
+
+const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
   const [formType, setFormType] = useState<FormType>("report");
-  const [reportForm, setReportForm] = useState<ReportFormData>({
+  const [formData, setFormData] = useState<FormData>({
     name: "",
     url: "",
-    userRoles: ["admin"],
   });
-  const [widgetForm, setWidgetForm] = useState<WidgetFormData>({
-    name: "",
-    url: "",
-    userRoles: ["admin"],
-  });
+  const [loading, setLoading] = useState(false);
 
-  const { showSuccess } = useNotification();
-  const availableRoles = ["admin", "user", "viewer"];
+  const { showSuccess, showError } = useNotification();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const formData = formType === "report" ? reportForm : widgetForm;
 
-    const timestamp = Date.now();
-    const randomSuffix = Math.random().toString(36).substr(2, 5);
-    const autoId = `${formType}-${timestamp}-${randomSuffix}`;
+    setLoading(true);
+    try {
+      if (formType === "report") {
+        await reportsService.createReport({
+          reportName: formData.name,
+          reportUrl: formData.url,
+        });
+        showSuccess(
+          "Report Created Successfully!",
+          `"${formData.name}" has been added and is now available.`
+        );
+      } else {
+        await widgetsService.createWidget({
+          widgetName: formData.name,
+          widgetUrl: formData.url,
+        });
+        showSuccess(
+          "Widget Created Successfully!",
+          `"${formData.name}" has been added and is now available.`
+        );
+      }
 
-    const newItem = {
-      id: autoId,
-      ...formData,
-      type: formType === "report" ? ("Report" as const) : ("Widget" as const),
-    };
+      // Reset form
+      setFormData({ name: "", url: "" });
 
-    onAddItem(newItem);
-
-    console.log(`Adding new ${formType}:`, newItem);
-
-    // Show beautiful success notification
-    showSuccess(
-      `${formType === "report" ? "Report" : "Widget"} Created Successfully!`,
-      `"${formData.name}" has been added and is now available to assigned users.`
-    );
-
-    // Reset form with admin pre-selected
-    if (formType === "report") {
-      setReportForm({ name: "", url: "", userRoles: ["admin"] });
-    } else {
-      setWidgetForm({ name: "", url: "", userRoles: ["admin"] });
+      // Notify parent to refresh
+      if (onItemAdded) {
+        onItemAdded();
+      }
+    } catch (error) {
+      console.error(`Failed to create ${formType}:`, error);
+      showError(
+        `Failed to create ${formType}`,
+        "Please check your input and try again"
+      );
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleRoleChange = (role: string, checked: boolean) => {
-    if (role === "admin") return;
-
-    if (formType === "report") {
-      setReportForm({
-        ...reportForm,
-        userRoles: checked
-          ? [...reportForm.userRoles, role]
-          : reportForm.userRoles.filter((r) => r !== role),
-      });
-    } else {
-      setWidgetForm({
-        ...widgetForm,
-        userRoles: checked
-          ? [...widgetForm.userRoles, role]
-          : widgetForm.userRoles.filter((r) => r !== role),
-      });
-    }
-  };
-
-  const currentForm = formType === "report" ? reportForm : widgetForm;
-  const setCurrentForm = formType === "report" ? setReportForm : setWidgetForm;
 
   const ReportIcon = () => (
     <svg
@@ -127,13 +115,14 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onAddItem }) => {
     <div className="modern-add-container">
       <div className="add-header">
         <h2>Add New {formType === "report" ? "Report" : "Widget"}</h2>
-        <p>Create and configure access permissions</p>
+        <p>Create a new {formType} in the system</p>
       </div>
 
       <div className="form-type-tabs">
         <button
           className={`tab-btn ${formType === "report" ? "active" : ""}`}
           onClick={() => setFormType("report")}
+          disabled={loading}
         >
           <ReportIcon />
           <span>Add Report</span>
@@ -141,6 +130,7 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onAddItem }) => {
         <button
           className={`tab-btn ${formType === "widget" ? "active" : ""}`}
           onClick={() => setFormType("widget")}
+          disabled={loading}
         >
           <WidgetIcon />
           <span>Add Widget</span>
@@ -162,12 +152,13 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onAddItem }) => {
                 <input
                   type="text"
                   className="modern-input"
-                  value={currentForm.name}
+                  value={formData.name}
                   onChange={(e) =>
-                    setCurrentForm({ ...currentForm, name: e.target.value })
+                    setFormData({ ...formData, name: e.target.value })
                   }
                   placeholder={`Enter ${formType} name`}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
@@ -180,49 +171,48 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onAddItem }) => {
                 <input
                   type="url"
                   className="modern-input"
-                  value={currentForm.url}
+                  value={formData.url}
                   onChange={(e) =>
-                    setCurrentForm({ ...currentForm, url: e.target.value })
+                    setFormData({ ...formData, url: e.target.value })
                   }
                   placeholder={`https://example.com/${formType}`}
                   required
+                  disabled={loading}
                 />
               </div>
             </div>
           </div>
 
           <div className="form-section">
-            <h3 className="section-title">Access Permissions</h3>
-
-            <div className="permission-section">
-              <label className="modern-label">User Roles</label>
-              <p className="admin-notice">
-                Admin role is automatically selected and cannot be changed
+            <div
+              style={{
+                padding: "16px",
+                backgroundColor: "var(--bg-secondary)",
+                borderRadius: "8px",
+                border: "1px solid var(--border-color)",
+              }}
+            >
+              <h4
+                style={{
+                  marginBottom: "8px",
+                  color: "var(--text-primary)",
+                  fontSize: "14px",
+                }}
+              >
+                📝 Note about Permissions
+              </h4>
+              <p
+                style={{
+                  margin: 0,
+                  color: "var(--text-secondary)",
+                  fontSize: "13px",
+                  lineHeight: "1.6",
+                }}
+              >
+                After creating the {formType}, use the "User Role Permissions"
+                tab to assign it to specific roles (admin, user, viewer). By
+                default, new items are not assigned to any role.
               </p>
-              <div className="checkbox-grid">
-                {availableRoles.map((role) => (
-                  <label
-                    key={role}
-                    className={`modern-checkbox ${
-                      role === "admin" ? "admin-locked disabled" : ""
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={currentForm.userRoles.includes(role)}
-                      onChange={(e) => handleRoleChange(role, e.target.checked)}
-                      disabled={role === "admin"}
-                    />
-                    <span className="checkmark"></span>
-                    <span className="checkbox-label">
-                      {role.charAt(0).toUpperCase() + role.slice(1)}
-                      {role === "admin" && (
-                        <span className="locked-indicator">🔒</span>
-                      )}
-                    </span>
-                  </label>
-                ))}
-              </div>
             </div>
           </div>
         </form>
@@ -232,8 +222,9 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onAddItem }) => {
           onClick={handleSubmit}
           className="floating-add-btn"
           title={`Add ${formType === "report" ? "Report" : "Widget"}`}
+          disabled={loading}
         >
-          <AddIcon />
+          {loading ? <span>...</span> : <AddIcon />}
         </button>
       </div>
     </div>

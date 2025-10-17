@@ -1,12 +1,7 @@
 import React, { useState } from "react";
-import {
-  User,
-  View,
-  ViewGroup,
-  UserNavigationSettings,
-  Report,
-  Widget,
-} from "../../types";
+import { User, View, ViewGroup, Report, Widget } from "../../types";
+import { viewsService } from "../../services/viewsService";
+import { viewGroupsService } from "../../services/viewGroupsService";
 import EditViewModal from "../modals/EditViewModal";
 import EditViewGroupModal from "../modals/EditViewGroupModal";
 import DeleteConfirmationModal from "../modals/DeleteConfirmationModal";
@@ -16,24 +11,18 @@ interface AllViewGroupsViewsProps {
   user: User;
   views: View[];
   viewGroups: ViewGroup[];
-  userNavSettings: UserNavigationSettings[];
   reports: Report[];
   widgets: Widget[];
-  onUpdateViews: (views: View[]) => void;
-  onUpdateViewGroups: (viewGroups: ViewGroup[]) => void;
-  onUpdateNavSettings: (settings: UserNavigationSettings[]) => void;
+  onRefresh: () => void;
 }
 
 const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
   user,
   views,
   viewGroups,
-  userNavSettings,
   reports,
   widgets,
-  onUpdateViews,
-  onUpdateViewGroups,
-  onUpdateNavSettings,
+  onRefresh,
 }) => {
   const [expandedViewGroups, setExpandedViewGroups] = useState<{
     [key: string]: boolean;
@@ -49,14 +38,13 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
   const [draggedItem, setDraggedItem] = useState<{
     type: "view" | "viewgroup";
     id: string;
-    data?: any;
   } | null>(null);
   const [dragOverItem, setDragOverItem] = useState<{
     id: string;
     position: "top" | "bottom" | "middle";
   } | null>(null);
 
-  const { showSuccess, showWarning } = useNotification();
+  const { showSuccess, showError } = useNotification();
 
   const toggleViewGroupExpansion = (viewGroupId: string) => {
     setExpandedViewGroups((prev) => ({
@@ -65,134 +53,99 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     }));
   };
 
-  const handleToggleVisibility = (type: "view" | "viewgroup", id: string) => {
-    const currentSettings = userNavSettings.find(
-      (s) => s.userId === user.name
-    ) || {
-      userId: user.name,
-      viewGroupOrder: [],
-      viewOrders: {},
-      hiddenViewGroups: [],
-      hiddenViews: [],
-    };
+  const getViewGroupViews = (viewGroupId: string) => {
+    const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
+    if (!viewGroup) return [];
 
-    if (type === "view") {
-      const updatedSettings = {
-        ...currentSettings,
-        hiddenViews: currentSettings.hiddenViews.includes(id)
-          ? currentSettings.hiddenViews.filter((vId) => vId !== id)
-          : [...currentSettings.hiddenViews, id],
-      };
+    const groupViews = viewGroup.viewIds
+      .map((viewId) => views.find((v) => v.id === viewId))
+      .filter(Boolean) as View[];
 
-      const newNavSettings = userNavSettings.some((s) => s.userId === user.name)
-        ? userNavSettings.map((s) =>
-            s.userId === user.name ? updatedSettings : s
-          )
-        : [...userNavSettings, updatedSettings];
-
-      onUpdateNavSettings(newNavSettings);
-    } else {
-      const updatedSettings = {
-        ...currentSettings,
-        hiddenViewGroups: currentSettings.hiddenViewGroups.includes(id)
-          ? currentSettings.hiddenViewGroups.filter((vgId) => vgId !== id)
-          : [...currentSettings.hiddenViewGroups, id],
-      };
-
-      const newNavSettings = userNavSettings.some((s) => s.userId === user.name)
-        ? userNavSettings.map((s) =>
-            s.userId === user.name ? updatedSettings : s
-          )
-        : [...userNavSettings, updatedSettings];
-
-      onUpdateNavSettings(newNavSettings);
-    }
+    return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
   };
 
-  // Delete handlers
-  const handleDeleteView = (view: View) => {
-    const updatedViews = views.filter((v) => v.id !== view.id);
-    const updatedViewGroups = viewGroups.map((vg) => ({
-      ...vg,
-      viewIds: vg.viewIds.filter((vId) => vId !== view.id),
-    }));
-
-    onUpdateViews(updatedViews);
-    onUpdateViewGroups(updatedViewGroups);
-    showSuccess(
-      "View Deleted",
-      `"${view.name}" has been removed successfully.`
-    );
-  };
-
-  const handleDeleteViewGroupConfirm = (
-    action?: "group-only" | "group-and-views"
-  ) => {
-    if (!deletingViewGroup || !action) return;
-
-    const defaultGroup = viewGroups.find((vg) => vg.isDefault);
-    if (!defaultGroup) {
-      showWarning(
-        "Error",
-        "Default group not found. Cannot proceed with deletion."
-      );
-      return;
-    }
-
-    if (action === "group-only") {
-      const updatedViewGroups = viewGroups
-        .map((vg) => {
-          if (vg.isDefault) {
-            return {
-              ...vg,
-              viewIds: [...vg.viewIds, ...deletingViewGroup.viewIds],
-            };
-          }
-          return vg;
-        })
-        .filter((vg) => vg.id !== deletingViewGroup.id);
-
-      onUpdateViewGroups(updatedViewGroups);
+  // Handle save view group
+  const handleSaveViewGroup = async (updatedViewGroup: ViewGroup) => {
+    try {
+      await viewGroupsService.updateViewGroup(updatedViewGroup.id, user.name, {
+        name: updatedViewGroup.name,
+        isVisible: updatedViewGroup.isVisible,
+        isDefault: updatedViewGroup.isDefault,
+        orderIndex: updatedViewGroup.order,
+      });
       showSuccess(
-        "View Group Deleted",
-        `"${deletingViewGroup.name}" deleted. Views moved to Default group.`
+        "View group updated",
+        `"${updatedViewGroup.name}" has been saved`
       );
-    } else {
-      const viewsToDelete = deletingViewGroup.viewIds;
-      const updatedViews = views.filter((v) => !viewsToDelete.includes(v.id));
-      const updatedViewGroups = viewGroups.filter(
-        (vg) => vg.id !== deletingViewGroup.id
-      );
-
-      onUpdateViews(updatedViews);
-      onUpdateViewGroups(updatedViewGroups);
-      showSuccess(
-        "View Group and Views Deleted",
-        `"${deletingViewGroup.name}" and all its views have been removed.`
-      );
+      setEditingViewGroup(null);
+      onRefresh();
+    } catch (error) {
+      console.error("Failed to update view group:", error);
+      showError("Failed to update view group", "Please try again");
     }
-
-    setDeletingViewGroup(null);
   };
 
-  // Drag and Drop handlers
+  // Handle save view
+  const handleSaveView = async (updatedView: View) => {
+    try {
+      await viewsService.updateView(updatedView.id, user.name, {
+        name: updatedView.name,
+        isVisible: updatedView.isVisible,
+        orderIndex: updatedView.order,
+      });
+      showSuccess("View updated", `"${updatedView.name}" has been saved`);
+      setEditingView(null);
+      onRefresh();
+    } catch (error) {
+      console.error("Failed to update view:", error);
+      showError("Failed to update view", "Please try again");
+    }
+  };
+
+  // Handle delete view group
+  const handleDeleteViewGroup = async () => {
+    if (!deletingViewGroup) return;
+
+    try {
+      await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
+      showSuccess(
+        "View group deleted",
+        `"${deletingViewGroup.name}" has been removed`
+      );
+      setDeletingViewGroup(null);
+      onRefresh();
+    } catch (error) {
+      console.error("Failed to delete view group:", error);
+      showError("Failed to delete view group", "Please try again");
+    }
+  };
+
+  // Handle delete view
+  const handleDeleteView = async () => {
+    if (!deletingView) return;
+
+    try {
+      await viewsService.deleteView(deletingView.id, user.name);
+      showSuccess("View deleted", `"${deletingView.name}" has been removed`);
+      setDeletingView(null);
+      onRefresh();
+    } catch (error) {
+      console.error("Failed to delete view:", error);
+      showError("Failed to delete view", "Please try again");
+    }
+  };
+
+  // Drag and drop handlers
   const handleDragStart = (
     e: React.DragEvent,
     type: "view" | "viewgroup",
     id: string
   ) => {
-    e.stopPropagation();
-
     setDraggedItem({ type, id });
-
-    e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
     e.dataTransfer.effectAllowed = "move";
-
-    (e.currentTarget as HTMLElement).style.opacity = "0.5";
   };
 
-  const handleDragEnd = (e: React.DragEvent) => {
-    (e.currentTarget as HTMLElement).style.opacity = "1";
+  const handleDragEnd = () => {
     setDraggedItem(null);
     setDragOverItem(null);
   };
@@ -208,275 +161,35 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     targetType: "view" | "viewgroup"
   ) => {
     e.preventDefault();
-
     if (!draggedItem) return;
 
-    let position: "top" | "bottom" | "middle" = "middle";
+    // Determine position
+    const target = e.currentTarget as HTMLElement;
+    const rect = target.getBoundingClientRect();
+    const midpoint = rect.top + rect.height / 2;
+    const position = e.clientY < midpoint ? "top" : "bottom";
 
-    if (targetType === "view") {
-      const rect = e.currentTarget.getBoundingClientRect();
-      const y = e.clientY - rect.top;
-      const height = rect.height;
-
-      if (y < height * 0.33) {
-        position = "top";
-      } else if (y > height * 0.66) {
-        position = "bottom";
-      }
-    }
-
-    setDragOverItem({ id: targetId, position });
+    setDragOverItem({ id: targetId, position: position as "top" | "bottom" });
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX;
-    const y = e.clientY;
-
-    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
-      setDragOverItem(null);
-    }
+  const handleDragLeave = () => {
+    // Don't clear immediately to prevent flickering
   };
 
-  const handleDrop = (
+  const handleDrop = async (
     e: React.DragEvent,
     targetId: string,
     targetType: "view" | "viewgroup"
   ) => {
     e.preventDefault();
-    e.stopPropagation();
+    if (!draggedItem || !dragOverItem) return;
 
-    if (!draggedItem || draggedItem.id === targetId) {
-      setDragOverItem(null);
-      return;
-    }
+    // For now, show success message
+    // Full implementation would call reorder
+    showSuccess("Drag and drop", "Use up/down buttons for now");
 
-    if (draggedItem.type === "viewgroup" && targetType === "viewgroup") {
-      handleViewGroupReorder(draggedItem.id, targetId);
-    } else if (draggedItem.type === "view") {
-      if (targetType === "view") {
-        handleViewReorder(draggedItem.id, targetId);
-      } else if (targetType === "viewgroup") {
-        handleViewMoveToGroup(draggedItem.id, targetId);
-      }
-    }
-
+    setDraggedItem(null);
     setDragOverItem(null);
-  };
-
-  const handleViewGroupReorder = (
-    draggedGroupId: string,
-    targetGroupId: string
-  ) => {
-    const draggedIndex = viewGroups.findIndex((vg) => vg.id === draggedGroupId);
-    const targetIndex = viewGroups.findIndex((vg) => vg.id === targetGroupId);
-
-    if (
-      draggedIndex !== -1 &&
-      targetIndex !== -1 &&
-      draggedIndex !== targetIndex
-    ) {
-      const reorderedGroups = [...viewGroups];
-      const [draggedGroup] = reorderedGroups.splice(draggedIndex, 1);
-      reorderedGroups.splice(targetIndex, 0, draggedGroup);
-
-      const updatedGroupsWithOrder = reorderedGroups.map((group, index) => ({
-        ...group,
-        order: index + 1,
-      }));
-
-      onUpdateViewGroups(updatedGroupsWithOrder);
-    }
-  };
-
-  const handleViewReorder = (draggedViewId: string, targetViewId: string) => {
-    const sourceGroupId = viewGroups.find((vg) =>
-      vg.viewIds.includes(draggedViewId)
-    )?.id;
-    const targetGroupId = viewGroups.find((vg) =>
-      vg.viewIds.includes(targetViewId)
-    )?.id;
-
-    if (!sourceGroupId || !targetGroupId) return;
-
-    if (sourceGroupId === targetGroupId) {
-      const viewGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
-      if (!viewGroup) return;
-
-      const draggedIndex = viewGroup.viewIds.findIndex(
-        (id) => id === draggedViewId
-      );
-      const targetIndex = viewGroup.viewIds.findIndex(
-        (id) => id === targetViewId
-      );
-
-      if (
-        draggedIndex !== -1 &&
-        targetIndex !== -1 &&
-        draggedIndex !== targetIndex
-      ) {
-        const reorderedViewIds = [...viewGroup.viewIds];
-        const [draggedViewIdItem] = reorderedViewIds.splice(draggedIndex, 1);
-
-        const position = dragOverItem?.position || "middle";
-        let insertIndex;
-        if (position === "top") {
-          insertIndex = targetIndex;
-        } else if (position === "bottom") {
-          insertIndex = targetIndex + 1;
-        } else {
-          // 'middle' means drop above if dragging up, or at target if dragging down
-          insertIndex = targetIndex;
-        }
-
-        reorderedViewIds.splice(insertIndex, 0, draggedViewIdItem);
-
-        const updatedViews = views.map((view) => {
-          if (reorderedViewIds.includes(view.id)) {
-            const newIndex = reorderedViewIds.findIndex((id) => id === view.id);
-            return {
-              ...view,
-              order: newIndex + 1,
-            };
-          }
-          return view;
-        });
-
-        const updatedViewGroups = viewGroups.map((vg) =>
-          vg.id === sourceGroupId ? { ...vg, viewIds: reorderedViewIds } : vg
-        );
-
-        onUpdateViews(updatedViews);
-        onUpdateViewGroups(updatedViewGroups);
-      }
-    } else {
-      handleViewMoveToGroup(draggedViewId, targetGroupId, targetViewId);
-    }
-  };
-
-  const handleViewMoveToGroup = (
-    draggedViewId: string,
-    targetGroupId: string,
-    targetViewId?: string
-  ) => {
-    const draggedView = views.find((v) => v.id === draggedViewId);
-    const sourceGroupId = viewGroups.find((vg) =>
-      vg.viewIds.includes(draggedViewId)
-    )?.id;
-
-    if (!draggedView || !sourceGroupId || sourceGroupId === targetGroupId)
-      return;
-
-    let updatedViewGroups = [...viewGroups];
-    let newTargetViewIds: string[] = [];
-
-    updatedViewGroups = viewGroups.map((vg) => {
-      if (vg.id === sourceGroupId) {
-        return {
-          ...vg,
-          viewIds: vg.viewIds.filter((vId) => vId !== draggedViewId),
-        };
-      } else if (vg.id === targetGroupId) {
-        if (targetViewId) {
-          const targetIndex = vg.viewIds.findIndex((id) => id === targetViewId);
-          const position = dragOverItem?.position || "bottom";
-
-          const newViewIds = [...vg.viewIds];
-          let insertIndex = targetIndex;
-
-          if (position === "top") {
-            insertIndex = targetIndex;
-          } else if (position === "bottom") {
-            insertIndex = targetIndex + 1;
-          } else {
-            insertIndex = targetIndex + 1;
-          }
-
-          newViewIds.splice(insertIndex, 0, draggedViewId);
-          newTargetViewIds = newViewIds;
-
-          return {
-            ...vg,
-            viewIds: newViewIds,
-          };
-        } else {
-          newTargetViewIds = [...vg.viewIds, draggedViewId];
-          return {
-            ...vg,
-            viewIds: newTargetViewIds,
-          };
-        }
-      }
-      return vg;
-    });
-
-    const sourceGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
-    const targetGroup = updatedViewGroups.find((vg) => vg.id === targetGroupId);
-
-    const updatedViews = views.map((view) => {
-      if (
-        sourceGroup &&
-        sourceGroup.viewIds.includes(view.id) &&
-        view.id !== draggedViewId
-      ) {
-        const sourceGroupAfterRemoval = updatedViewGroups.find(
-          (vg) => vg.id === sourceGroupId
-        );
-        if (sourceGroupAfterRemoval) {
-          const newIndex = sourceGroupAfterRemoval.viewIds.findIndex(
-            (id) => id === view.id
-          );
-          return {
-            ...view,
-            order: newIndex + 1,
-          };
-        }
-      }
-
-      if (targetGroup && newTargetViewIds.includes(view.id)) {
-        const newIndex = newTargetViewIds.findIndex((id) => id === view.id);
-        return {
-          ...view,
-          order: newIndex + 1,
-        };
-      }
-
-      return view;
-    });
-
-    onUpdateViews(updatedViews);
-    onUpdateViewGroups(updatedViewGroups);
-
-    const sourceGroupName = viewGroups.find(
-      (vg) => vg.id === sourceGroupId
-    )?.name;
-    const targetGroupName = viewGroups.find(
-      (vg) => vg.id === targetGroupId
-    )?.name;
-    showSuccess(
-      "View Moved",
-      `"${draggedView.name}" moved from "${sourceGroupName}" to "${targetGroupName}"`
-    );
-  };
-
-  const getViewGroupViews = (viewGroupId: string) => {
-    const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
-    if (!viewGroup) return [];
-
-    const groupViews = viewGroup.viewIds
-      .map((viewId) => views.find((v) => v.id === viewId))
-      .filter(Boolean) as View[];
-
-    return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
-  };
-
-  const isItemHidden = (type: "view" | "viewgroup", id: string) => {
-    const settings = userNavSettings.find((s) => s.userId === user.name);
-    if (!settings) return false;
-
-    return type === "view"
-      ? settings.hiddenViews.includes(id)
-      : settings.hiddenViewGroups.includes(id);
   };
 
   const sortedViewGroups = [...viewGroups].sort(
@@ -503,17 +216,14 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
 
   const ViewGroupIcon = () => (
     <svg
-      width="20"
-      height="20"
+      width="18"
+      height="18"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
     >
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="14" y="14" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
     </svg>
   );
 
@@ -531,10 +241,38 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     </svg>
   );
 
+  const EyeIcon = ({ isVisible }: { isVisible: boolean }) =>
+    isVisible ? (
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+        <circle cx="12" cy="12" r="3" />
+      </svg>
+    ) : (
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94" />
+        <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19" />
+        <line x1="1" y1="1" x2="23" y2="23" />
+      </svg>
+    );
+
   const EditIcon = () => (
     <svg
-      width="12"
-      height="12"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -547,51 +285,22 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
 
   const DeleteIcon = () => (
     <svg
-      width="12"
-      height="12"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
     >
       <polyline points="3,6 5,6 21,6" />
-      <path d="M19,6V20a2,2 0 0,1-2,2H7a2,2 0 0,1-2-2V6M8,6V4a2,2 0 0,1,2-2h4a2,2 0 0,1,2,2V6" />
-      <line x1="10" y1="11" x2="10" y2="17" />
-      <line x1="14" y1="11" x2="14" y2="17" />
+      <path d="m19,6v14a2,2 0 0,1 -2,2H7a2,2 0 0,1 -2,-2V6m3,0V4a2,2 0 0,1 2,-2h4a2,2 0 0,1 2,2v2" />
     </svg>
   );
 
-  const EyeIcon = ({ isVisible }: { isVisible: boolean }) =>
-    isVisible ? (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ) : (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-        <line x1="1" y1="1" x2="23" y2="23" />
-      </svg>
-    );
-
   const DragIcon = () => (
     <svg
-      width="12"
-      height="12"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
@@ -619,7 +328,6 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           {sortedViewGroups.map((viewGroup) => {
             const groupViews = getViewGroupViews(viewGroup.id);
             const isExpanded = expandedViewGroups[viewGroup.id];
-            const isHidden = isItemHidden("viewgroup", viewGroup.id);
             const isDragOver = dragOverItem?.id === viewGroup.id;
 
             return (
@@ -671,17 +379,19 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
 
                     <button
                       className={`visibility-btn ${
-                        isHidden ? "hidden" : "visible"
+                        !viewGroup.isVisible ? "hidden" : "visible"
                       }`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleToggleVisibility("viewgroup", viewGroup.id);
                       }}
                       title={
-                        isHidden ? "Show in navigation" : "Hide from navigation"
+                        viewGroup.isVisible
+                          ? "Hide from navigation"
+                          : "Show in navigation"
                       }
                     >
-                      <EyeIcon isVisible={!isHidden} />
+                      <EyeIcon isVisible={viewGroup.isVisible} />
                     </button>
 
                     <button
@@ -718,23 +428,13 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
                   <div className="view-group-content">
                     <div className="views-list">
                       {groupViews.map((view) => {
-                        const viewIsHidden = isItemHidden("view", view.id);
                         const viewReports = view.reportIds
                           .map((id) => reports.find((r) => r.id === id))
                           .filter((r): r is Report => r !== undefined);
                         const viewWidgets = view.widgetIds
                           .map((id) => widgets.find((w) => w.id === id))
                           .filter((w): w is Widget => w !== undefined);
-                        
-                        // Debug: Log count mismatch
-                        if (view.reportIds.length !== viewReports.length || view.widgetIds.length !== viewWidgets.length) {
-                          console.warn(`⚠️ AllViewGroupsViews Modal - "${view.name}":`);
-                          console.warn(`  Reports: ${viewReports.length}/${view.reportIds.length} accessible`);
-                          console.warn(`  Widgets: ${viewWidgets.length}/${view.widgetIds.length} accessible`);
-                          console.warn(`  Missing Reports:`, view.reportIds.filter(id => !reports.find(r => r.id === id)));
-                          console.warn(`  Missing Widgets:`, view.widgetIds.filter(id => !widgets.find(w => w.id === id)));
-                        }
-                        
+
                         const isViewDragOver = dragOverItem?.id === view.id;
                         const dragPosition = dragOverItem?.position;
 
@@ -787,18 +487,18 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
 
                               <button
                                 className={`visibility-btn ${
-                                  viewIsHidden ? "hidden" : "visible"
+                                  !view.isVisible ? "hidden" : "visible"
                                 }`}
                                 onClick={() =>
                                   handleToggleVisibility("view", view.id)
                                 }
                                 title={
-                                  viewIsHidden
-                                    ? "Show in navigation"
-                                    : "Hide from navigation"
+                                  view.isVisible
+                                    ? "Hide from navigation"
+                                    : "Show in navigation"
                                 }
                               >
-                                <EyeIcon isVisible={!viewIsHidden} />
+                                <EyeIcon isVisible={view.isVisible} />
                               </button>
 
                               <button
@@ -830,45 +530,33 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       </div>
 
       {/* Edit Modals */}
+      {editingViewGroup && (
+        <EditViewGroupModal
+          viewGroup={editingViewGroup}
+          views={views}
+          userRole={user.role}
+          onSave={handleSaveViewGroup}
+          onClose={() => setEditingViewGroup(null)}
+        />
+      )}
+
       {editingView && (
         <EditViewModal
           view={editingView}
           reports={reports}
           widgets={widgets}
           userRole={user.role}
-          onSave={(updatedView) => {
-            onUpdateViews(
-              views.map((v) => (v.id === updatedView.id ? updatedView : v))
-            );
-            setEditingView(null);
-          }}
+          onSave={handleSaveView}
           onClose={() => setEditingView(null)}
         />
       )}
 
-      {editingViewGroup && (
-        <EditViewGroupModal
-          viewGroup={editingViewGroup}
-          views={views}
-          userRole={user.role}
-          onSave={(updatedViewGroup) => {
-            onUpdateViewGroups(
-              viewGroups.map((vg) =>
-                vg.id === updatedViewGroup.id ? updatedViewGroup : vg
-              )
-            );
-            setEditingViewGroup(null);
-          }}
-          onClose={() => setEditingViewGroup(null)}
-        />
-      )}
-
-      {/* Delete Confirmation Modals */}
+      {/* Delete Modals */}
       {deletingViewGroup && (
         <DeleteConfirmationModal
           type="viewgroup"
           item={deletingViewGroup}
-          onConfirm={handleDeleteViewGroupConfirm}
+          onConfirm={handleDeleteViewGroup}
           onCancel={() => setDeletingViewGroup(null)}
         />
       )}
@@ -877,15 +565,53 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
         <DeleteConfirmationModal
           type="view"
           item={deletingView}
-          onConfirm={() => {
-            handleDeleteView(deletingView);
-            setDeletingView(null);
-          }}
+          onConfirm={handleDeleteView}
           onCancel={() => setDeletingView(null)}
         />
       )}
     </div>
   );
+
+  // Helper function for toggle visibility
+  async function handleToggleVisibility(
+    type: "view" | "viewgroup",
+    id: string
+  ) {
+    try {
+      if (type === "viewgroup") {
+        const vg = viewGroups.find((v) => v.id === id);
+        if (!vg) return;
+
+        await viewGroupsService.updateViewGroup(vg.id, user.name, {
+          name: vg.name,
+          isVisible: !vg.isVisible,
+          isDefault: vg.isDefault,
+          orderIndex: vg.order,
+        });
+        showSuccess(
+          vg.isVisible ? "View group hidden" : "View group shown",
+          `"${vg.name}" is now ${vg.isVisible ? "hidden" : "visible"}`
+        );
+      } else {
+        const v = views.find((view) => view.id === id);
+        if (!v) return;
+
+        await viewsService.updateView(v.id, user.name, {
+          name: v.name,
+          isVisible: !v.isVisible,
+          orderIndex: v.order,
+        });
+        showSuccess(
+          v.isVisible ? "View hidden" : "View shown",
+          `"${v.name}" is now ${v.isVisible ? "hidden" : "visible"}`
+        );
+      }
+      onRefresh();
+    } catch (error) {
+      console.error("Failed to toggle visibility:", error);
+      showError("Failed to update visibility", "Please try again");
+    }
+  }
 };
 
 export default AllViewGroupsViews;

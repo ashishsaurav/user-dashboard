@@ -8,9 +8,6 @@ interface EditWidgetModalProps {
   onClose: () => void;
 }
 
-/**
- * @deprecated Use EditItemModal from shared/EditItemModal instead
- */
 const EditWidgetModal: React.FC<EditWidgetModalProps> = ({
   widget,
   onSave,

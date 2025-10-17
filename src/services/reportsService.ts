@@ -10,7 +10,6 @@ import { Report } from '../types';
 interface ReportDto {
   reportId: string;
   reportName: string;
-  reportDescription?: string;
   reportUrl?: string;
   isActive: boolean;
   orderIndex?: number;
@@ -48,7 +47,6 @@ export class ReportsService {
    */
   async createReport(data: {
     reportName: string;
-    reportDescription?: string;
     reportUrl?: string;
   }): Promise<Report> {
     const report = await apiClient.post<ReportDto>(
@@ -65,7 +63,6 @@ export class ReportsService {
     id: string,
     data: {
       reportName: string;
-      reportDescription?: string;
       reportUrl?: string;
     }
   ): Promise<Report> {
@@ -81,6 +78,32 @@ export class ReportsService {
    */
   async deleteReport(id: string): Promise<void> {
     await apiClient.delete(API_ENDPOINTS.REPORTS.DELETE(id));
+  }
+
+  /**
+   * Assign report to role
+   */
+  async assignReportToRole(
+    roleId: string,
+    reportId: string,
+    orderIndex?: number
+  ): Promise<void> {
+    await apiClient.post(API_ENDPOINTS.REPORTS.ASSIGN_TO_ROLE(roleId), {
+      reportId,
+      orderIndex: orderIndex ?? 0,
+    });
+  }
+
+  /**
+   * Unassign report from role
+   */
+  async unassignReportFromRole(
+    roleId: string,
+    reportId: string
+  ): Promise<void> {
+    await apiClient.delete(
+      API_ENDPOINTS.REPORTS.UNASSIGN_FROM_ROLE(roleId, reportId)
+    );
   }
 
   /**

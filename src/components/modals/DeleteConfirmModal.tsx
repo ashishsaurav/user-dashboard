@@ -8,9 +8,6 @@ interface DeleteConfirmModalProps {
   onCancel: () => void;
 }
 
-/**
- * @deprecated Use ConfirmDialog from ui/ConfirmDialog instead
- */
 const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   itemName,
   itemType,

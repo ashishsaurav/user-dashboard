@@ -1215,8 +1215,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <ManageModal 
           user={user} 
           onClose={() => setShowManageModal(false)} 
-          reports={reports}  
-          widgets={widgets}  
+          onRefreshData={() => {
+            // Refresh views and viewgroups data after changes
+            refetchViews();
+            refetchViewGroups();
+            refetchNavSettings();
+          }}
         />
       )}
 
