@@ -99,7 +99,7 @@ const ManageModal: React.FC<ManageModalProps> = ({
               onUpdateWidgets={setWidgets}
             />
           )}
-          {activeTab === "permissions" && (
+          {activeTab === "permissions" && user && (
             <UserRolePermissions
               reports={reports}
               widgets={widgets}
@@ -107,6 +107,14 @@ const ManageModal: React.FC<ManageModalProps> = ({
               onUpdateWidgets={setWidgets}
             />
           )}
+          {/* To use the new API-connected version, replace above with:
+          {activeTab === "permissions" && user && (
+            <UserRolePermissionsApi
+              userRole={user.role}
+              onRefreshData={onClose}
+            />
+          )}
+          */}
           {activeTab === "add" && <AddReportWidget onAddItem={handleAddItem} />}
           {activeTab === "layout" && user && (
             <div style={{ padding: "20px" }}>

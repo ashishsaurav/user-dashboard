@@ -10,8 +10,6 @@ import { widgetsService } from "../../services/widgetsService";
 import { useNotification } from "../common/NotificationProvider";
 
 interface UserRolePermissionsApiProps {
-  reports: Report[];
-  widgets: Widget[];
   userRole: string;
   onRefreshData?: () => void;
 }
@@ -23,8 +21,6 @@ interface RoleAssignment {
 }
 
 const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
-  reports,
-  widgets,
   userRole,
   onRefreshData,
 }) => {
@@ -38,25 +34,53 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
     viewer: true,
   });
   const [loading, setLoading] = useState(false);
+  const [allReports, setAllReports] = useState<Report[]>([]);
+  const [allWidgets, setAllWidgets] = useState<Widget[]>([]);
 
   const { showSuccess, showError } = useNotification();
 
   const userRoles = ["admin", "user", "viewer"];
 
-  // Initialize role assignments (in production, fetch from backend)
+  // Fetch all reports, widgets, and role assignments (admin only)
   useEffect(() => {
-    // For now, assume all reports/widgets belong to admin
-    // In real implementation, fetch role assignments from backend
-    const assignments: { [key: string]: RoleAssignment } = {};
-    userRoles.forEach((role) => {
-      assignments[role] = {
-        roleId: role,
-        reportIds: reports.map((r) => r.id),
-        widgetIds: widgets.map((w) => w.id),
-      };
-    });
-    setRoleAssignments(assignments);
-  }, [reports, widgets]);
+    if (userRole !== "admin") return;
+
+    const fetchAllData = async () => {
+      setLoading(true);
+      try {
+        // Fetch all reports (not filtered by role)
+        const allReportsData = await reportsService.getAllReports();
+        setAllReports(allReportsData);
+
+        // Fetch all widgets (not filtered by role)
+        const allWidgetsData = await widgetsService.getAllWidgets();
+        setAllWidgets(allWidgetsData);
+
+        // Fetch role assignments for each role
+        const assignments: { [key: string]: RoleAssignment } = {};
+        
+        for (const role of userRoles) {
+          const roleReports = await reportsService.getReportsByRole(role);
+          const roleWidgets = await widgetsService.getWidgetsByRole(role);
+          
+          assignments[role] = {
+            roleId: role,
+            reportIds: roleReports.map((r) => r.id),
+            widgetIds: roleWidgets.map((w) => w.id),
+          };
+        }
+
+        setRoleAssignments(assignments);
+      } catch (error) {
+        console.error("Failed to fetch role permissions:", error);
+        showError("Failed to load role permissions", "Please refresh the page");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, [userRole]);
 
   const getRolePermissions = (role: string) => {
     const assignment = roleAssignments[role] || {
@@ -64,8 +88,8 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
       reportIds: [],
       widgetIds: [],
     };
-    const roleReports = reports.filter((r) => assignment.reportIds.includes(r.id));
-    const roleWidgets = widgets.filter((w) => assignment.widgetIds.includes(w.id));
+    const roleReports = allReports.filter((r) => assignment.reportIds.includes(r.id));
+    const roleWidgets = allWidgets.filter((w) => assignment.widgetIds.includes(w.id));
     return { reports: roleReports, widgets: roleWidgets };
   };
 
@@ -252,6 +276,32 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
     </svg>
   );
 
+  // Show loading state
+  if (loading && allReports.length === 0) {
+    return (
+      <div className="modern-permissions-container">
+        <div className="permissions-header">
+          <h2>User Role Permissions</h2>
+          <p>Loading role permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if not admin
+  if (userRole !== "admin") {
+    return (
+      <div className="modern-permissions-container">
+        <div className="permissions-header">
+          <h2>User Role Permissions</h2>
+          <p style={{ color: "var(--error-color)" }}>
+            Only administrators can manage role permissions.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="modern-permissions-container">
       <div className="permissions-header">
@@ -380,8 +430,8 @@ const UserRolePermissionsApi: React.FC<UserRolePermissionsApiProps> = ({
       {editingRole && userRole === "admin" && (
         <EditRolePermissionsModal
           role={editingRole}
-          currentReports={reports}
-          currentWidgets={widgets}
+          currentReports={allReports}
+          currentWidgets={allWidgets}
           assignedReportIds={roleAssignments[editingRole]?.reportIds || []}
           assignedWidgetIds={roleAssignments[editingRole]?.widgetIds || []}
           onSave={handleSaveRole}
