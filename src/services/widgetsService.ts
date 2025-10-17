@@ -10,7 +10,7 @@ import { Widget } from '../types';
 interface WidgetDto {
   widgetId: string;
   widgetName: string;
-  widgetDescription?: string;
+  widgetUrl?: string;
   widgetType?: string;
   isActive: boolean;
   orderIndex?: number;
@@ -48,7 +48,7 @@ export class WidgetsService {
    */
   async createWidget(data: {
     widgetName: string;
-    widgetDescription?: string;
+    widgetUrl?: string;
     widgetType?: string;
   }): Promise<Widget> {
     const widget = await apiClient.post<WidgetDto>(
@@ -65,7 +65,7 @@ export class WidgetsService {
     id: string,
     data: {
       widgetName: string;
-      widgetDescription?: string;
+      widgetUrl?: string;
       widgetType?: string;
     }
   ): Promise<Widget> {
@@ -84,13 +84,39 @@ export class WidgetsService {
   }
 
   /**
+   * Assign widget to role
+   */
+  async assignWidgetToRole(
+    roleId: string,
+    widgetId: string,
+    orderIndex?: number
+  ): Promise<void> {
+    await apiClient.post(API_ENDPOINTS.WIDGETS.ASSIGN_TO_ROLE(roleId), {
+      widgetId,
+      orderIndex: orderIndex ?? 0,
+    });
+  }
+
+  /**
+   * Unassign widget from role
+   */
+  async unassignWidgetFromRole(
+    roleId: string,
+    widgetId: string
+  ): Promise<void> {
+    await apiClient.delete(
+      API_ENDPOINTS.WIDGETS.UNASSIGN_FROM_ROLE(roleId, widgetId)
+    );
+  }
+
+  /**
    * Transform backend DTO to frontend type
    */
   private transformToFrontend(dto: WidgetDto): Widget {
     return {
       id: dto.widgetId,
       name: dto.widgetName,
-      url: '', // Widgets don't have URLs in the backend
+      url: dto.widgetUrl || '',
       type: 'Widget',
       userRoles: [], // Role-based, not needed
     };
