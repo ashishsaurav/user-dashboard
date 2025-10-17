@@ -1,53 +1,30 @@
-import React, { useState, useEffect } from "react";
-import AllReportsWidgets from "../features/AllReportsWidgets";
-import UserRolePermissions from "../features/UserRolePermissions";
-import AddReportWidget from "../forms/AddReportWidget";
+import React, { useState } from "react";
+import UserRolePermissionsApi from "../features/UserRolePermissionsApi";
+import AllReportsWidgetsApi from "../features/AllReportsWidgetsApi";
+import AddReportWidgetApi from "../forms/AddReportWidgetApi";
 import LayoutResetButton from "../dashboard/LayoutResetButton";
-import { testReports, testWidgets } from "../../data/testData";
-import { Report, Widget, User } from "../../types";
+import { User } from "../../types";
 import { layoutPersistenceService } from "../../services/layoutPersistenceService";
 import "./styles/ManageModal.css";
 
 interface ManageModalProps {
   onClose: () => void;
   user?: User;
-  reports?: Report[];  // ✅ From API
-  widgets?: Widget[];  // ✅ From API
+  onRefreshData?: () => void;
 }
 
 type TabType = "all" | "permissions" | "add" | "layout";
 
 const ManageModal: React.FC<ManageModalProps> = ({ 
   onClose, 
-  user, 
-  reports: apiReports = [], 
-  widgets: apiWidgets = [] 
+  user,
+  onRefreshData
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>("all");
 
-  // ✅ Use reports and widgets from API (fallback to testData only if not provided)
-  const [reports, setReports] = useState<Report[]>(apiReports.length > 0 ? apiReports : testReports);
-  const [widgets, setWidgets] = useState<Widget[]>(apiWidgets.length > 0 ? apiWidgets : testWidgets);
-
-  // Update local state when API data changes
-  useEffect(() => {
-    if (apiReports.length > 0) {
-      setReports(apiReports);
-    }
-  }, [apiReports]);
-
-  useEffect(() => {
-    if (apiWidgets.length > 0) {
-      setWidgets(apiWidgets);
-    }
-  }, [apiWidgets]);
-
-  // Add new item (from Add tab)
-  const handleAddItem = (newItem: Report | Widget) => {
-    if (newItem.type === "Report") {
-      setReports((prev) => [...prev, newItem as Report]);
-    } else {
-      setWidgets((prev) => [...prev, newItem as Widget]);
+  const handleDataRefresh = () => {
+    if (onRefreshData) {
+      onRefreshData();
     }
   };
 
@@ -91,31 +68,22 @@ const ManageModal: React.FC<ManageModalProps> = ({
         </div>
 
         <div className="modal-content">
-          {activeTab === "all" && (
-            <AllReportsWidgets
-              reports={reports}
-              widgets={widgets}
-              onUpdateReports={setReports}
-              onUpdateWidgets={setWidgets}
+          {activeTab === "all" && user && (
+            <AllReportsWidgetsApi
+              onRefreshData={handleDataRefresh}
             />
           )}
-          {activeTab === "permissions" && user && (
-            <UserRolePermissions
-              reports={reports}
-              widgets={widgets}
-              onUpdateReports={setReports}
-              onUpdateWidgets={setWidgets}
-            />
-          )}
-          {/* To use the new API-connected version, replace above with:
           {activeTab === "permissions" && user && (
             <UserRolePermissionsApi
               userRole={user.role}
-              onRefreshData={onClose}
+              onRefreshData={handleDataRefresh}
             />
           )}
-          */}
-          {activeTab === "add" && <AddReportWidget onAddItem={handleAddItem} />}
+          {activeTab === "add" && user && (
+            <AddReportWidgetApi
+              onItemAdded={handleDataRefresh}
+            />
+          )}
           {activeTab === "layout" && user && (
             <div style={{ padding: "20px" }}>
               <h3 style={{ marginBottom: "16px", color: "var(--text-primary)" }}>

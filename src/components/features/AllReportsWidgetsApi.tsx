@@ -3,7 +3,7 @@
  * Manages reports and widgets with full CRUD operations via backend API
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Report, Widget } from "../../types";
 import { reportsService } from "../../services/reportsService";
 import { widgetsService } from "../../services/widgetsService";
@@ -13,14 +13,10 @@ import EditWidgetModal from "../modals/EditWidgetModal";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 
 interface AllReportsWidgetsApiProps {
-  reports: Report[];
-  widgets: Widget[];
   onRefreshData?: () => void;
 }
 
 const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
-  reports,
-  widgets,
   onRefreshData,
 }) => {
   const [editingReport, setEditingReport] = useState<Report | null>(null);
@@ -31,8 +27,32 @@ const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
     name: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
+  const [reports, setReports] = useState<Report[]>([]);
+  const [widgets, setWidgets] = useState<Widget[]>([]);
 
   const { showSuccess, showError } = useNotification();
+
+  // Fetch all reports and widgets (admin only)
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [allReports, allWidgets] = await Promise.all([
+          reportsService.getAllReports(),
+          widgetsService.getAllWidgets(),
+        ]);
+        setReports(allReports);
+        setWidgets(allWidgets);
+      } catch (error) {
+        console.error("Failed to fetch reports/widgets:", error);
+        showError("Failed to load data", "Please refresh the page");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleDeleteConfirm = (
     type: "report" | "widget",
@@ -57,7 +77,15 @@ const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
 
       setDeleteConfirm(null);
 
-      // Refresh data
+      // Reload data
+      const [allReports, allWidgets] = await Promise.all([
+        reportsService.getAllReports(),
+        widgetsService.getAllWidgets(),
+      ]);
+      setReports(allReports);
+      setWidgets(allWidgets);
+
+      // Also refresh parent if needed
       if (onRefreshData) {
         onRefreshData();
       }
@@ -91,7 +119,11 @@ const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
       showSuccess("Report updated", `"${updatedReport.name}" has been saved`);
       setEditingReport(null);
 
-      // Refresh data
+      // Reload data
+      const allReports = await reportsService.getAllReports();
+      setReports(allReports);
+
+      // Also refresh parent if needed
       if (onRefreshData) {
         onRefreshData();
       }
@@ -114,7 +146,11 @@ const AllReportsWidgetsApi: React.FC<AllReportsWidgetsApiProps> = ({
       showSuccess("Widget updated", `"${updatedWidget.name}" has been saved`);
       setEditingWidget(null);
 
-      // Refresh data
+      // Reload data
+      const allWidgets = await widgetsService.getAllWidgets();
+      setWidgets(allWidgets);
+
+      // Also refresh parent if needed
       if (onRefreshData) {
         onRefreshData();
       }
