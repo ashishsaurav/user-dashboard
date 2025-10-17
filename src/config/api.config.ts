@@ -39,79 +39,79 @@ export const API_CONFIG = {
  * Centralized endpoint definitions for .NET Core Backend
  */
 export const API_ENDPOINTS = {
-  // Authentication
+  // Authentication (Note: Backend uses capital 'U' in /Users/)
   AUTH: {
-    LOGIN: '/users/login',
-    GET_USER: (userId: string) => `/users/${userId}`,
-    LIST_USERS: '/users',
+    LOGIN: '/Users/login',
+    GET_USER: (userId: string) => `/Users/${userId}`,
+    LIST_USERS: '/Users',
   },
   
-  // Reports
+  // Reports (Note: Backend uses capital 'R' in /Reports/)
   REPORTS: {
-    LIST: '/reports',
-    GET: (id: string) => `/reports/${id}`,
-    BY_ROLE: (roleId: string) => `/reports/role/${roleId}`,
-    CREATE: '/reports',
-    UPDATE: (id: string) => `/reports/${id}`,
-    DELETE: (id: string) => `/reports/${id}`,
-    ASSIGN_TO_ROLE: (roleId: string) => `/reports/role/${roleId}/assign`,
-    UNASSIGN_FROM_ROLE: (roleId: string, reportId: string) => `/reports/role/${roleId}/unassign/${reportId}`,
+    LIST: '/Reports',
+    GET: (id: string) => `/Reports/${id}`,
+    BY_ROLE: (roleId: string) => `/Reports/role/${roleId}`,
+    CREATE: '/Reports',
+    UPDATE: (id: string) => `/Reports/${id}`,
+    DELETE: (id: string) => `/Reports/${id}`,
+    ASSIGN_TO_ROLE: (roleId: string) => `/Reports/role/${roleId}/assign`,
+    UNASSIGN_FROM_ROLE: (roleId: string, reportId: string) => `/Reports/role/${roleId}/unassign/${reportId}`,
   },
   
-  // Widgets
+  // Widgets (Note: Backend uses capital 'W' in /Widgets/)
   WIDGETS: {
-    LIST: '/widgets',
-    GET: (id: string) => `/widgets/${id}`,
-    BY_ROLE: (roleId: string) => `/widgets/role/${roleId}`,
-    CREATE: '/widgets',
-    UPDATE: (id: string) => `/widgets/${id}`,
-    DELETE: (id: string) => `/widgets/${id}`,
-    ASSIGN_TO_ROLE: (roleId: string) => `/widgets/role/${roleId}/assign`,
-    UNASSIGN_FROM_ROLE: (roleId: string, widgetId: string) => `/widgets/role/${roleId}/unassign/${widgetId}`,
+    LIST: '/Widgets',
+    GET: (id: string) => `/Widgets/${id}`,
+    BY_ROLE: (roleId: string) => `/Widgets/role/${roleId}`,
+    CREATE: '/Widgets',
+    UPDATE: (id: string) => `/Widgets/${id}`,
+    DELETE: (id: string) => `/Widgets/${id}`,
+    ASSIGN_TO_ROLE: (roleId: string) => `/Widgets/role/${roleId}/assign`,
+    UNASSIGN_FROM_ROLE: (roleId: string, widgetId: string) => `/Widgets/role/${roleId}/unassign/${widgetId}`,
   },
   
-  // Views
+  // Views (Note: Backend uses capital 'V' in /Views/)
   VIEWS: {
-    BY_USER: (userId: string) => `/views/user/${userId}`,
-    GET: (id: string, userId: string) => `/views/${id}?userId=${userId}`,
-    CREATE: '/views',
-    UPDATE: (id: string) => `/views/${id}`,
-    DELETE: (id: string, userId: string) => `/views/${id}?userId=${userId}`,
-    ADD_REPORTS: (id: string) => `/views/${id}/reports`,
-    REMOVE_REPORT: (viewId: string, reportId: string, userId: string) => `/views/${viewId}/reports/${reportId}?userId=${userId}`,
-    ADD_WIDGETS: (id: string) => `/views/${id}/widgets`,
-    REMOVE_WIDGET: (viewId: string, widgetId: string, userId: string) => `/views/${viewId}/widgets/${widgetId}?userId=${userId}`,
-    REORDER_REPORTS: (id: string) => `/views/${id}/reports/reorder`,
-    REORDER_WIDGETS: (id: string) => `/views/${id}/widgets/reorder`,
+    BY_USER: (userId: string) => `/Views/user/${userId}`,
+    GET: (id: string, userId: string) => `/Views/${id}?userId=${userId}`,
+    CREATE: '/Views',
+    UPDATE: (id: string) => `/Views/${id}`,
+    DELETE: (id: string, userId: string) => `/Views/${id}?userId=${userId}`,
+    ADD_REPORTS: (id: string) => `/Views/${id}/reports`,
+    REMOVE_REPORT: (viewId: string, reportId: string, userId: string) => `/Views/${viewId}/reports/${reportId}?userId=${userId}`,
+    ADD_WIDGETS: (id: string) => `/Views/${id}/widgets`,
+    REMOVE_WIDGET: (viewId: string, widgetId: string, userId: string) => `/Views/${viewId}/widgets/${widgetId}?userId=${userId}`,
+    REORDER_REPORTS: (id: string) => `/Views/${id}/reports/reorder`,
+    REORDER_WIDGETS: (id: string) => `/Views/${id}/widgets/reorder`,
   },
   
-  // View Groups
+  // View Groups (Note: Backend uses capital 'V' and 'G' in /ViewGroups/)
   VIEW_GROUPS: {
-    BY_USER: (userId: string) => `/viewgroups/user/${userId}`,
-    GET: (id: string, userId: string) => `/viewgroups/${id}?userId=${userId}`,
-    CREATE: '/viewgroups',
-    UPDATE: (id: string) => `/viewgroups/${id}`,
-    DELETE: (id: string, userId: string) => `/viewgroups/${id}?userId=${userId}`,
-    REORDER: '/viewgroups/reorder',
-    ADD_VIEWS: (id: string) => `/viewgroups/${id}/views`,
-    REMOVE_VIEW: (viewGroupId: string, viewId: string, userId: string) => `/viewgroups/${viewGroupId}/views/${viewId}?userId=${userId}`,
-    REORDER_VIEWS: (id: string) => `/viewgroups/${id}/views/reorder`,
+    BY_USER: (userId: string) => `/ViewGroups/user/${userId}`,
+    GET: (id: string, userId: string) => `/ViewGroups/${id}?userId=${userId}`,
+    CREATE: '/ViewGroups',
+    UPDATE: (id: string) => `/ViewGroups/${id}`,
+    DELETE: (id: string, userId: string) => `/ViewGroups/${id}?userId=${userId}`,
+    REORDER: '/ViewGroups/reorder',
+    ADD_VIEWS: (id: string) => `/ViewGroups/${id}/views`,
+    REMOVE_VIEW: (viewGroupId: string, viewId: string, userId: string) => `/ViewGroups/${viewGroupId}/views/${viewId}?userId=${userId}`,
+    REORDER_VIEWS: (id: string) => `/ViewGroups/${id}/views/reorder`,
   },
   
-  // Navigation Settings
+  // Navigation Settings (Note: Backend uses capital 'N' in /Navigation/)
   NAVIGATION: {
-    GET: (userId: string) => `/navigation/${userId}`,
-    UPDATE: (userId: string) => `/navigation/${userId}`,
-    RESET: (userId: string) => `/navigation/${userId}`,
+    GET: (userId: string) => `/Navigation/${userId}`,
+    UPDATE: (userId: string) => `/Navigation/${userId}`,
+    RESET: (userId: string) => `/Navigation/${userId}`,
   },
   
-  // Layout Customizations
+  // Layout Customizations (Note: Backend uses capital 'L' in /Layout/)
   LAYOUT: {
-    GET_ALL: (userId: string) => `/layout/${userId}`,
-    GET: (userId: string, signature: string) => `/layout/${userId}/${signature}`,
-    SAVE: (userId: string) => `/layout/${userId}`,
-    DELETE: (userId: string, signature: string) => `/layout/${userId}/${signature}`,
-    DELETE_ALL: (userId: string) => `/layout/${userId}`,
+    GET_ALL: (userId: string) => `/Layout/${userId}`,
+    GET: (userId: string, signature: string) => `/Layout/${userId}/${signature}`,
+    SAVE: (userId: string) => `/Layout/${userId}`,
+    DELETE: (userId: string, signature: string) => `/Layout/${userId}/${signature}`,
+    DELETE_ALL: (userId: string) => `/Layout/${userId}`,
   },
 } as const;
 
