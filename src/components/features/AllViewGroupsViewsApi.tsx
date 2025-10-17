@@ -76,6 +76,7 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
         await viewGroupsService.updateViewGroup(vg.id, user.name, {
           name: vg.name,
           isVisible: !vg.isVisible,
+          isDefault: vg.isDefault,
           orderIndex: vg.order,
         });
         showSuccess(
@@ -196,6 +197,7 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
       await viewGroupsService.updateViewGroup(updatedViewGroup.id, user.name, {
         name: updatedViewGroup.name,
         isVisible: updatedViewGroup.isVisible,
+        isDefault: updatedViewGroup.isDefault,
         orderIndex: updatedViewGroup.order,
       });
       showSuccess("View group updated", `"${updatedViewGroup.name}" has been saved`);
@@ -548,6 +550,8 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
       {editingViewGroup && (
         <EditViewGroupModal
           viewGroup={editingViewGroup}
+          views={views}
+          userRole={user.role}
           onSave={handleSaveViewGroup}
           onClose={() => setEditingViewGroup(null)}
         />
@@ -558,6 +562,7 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
           view={editingView}
           reports={reports}
           widgets={widgets}
+          userRole={user.role}
           onSave={handleSaveView}
           onClose={() => setEditingView(null)}
         />
@@ -566,8 +571,8 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
       {/* Delete Modals */}
       {deletingViewGroup && (
         <DeleteConfirmationModal
-          itemName={deletingViewGroup.name}
-          itemType="View Group"
+          type="viewgroup"
+          item={deletingViewGroup}
           onConfirm={handleDeleteViewGroup}
           onCancel={() => setDeletingViewGroup(null)}
         />
@@ -575,8 +580,8 @@ const AllViewGroupsViewsApi: React.FC<AllViewGroupsViewsApiProps> = ({
 
       {deletingView && (
         <DeleteConfirmationModal
-          itemName={deletingView.name}
-          itemType="View"
+          type="view"
+          item={deletingView}
           onConfirm={handleDeleteView}
           onCancel={() => setDeletingView(null)}
         />
