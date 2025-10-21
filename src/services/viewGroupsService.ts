@@ -81,6 +81,7 @@ export class ViewGroupsService {
       viewIds?: string[];
     }
   ): Promise<ViewGroup> {
+    // First update the basic view group properties
     const viewGroup = await apiClient.put<ViewGroupDto>(
       API_ENDPOINTS.VIEW_GROUPS.UPDATE(id),
       {
@@ -90,10 +91,35 @@ export class ViewGroupsService {
           isVisible: data.isVisible,
           isDefault: data.isDefault,
           orderIndex: data.orderIndex,
-          viewIds: data.viewIds || [],
         },
       }
     );
+
+    // If viewIds are provided, update them separately
+    if (data.viewIds !== undefined) {
+      // Get current view group to compare with new data
+      const currentViewGroup = await this.getViewGroup(id, userId);
+      
+      const currentViewIds = currentViewGroup.viewIds || [];
+      const newViewIds = data.viewIds || [];
+      
+      // Remove views that are no longer selected
+      for (const viewId of currentViewIds) {
+        if (!newViewIds.includes(viewId)) {
+          await this.removeViewFromGroup(id, viewId, userId);
+        }
+      }
+      
+      // Add new views
+      const viewsToAdd = newViewIds.filter(id => !currentViewIds.includes(id));
+      if (viewsToAdd.length > 0) {
+        await this.addViewsToGroup(id, userId, viewsToAdd);
+      }
+      
+      // Return the updated view group
+      return await this.getViewGroup(id, userId);
+    }
+
     return this.transformToFrontend(viewGroup);
   }
 

@@ -95,16 +95,63 @@ export class ViewsService {
       widgetIds?: string[];
     }
   ): Promise<View> {
+    // First update the basic view properties
     const view = await apiClient.put<ViewDto>(API_ENDPOINTS.VIEWS.UPDATE(id), {
       userId,
       data: {
         name: data.name,
         isVisible: data.isVisible,
         orderIndex: data.orderIndex,
-        reportIds: data.reportIds || [],
-        widgetIds: data.widgetIds || [],
       },
     });
+
+    // If reportIds or widgetIds are provided, update them separately
+    if (data.reportIds !== undefined || data.widgetIds !== undefined) {
+      // Get current view to compare with new data
+      const currentView = await this.getView(id, userId);
+      
+      // Update reports if provided
+      if (data.reportIds !== undefined) {
+        const currentReportIds = currentView.reportIds || [];
+        const newReportIds = data.reportIds || [];
+        
+        // Remove reports that are no longer selected
+        for (const reportId of currentReportIds) {
+          if (!newReportIds.includes(reportId)) {
+            await this.removeReportFromView(id, reportId, userId);
+          }
+        }
+        
+        // Add new reports
+        const reportsToAdd = newReportIds.filter(id => !currentReportIds.includes(id));
+        if (reportsToAdd.length > 0) {
+          await this.addReportsToView(id, userId, reportsToAdd);
+        }
+      }
+      
+      // Update widgets if provided
+      if (data.widgetIds !== undefined) {
+        const currentWidgetIds = currentView.widgetIds || [];
+        const newWidgetIds = data.widgetIds || [];
+        
+        // Remove widgets that are no longer selected
+        for (const widgetId of currentWidgetIds) {
+          if (!newWidgetIds.includes(widgetId)) {
+            await this.removeWidgetFromView(id, widgetId, userId);
+          }
+        }
+        
+        // Add new widgets
+        const widgetsToAdd = newWidgetIds.filter(id => !currentWidgetIds.includes(id));
+        if (widgetsToAdd.length > 0) {
+          await this.addWidgetsToView(id, userId, widgetsToAdd);
+        }
+      }
+      
+      // Return the updated view
+      return await this.getView(id, userId);
+    }
+
     return this.transformToFrontend(view);
   }
 
