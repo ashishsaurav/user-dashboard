@@ -68,42 +68,7 @@ export function useApiData(user: User | null) {
           loading: false,
           error: null,
         });
-
-        console.log('✅ API Data loaded successfully', {
-          reports: reports.length,
-          widgets: widgets.length,
-          views: views.length,
-          viewGroups: viewGroups.length,
-        });
-        
-        // Debug: Show first view details
-        if (views.length > 0) {
-          const firstView = views[0];
-          console.log('🔍 Sample View Data:', {
-            name: firstView.name,
-            reportIds: firstView.reportIds,
-            widgetIds: firstView.widgetIds,
-            totalReports: firstView.reportIds.length,
-            totalWidgets: firstView.widgetIds.length
-          });
-          
-          console.log('🔍 Available Reports:', reports.map(r => ({ id: r.id, name: r.name })));
-          console.log('🔍 Available Widgets:', widgets.map(w => ({ id: w.id, name: w.name })));
-          
-          // Check which IDs are missing
-          const missingReports = firstView.reportIds.filter(id => !reports.find(r => r.id === id));
-          const missingWidgets = firstView.widgetIds.filter(id => !widgets.find(w => w.id === id));
-          
-          if (missingReports.length > 0 || missingWidgets.length > 0) {
-            console.warn('⚠️ View has items user cannot access:', {
-              view: firstView.name,
-              missingReports,
-              missingWidgets
-            });
-          }
-        }
       } catch (error: any) {
-        console.error('❌ Error loading API data:', error);
         setState(prev => ({
           ...prev,
           loading: false,
@@ -130,24 +95,20 @@ export function useApiData(user: User | null) {
   const refetchViewGroups = useCallback(async () => {
     if (!user) return;
     try {
-      console.log('🔄 Refetching view groups for user:', user.name);
       const viewGroups = await viewGroupsService.getUserViewGroups(user.name);
-      console.log('✅ View groups refetched:', viewGroups.length);
       setState(prev => ({ ...prev, viewGroups }));
     } catch (error) {
-      console.error('❌ Error refetching view groups:', error);
+      // Silent fail
     }
   }, [user]);
 
   const refetchNavSettings = useCallback(async () => {
     if (!user) return;
     try {
-      console.log('🔄 Refetching navigation settings for user:', user.name);
       const navSettings = await navigationService.getNavigationSettings(user.name);
-      console.log('✅ Navigation settings refetched');
       setState(prev => ({ ...prev, navSettings }));
     } catch (error) {
-      console.error('❌ Error refetching navigation settings:', error);
+      // Silent fail
     }
   }, [user]);
 

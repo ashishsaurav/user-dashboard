@@ -38,6 +38,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
   const [draggedItem, setDraggedItem] = useState<{
     type: "view" | "viewgroup";
     id: string;
+    data?: { viewGroupId?: string };
   } | null>(null);
   const [dragOverItem, setDragOverItem] = useState<{
     id: string;
@@ -57,11 +58,12 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
     if (!viewGroup) return [];
 
+    // Preserve backend ordering from viewGroup.viewIds
     const groupViews = viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean) as View[];
 
-    return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
+    return groupViews;
   };
 
   // Handle save view group
@@ -80,7 +82,6 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       setEditingViewGroup(null);
       onRefresh();
     } catch (error) {
-      console.error("Failed to update view group:", error);
       showError("Failed to update view group", "Please try again");
     }
   };
@@ -97,7 +98,6 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       setEditingView(null);
       onRefresh();
     } catch (error) {
-      console.error("Failed to update view:", error);
       showError("Failed to update view", "Please try again");
     }
   };
@@ -115,7 +115,6 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       setDeletingViewGroup(null);
       onRefresh();
     } catch (error) {
-      console.error("Failed to delete view group:", error);
       showError("Failed to delete view group", "Please try again");
     }
   };
@@ -130,7 +129,6 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       setDeletingView(null);
       onRefresh();
     } catch (error) {
-      console.error("Failed to delete view:", error);
       showError("Failed to delete view", "Please try again");
     }
   };
@@ -139,10 +137,12 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
   const handleDragStart = (
     e: React.DragEvent,
     type: "view" | "viewgroup",
-    id: string
+    id: string,
+    viewGroupId?: string
   ) => {
-    setDraggedItem({ type, id });
+    setDraggedItem({ type, id, data: { viewGroupId } });
     e.dataTransfer.effectAllowed = "move";
+    (e.currentTarget as HTMLElement).style.opacity = "0.5";
   };
 
   const handleDragEnd = () => {
@@ -454,7 +454,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
                             }`}
                             draggable={true}
                             onDragStart={(e) =>
-                              handleDragStart(e, "view", view.id)
+                              handleDragStart(e, "view", view.id, viewGroup.id)
                             }
                             onDragEnd={handleDragEnd}
                             onDragOver={handleDragOver}
@@ -609,7 +609,102 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       }
       onRefresh();
     } catch (error) {
-      console.error("Failed to toggle visibility:", error);
+      showError("Failed to update visibility", "Please try again");
+    }
+  }
+};
+
+export default AllViewGroupsViews;
+}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Edit Modals */}
+      {editingViewGroup && (
+        <EditViewGroupModal
+          viewGroup={editingViewGroup}
+          views={views}
+          userRole={user.role}
+          onSave={handleSaveViewGroup}
+          onClose={() => setEditingViewGroup(null)}
+        />
+      )}
+
+      {editingView && (
+        <EditViewModal
+          view={editingView}
+          reports={reports}
+          widgets={widgets}
+          userRole={user.role}
+          userId={user.name}
+          onSave={handleSaveView}
+          onClose={() => setEditingView(null)}
+        />
+      )}
+
+      {/* Delete Modals */}
+      {deletingViewGroup && (
+        <DeleteConfirmationModal
+          type="viewgroup"
+          item={deletingViewGroup}
+          onConfirm={handleDeleteViewGroup}
+          onCancel={() => setDeletingViewGroup(null)}
+        />
+      )}
+
+      {deletingView && (
+        <DeleteConfirmationModal
+          type="view"
+          item={deletingView}
+          onConfirm={handleDeleteView}
+          onCancel={() => setDeletingView(null)}
+        />
+      )}
+    </div>
+  );
+
+  // Helper function for toggle visibility
+  async function handleToggleVisibility(
+    type: "view" | "viewgroup",
+    id: string
+  ) {
+    try {
+      if (type === "viewgroup") {
+        const vg = viewGroups.find((v) => v.id === id);
+        if (!vg) return;
+
+        await viewGroupsService.updateViewGroup(vg.id, user.name, {
+          name: vg.name,
+          isVisible: !vg.isVisible,
+          isDefault: vg.isDefault,
+          orderIndex: vg.order,
+        });
+        showSuccess(
+          vg.isVisible ? "View group hidden" : "View group shown",
+          `"${vg.name}" is now ${vg.isVisible ? "hidden" : "visible"}`
+        );
+      } else {
+        const v = views.find((view) => view.id === id);
+        if (!v) return;
+
+        await viewsService.updateView(v.id, user.name, {
+          name: v.name,
+          isVisible: !v.isVisible,
+          orderIndex: v.order,
+        });
+        showSuccess(
+          v.isVisible ? "View hidden" : "View shown",
+          `"${v.name}" is now ${v.isVisible ? "hidden" : "visible"}`
+        );
+      }
+      onRefresh();
+    } catch (error) {
       showError("Failed to update visibility", "Please try again");
     }
   }

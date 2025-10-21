@@ -336,7 +336,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Content creators - NOT memoized so it always returns fresh content
   const createNavigationContent = () => {
-    console.log('🔨 Creating navigation content - views:', views.length, 'viewGroups:', viewGroups.length);
     
     if (isDockCollapsed) {
       return (

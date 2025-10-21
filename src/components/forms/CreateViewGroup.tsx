@@ -32,7 +32,7 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
   const { showSuccess } = useNotification();
 
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     const timestamp = Date.now();
@@ -48,6 +48,25 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
       createdBy: user.name,
     };
 
+    // Save visibility changes for each view that was toggled
+    if (Object.keys(localVisibilityChanges).length > 0) {
+      const viewsService = await import('../../services/viewsService');
+      for (const [viewId, isVisible] of Object.entries(localVisibilityChanges)) {
+        const view = views.find(v => v.id === viewId);
+        if (view) {
+          try {
+            await viewsService.viewsService.updateView(view.id, user.name, {
+              name: view.name,
+              isVisible: isVisible,
+              orderIndex: view.order || 0,
+            });
+          } catch (error) {
+            // Continue even if one fails
+          }
+        }
+      }
+    }
+
     onAddViewGroup(newViewGroup);
 
     showSuccess(
@@ -59,6 +78,7 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
       name: "",
       viewIds: [] as string[],
     });
+    setLocalVisibilityChanges({});
   };
 
   const handleViewToggle = (viewId: string, checked: boolean) => {
@@ -70,32 +90,31 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
     }));
   };
 
-  // Toggle visibility by updating View.isVisible via API
-  const handleVisibilityToggle = async (viewId: string) => {
+  // Toggle visibility locally (save on form submit)
+  const handleVisibilityToggle = (viewId: string) => {
     const view = views.find(v => v.id === viewId);
     if (!view) return;
 
-    try {
-      const viewsService = await import('../../services/viewsService');
-      await viewsService.viewsService.updateView(view.id, user.name, {
-        name: view.name,
-        isVisible: !view.isVisible,
-        orderIndex: view.order || 0,
-      });
-
-      showSuccess(
-        view.isVisible ? "View hidden" : "View shown",
-        `"${view.name}" ${view.isVisible ? 'will be hidden' : 'will be shown'} in navigation`
-      );
-    } catch (error) {
-      // Silent fail for create form
-    }
+    setLocalVisibilityChanges(prev => {
+      const currentVisibility = prev.hasOwnProperty(viewId) ? prev[viewId] : view.isVisible;
+      return {
+        ...prev,
+        [viewId]: !currentVisibility
+      };
+    });
   };
 
-  // Check if view is hidden (using View.isVisible)
+  // Check if view is hidden (using local changes or View.isVisible)
   const isViewHidden = (viewId: string): boolean => {
     const view = views.find(v => v.id === viewId);
-    return view ? !view.isVisible : false;
+    if (!view) return false;
+    
+    // Check local changes first, fallback to actual value
+    if (localVisibilityChanges.hasOwnProperty(viewId)) {
+      return !localVisibilityChanges[viewId];
+    }
+    
+    return !view.isVisible;
   };
 
   // Icons - same as EditViewGroupModal

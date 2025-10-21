@@ -62,15 +62,34 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
         await viewGroupsService.removeViewFromGroup(formData.id, viewId, user?.name || '');
       }
 
+      // 3. Save visibility changes for each view that was toggled
+      if (Object.keys(localVisibilityChanges).length > 0) {
+        const viewsServiceModule = await import('../../services/viewsService');
+        for (const [viewId, isVisible] of Object.entries(localVisibilityChanges)) {
+          const view = views.find(v => v.id === viewId);
+          if (view) {
+            try {
+              await viewsServiceModule.viewsService.updateView(view.id, user?.name || '', {
+                name: view.name,
+                isVisible: isVisible,
+                orderIndex: view.order || 0,
+              });
+            } catch (error) {
+              // Continue even if one fails
+            }
+          }
+        }
+      }
+
       showSuccess(
         "View Group Updated",
         `"${formData.name}" has been updated with ${formData.viewIds.length} views`
       );
 
       // Save the view group changes
+      setLocalVisibilityChanges({});
       onSave(formData);
     } catch (error) {
-      console.error("Failed to update view group:", error);
       showError("Update Failed", "Could not update view group. Please try again.");
     } finally {
       setIsLoading(false);
@@ -86,35 +105,31 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     });
   };
 
-  // Toggle visibility by updating View.isVisible via API
-  const handleVisibilityToggle = async (viewId: string) => {
+  // Toggle visibility locally (save on form submit)
+  const handleVisibilityToggle = (viewId: string) => {
     const view = views.find(v => v.id === viewId);
-    if (!view || !user) return;
+    if (!view) return;
 
-    try {
-      const viewsService = await import('../../services/viewsService');
-      await viewsService.viewsService.updateView(view.id, user.name, {
-        name: view.name,
-        isVisible: !view.isVisible,
-        orderIndex: view.order || 0,
-      });
-
-      showSuccess(
-        view.isVisible ? "View hidden" : "View shown",
-        `"${view.name}" ${view.isVisible ? 'will be hidden' : 'will be shown'} in navigation`
-      );
-      
-      // Trigger parent refresh to update UI
-      onSave(formData);
-    } catch (error) {
-      showError("Update Failed", "Could not update view visibility");
-    }
+    setLocalVisibilityChanges(prev => {
+      const currentVisibility = prev.hasOwnProperty(viewId) ? prev[viewId] : view.isVisible;
+      return {
+        ...prev,
+        [viewId]: !currentVisibility
+      };
+    });
   };
 
-  // Check if view is hidden (using View.isVisible)
+  // Check if view is hidden (using local changes or View.isVisible)
   const isViewHidden = (viewId: string): boolean => {
     const view = views.find(v => v.id === viewId);
-    return view ? !view.isVisible : false;
+    if (!view) return false;
+    
+    // Check local changes first, fallback to actual value
+    if (localVisibilityChanges.hasOwnProperty(viewId)) {
+      return !localVisibilityChanges[viewId];
+    }
+    
+    return !view.isVisible;
   };
 
   // Icons
