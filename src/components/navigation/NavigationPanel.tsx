@@ -139,9 +139,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
   // Check if item is hidden
   const isItemHidden = (type: "view" | "viewgroup", id: string): boolean => {
-    return type === "view"
-      ? settings.hiddenViews.includes(id)
-      : settings.hiddenViewGroups.includes(id);
+    if (type === "view") {
+      const view = views.find(v => v.id === id);
+      return view ? !view.isVisible : false;
+    } else {
+      const viewGroup = viewGroups.find(vg => vg.id === id);
+      return viewGroup ? !viewGroup.isVisible : false;
+    }
   };
 
   // Get viewgroup views with proper ordering

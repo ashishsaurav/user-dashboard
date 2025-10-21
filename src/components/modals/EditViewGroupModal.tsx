@@ -258,6 +258,22 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
                 </p>
               )}
             </div>
+
+            <div className="form-group">
+              <label className="modern-checkbox">
+                <input
+                  type="checkbox"
+                  checked={formData.isVisible}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isVisible: e.target.checked })
+                  }
+                />
+                <span className="checkmark"></span>
+                <span className="checkbox-label">
+                  Visible in navigation panel
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Views Section */}
