@@ -315,19 +315,26 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     e.stopPropagation();
     if (!draggedItem || draggedItem.id === targetId) {
       setDragOverItem(null);
+      setDraggedItem(null);
       return;
     }
 
-    if (draggedItem.type === "viewgroup" && targetType === "viewgroup") {
-      handleViewGroupReorder(draggedItem.id, targetId);
-    } else if (draggedItem.type === "view") {
+    // Store drag data before any state changes
+    const dragData = { ...draggedItem };
+    const dropPosition = dragOverItem?.position;
+    
+    // Clear drag UI state
+    setDragOverItem(null);
+
+    if (dragData.type === "viewgroup" && targetType === "viewgroup") {
+      handleViewGroupReorder(dragData.id, targetId);
+    } else if (dragData.type === "view") {
       if (targetType === "view") {
-        handleViewReorder(draggedItem.id, targetId);
+        handleViewReorder(dragData.id, targetId, dropPosition);
       } else if (targetType === "viewgroup") {
-        handleViewMoveToGroup(draggedItem.id, targetId);
+        handleViewMoveToGroup(dragData.id, targetId);
       }
     }
-    setDragOverItem(null);
   };
 
   // Reorder view groups (API-connected)
@@ -365,11 +372,14 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       } catch (error) {
         console.error("❌ Failed to reorder view groups:", error);
         showWarning("Failed to save order", "Changes not saved");
+      } finally {
+        // ✅ Clear drag state after operation completes
+        setDraggedItem(null);
       }
     }
   };
 
-  const handleViewReorder = async (draggedViewId: string, targetViewId: string) => {
+  const handleViewReorder = async (draggedViewId: string, targetViewId: string, position?: "top" | "bottom" | "middle") => {
     // Use the source group from drag data to avoid conflicts with duplicate view IDs
     const sourceGroupId = draggedItem?.data?.viewGroupId || viewGroups.find((vg) =>
       vg.viewIds.includes(draggedViewId)
@@ -378,7 +388,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       vg.viewIds.includes(targetViewId)
     )?.id;
 
-    console.log('🔄 View reorder - source group:', sourceGroupId, 'target group:', targetGroupId);
+    console.log('🔄 View reorder:', {
+      draggedView: draggedViewId,
+      targetView: targetViewId,
+      sourceGroup: sourceGroupId,
+      targetGroup: targetGroupId,
+      position: position
+    });
     
     if (!sourceGroupId || !targetGroupId) {
       console.warn('⚠️ Cannot reorder - missing group IDs');
@@ -404,17 +420,31 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         const reorderedViewIds = [...viewGroup.viewIds];
         const [draggedViewIdItem] = reorderedViewIds.splice(draggedIndex, 1);
 
-        const position = dragOverItem?.position || "middle";
+        // Calculate correct insert position
         let insertIndex = targetIndex;
-        if (position === "top") {
-          insertIndex = targetIndex;
-        } else if (position === "bottom") {
-          insertIndex = targetIndex + 1;
-        } else {
-          insertIndex = targetIndex;
+        
+        // ✅ CRITICAL FIX: Adjust for the removed item if dragging down
+        if (draggedIndex < targetIndex) {
+          insertIndex = targetIndex - 1;
         }
+        
+        // Apply position offset
+        const pos = position || "middle";
+        if (pos === "bottom") {
+          insertIndex = insertIndex + 1;
+        }
+        // "top" and "middle" use insertIndex as-is
 
         reorderedViewIds.splice(insertIndex, 0, draggedViewIdItem);
+        
+        console.log('  Reorder calculation:', {
+          original: viewGroup.viewIds,
+          draggedIndex,
+          targetIndex,
+          adjustedInsert: insertIndex,
+          position: pos,
+          result: reorderedViewIds
+        });
 
         const items = reorderedViewIds.map((id, index) => ({
           id,
@@ -422,19 +452,27 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         }));
 
         try {
-          console.log('🔄 Reordering views in group:', sourceGroupId, items);
+          console.log('🔄 Calling API to reorder views in group:', sourceGroupId);
+          console.log('  Items:', items);
+          
           // Call API to persist reorder
           await viewGroupsService.reorderViewsInGroup(sourceGroupId, user.name, items);
-          console.log('✅ Views reordered successfully');
-          showSuccess("Views reordered");
+          console.log('✅ Views reordered successfully in backend');
           
           // Refresh data from parent to get updated order
           if (onRefreshData) {
+            console.log('  🔄 Refreshing data...');
             await onRefreshData();
+            console.log('  ✅ Data refreshed');
           }
+          
+          showSuccess("Views reordered");
         } catch (error) {
           console.error("❌ Failed to reorder views:", error);
           showWarning("Failed to save order", "Changes not saved");
+        } finally {
+          // ✅ Clear drag state after operation completes
+          setDraggedItem(null);
         }
       }
     } else {
@@ -489,6 +527,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     } catch (error) {
       console.error('❌ Failed to move view:', error);
       showWarning("Failed to move view", "Changes not saved");
+    } finally {
+      // ✅ Clear drag state after operation completes
+      setDraggedItem(null);
     }
   };
 
