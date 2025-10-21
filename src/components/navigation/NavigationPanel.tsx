@@ -498,7 +498,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       console.log('🗑️ Deleting view:', view.id, view.name);
       
       // Step 1: Remove view from all view groups that contain it
-      const groupsContainingView = viewGroups.filter(vg => vg.viewIds.includes(view.id));
+      const groupsContainingView = viewGroups.filter((vg: ViewGroup) => vg.viewIds.includes(view.id));
       console.log('  View is in', groupsContainingView.length, 'group(s):', groupsContainingView.map(g => g.name));
       
       for (const group of groupsContainingView) {
@@ -550,7 +550,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           // Get views that are NOT already in the default group
           const defaultGroupViewIds = defaultGroup!.viewIds;
           const viewsToAdd = viewsInGroup.filter(
-            viewId => !defaultGroupViewIds.includes(viewId)
+            (viewId: string) => !defaultGroupViewIds.includes(viewId)
           );
           
           console.log('  Views to add to default group:', viewsToAdd.length, 'of', viewsInGroup.length);
@@ -610,7 +610,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           console.log('  Deleting view:', view.name, viewId);
           
           // Remove from all groups that contain it
-          const groupsContainingView = viewGroups.filter(vg => vg.viewIds.includes(viewId));
+          const groupsContainingView = viewGroups.filter((vg: ViewGroup) => vg.viewIds.includes(viewId));
           console.log('    View is in', groupsContainingView.length, 'group(s)');
           
           for (const group of groupsContainingView) {
