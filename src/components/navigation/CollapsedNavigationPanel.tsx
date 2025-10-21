@@ -48,9 +48,14 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Get ordered and visible view groups
+  console.log('📊 CollapsedNavigationPanel - viewGroups:', viewGroups.length);
+  console.log('📊 CollapsedNavigationPanel - views:', views.length);
+  
   const orderedViewGroups = viewGroups
     .filter((vg) => vg.isVisible && !userNavSettings.hiddenViewGroups.includes(vg.id))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
+  
+  console.log('🔍 CollapsedNavigationPanel - visible groups:', orderedViewGroups.length);
 
   // Get views for a specific view group
   const getViewsForGroup = (viewGroupId: string) => {

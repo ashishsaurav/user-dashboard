@@ -54,6 +54,30 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [deletingViewGroup, setDeletingViewGroup] = useState<any>(null);
   const [deletingView, setDeletingView] = useState<any>(null);
 
+  // Auto-expand all view groups on initial load
+  useEffect(() => {
+    console.log('📊 NavigationPanel received view groups:', viewGroups.length);
+    console.log('📊 NavigationPanel received views:', views.length);
+    
+    if (viewGroups.length > 0) {
+      const initialExpanded: { [key: string]: boolean } = {};
+      viewGroups.forEach((vg) => {
+        console.log('  View Group:', vg.name, 'isVisible:', vg.isVisible, 'viewIds:', vg.viewIds.length);
+        // Only set if not already set (preserve user's manual collapse/expand)
+        if (!(vg.id in expandedViewGroups)) {
+          initialExpanded[vg.id] = true; // Expand by default
+        }
+      });
+      if (Object.keys(initialExpanded).length > 0) {
+        console.log('🔓 Auto-expanding view groups:', Object.keys(initialExpanded).map(id => {
+          const vg = viewGroups.find(g => g.id === id);
+          return vg?.name || id;
+        }));
+        setExpandedViewGroups((prev) => ({ ...prev, ...initialExpanded }));
+      }
+    }
+  }, [viewGroups]);
+
   // NEW: Responsive layout state
   const [isHorizontalLayout, setIsHorizontalLayout] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -144,7 +168,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     const sortedViewGroups = [...viewGroups].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
-    return sortedViewGroups.filter((vg) => !isItemHidden("viewgroup", vg.id));
+    const visible = sortedViewGroups.filter((vg) => !isItemHidden("viewgroup", vg.id));
+    console.log('🔍 Visible view groups:', visible.length, '/', viewGroups.length);
+    return visible;
   };
 
   const getVisibleViewsInGroup = (viewGroupId: string): View[] => {
@@ -778,7 +804,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           const groupViews = getVisibleViewsInGroup(viewGroup.id);
           const isExpanded = isHorizontalLayout
             ? true
-            : expandedViewGroups[viewGroup.id]; // Always expanded in horizontal
+            : (expandedViewGroups[viewGroup.id] ?? true); // Default to expanded if not set
           const isHidden = isItemHidden("viewgroup", viewGroup.id);
           const isDragOver = dragOverItem?.id === viewGroup.id;
 
