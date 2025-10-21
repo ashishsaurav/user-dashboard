@@ -325,11 +325,22 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     
     setDragOverItem(null);
 
+    console.log('🎯 DROP:', {
+      dragType: dragData.type,
+      dragId: dragData.id,
+      targetType,
+      targetId,
+      position: dropPosition,
+      sourceGroupId: dragData.data?.viewGroupId
+    });
+
     try {
       if (dragData.type === "viewgroup" && targetType === "viewgroup") {
         // Reorder view groups
         const draggedIndex = viewGroups.findIndex(vg => vg.id === dragData.id);
         const targetIndex = viewGroups.findIndex(vg => vg.id === targetId);
+        
+        console.log('📦 Reordering view groups:', { draggedIndex, targetIndex });
         
         if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
           const reorderedGroups = [...viewGroups];
@@ -341,6 +352,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
             orderIndex: index,
           }));
 
+          console.log('📦 Calling reorderViewGroups API:', items);
           await viewGroupsService.reorderViewGroups(user.name, items);
           onRefresh();
         }
@@ -349,12 +361,19 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
         const sourceGroupId = dragData.data?.viewGroupId;
         const targetGroupId = viewGroups.find(vg => vg.viewIds.includes(targetId))?.id;
         
+        console.log('📋 View reorder:', { sourceGroupId, targetGroupId, same: sourceGroupId === targetGroupId });
+        
         if (sourceGroupId && targetGroupId && sourceGroupId === targetGroupId) {
           const viewGroup = viewGroups.find(vg => vg.id === sourceGroupId);
-          if (!viewGroup) return;
+          if (!viewGroup) {
+            console.log('❌ View group not found:', sourceGroupId);
+            return;
+          }
 
           const draggedIndex = viewGroup.viewIds.findIndex(id => id === dragData.id);
           const targetIndex = viewGroup.viewIds.findIndex(id => id === targetId);
+          
+          console.log('📋 View indices:', { draggedIndex, targetIndex });
           
           if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
             const reorderedViewIds = [...viewGroup.viewIds];
@@ -382,12 +401,16 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
               orderIndex: index,
             }));
 
+            console.log('📋 Calling reorderViewsInGroup API:', { groupId: sourceGroupId, items });
             await viewGroupsService.reorderViewsInGroup(sourceGroupId, user.name, items);
             onRefresh();
           }
+        } else {
+          console.log('⚠️ Cannot reorder - different groups or missing IDs');
         }
       }
     } catch (error) {
+      console.error('❌ Reorder error:', error);
       showError("Failed to reorder", "Changes not saved");
     } finally {
       setDraggedItem(null);
@@ -737,6 +760,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           viewGroup={editingViewGroup}
           views={views}
           userRole={user.role}
+          user={{ name: user.name }}
           onSave={handleSaveViewGroup}
           onClose={() => setEditingViewGroup(null)}
         />
