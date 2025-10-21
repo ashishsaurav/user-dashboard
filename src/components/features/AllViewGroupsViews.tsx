@@ -546,6 +546,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           reports={reports}
           widgets={widgets}
           userRole={user.role}
+          userId={user.name}
           onSave={handleSaveView}
           onClose={() => setEditingView(null)}
         />

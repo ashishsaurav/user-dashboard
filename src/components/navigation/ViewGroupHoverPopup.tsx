@@ -483,6 +483,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
           reports={reports}
           widgets={widgets}
           userRole={user?.role || "viewer"}
+          userId={user?.name || ""}
           onSave={handleSaveView}
           onClose={() => setEditingView(null)}
         />
