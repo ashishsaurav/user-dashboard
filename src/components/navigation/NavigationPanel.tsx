@@ -28,6 +28,7 @@ interface NavigationPanelProps {
   onUpdateNavSettings: (settings: UserNavigationSettings) => void;
   onViewSelect?: (view: View) => void; // NEW: View selection handler
   selectedView?: View | null; // NEW: Currently selected view
+  onRefreshData?: () => void; // NEW: Callback to refresh data from parent
 }
 
 const NavigationPanel: React.FC<NavigationPanelProps> = ({
@@ -42,6 +43,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   onUpdateNavSettings,
   onViewSelect,
   selectedView,
+  onRefreshData,
 }) => {
   // Local state
   const [expandedViewGroups, setExpandedViewGroups] = useState<{
@@ -184,8 +186,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         );
       }
       
-      // Reload data
-      window.location.reload();
+      // Refresh data from parent
+      if (onRefreshData) {
+        onRefreshData();
+      }
     } catch (error) {
       console.error("Failed to toggle visibility:", error);
       showWarning("Failed to update visibility", "Please try again");
@@ -508,8 +512,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       await viewsService.deleteView(view.id, user.name);
       showSuccess("View Deleted", `${view.name} has been removed successfully.`);
       
-      // Reload data
-      window.location.reload();
+      // Refresh data from parent
+      if (onRefreshData) {
+        onRefreshData();
+      }
     } catch (error) {
       console.error("Failed to delete view:", error);
       showWarning("Failed to delete view", "Please try again");
@@ -559,8 +565,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
       setDeletingViewGroup(null);
       
-      // Reload data
-      window.location.reload();
+      // Refresh data from parent
+      if (onRefreshData) {
+        onRefreshData();
+      }
     } catch (error) {
       console.error("Failed to delete view group:", error);
       showWarning("Failed to delete view group", "Please try again");
@@ -897,10 +905,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           userRole={user.role}
           userId={user.name}
           onSave={(updatedView) => {
-            // Modal now handles all API calls internally
+            // Modal handles all API calls internally
             setEditingView(null);
-            // Reload to fetch fresh data
-            window.location.reload();
+            // Refresh data from parent
+            if (onRefreshData) {
+              onRefreshData();
+            }
           }}
           onClose={() => setEditingView(null)}
         />
@@ -914,10 +924,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           userNavSettings={[userNavSettings]} // Convert single object to array for modal
           user={user}
           onSave={(updatedViewGroup) => {
-            // Modal now handles all API calls internally
+            // Modal handles all API calls internally
             setEditingViewGroup(null);
-            // Reload to fetch fresh data
-            window.location.reload();
+            // Refresh data from parent
+            if (onRefreshData) {
+              onRefreshData();
+            }
           }}
           onClose={() => setEditingViewGroup(null)}
           onUpdateNavSettings={(updatedSettings) => {

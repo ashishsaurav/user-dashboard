@@ -355,6 +355,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           reports={getUserAccessibleReports()}
           widgets={getUserAccessibleWidgets()}
           popupPosition={navPanelPosition}
+          onRefreshData={() => {
+            refetchViews();
+            refetchViewGroups();
+            refetchNavSettings();
+          }}
         />
       );
     }
@@ -373,6 +378,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         onUpdateNavSettings={handleUpdateNavSettings}
         onViewSelect={handleViewSelect}
         selectedView={selectedView}
+        onRefreshData={() => {
+          refetchViews();
+          refetchViewGroups();
+          refetchNavSettings();
+        }}
       />
     );
   }, [

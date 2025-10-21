@@ -19,6 +19,7 @@ interface CollapsedNavigationPanelProps {
   onUpdateViews?: (views: View[]) => void;
   onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
   onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
+  onRefreshData?: () => void; // NEW: Callback to refresh data from parent
   // Add reports and widgets for modals
   reports?: any[];
   widgets?: any[];
@@ -36,6 +37,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
+  onRefreshData,
   reports = [],
   widgets = [],
   popupPosition = 'left',
@@ -209,10 +211,11 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
           userNavSettings={userNavSettings}
           reports={reports}
           widgets={widgets}
-          onUpdateViews={onUpdateViews}
-          onUpdateViewGroups={onUpdateViewGroups}
-          onUpdateNavSettings={onUpdateNavSettings}
-          dockPosition={popupPosition}
+            onUpdateViews={onUpdateViews}
+            onUpdateViewGroups={onUpdateViewGroups}
+            onUpdateNavSettings={onUpdateNavSettings}
+            onRefreshData={onRefreshData}
+            dockPosition={popupPosition}
         />
       )}
     </div>
