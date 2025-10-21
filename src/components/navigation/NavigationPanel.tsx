@@ -86,7 +86,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [draggedItem, setDraggedItem] = useState<{
     type: "view" | "viewgroup";
     id: string;
-    data?: any;
+    data?: { viewGroupId?: string };
   } | null>(null);
   const [dragOverItem, setDragOverItem] = useState<{
     id: string;
@@ -241,13 +241,15 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const handleDragStart = (
     e: React.DragEvent,
     type: "view" | "viewgroup",
-    id: string
+    id: string,
+    viewGroupId?: string  // NEW: Track which group the view is from
   ) => {
     e.stopPropagation();
-    setDraggedItem({ type, id });
-    e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+    setDraggedItem({ type, id, data: { viewGroupId } });  // Store source group
+    e.dataTransfer.setData("text/plain", JSON.stringify({ type, id, viewGroupId }));
     e.dataTransfer.effectAllowed = "move";
     (e.currentTarget as HTMLElement).style.opacity = "0.5";
+    console.log('🎯 Drag started:', type, id, viewGroupId ? `from group ${viewGroupId}` : '');
   };
 
   const handleDragEnd = (e: React.DragEvent) => {
@@ -368,14 +370,20 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   };
 
   const handleViewReorder = async (draggedViewId: string, targetViewId: string) => {
-    const sourceGroupId = viewGroups.find((vg) =>
+    // Use the source group from drag data to avoid conflicts with duplicate view IDs
+    const sourceGroupId = draggedItem?.data?.viewGroupId || viewGroups.find((vg) =>
       vg.viewIds.includes(draggedViewId)
     )?.id;
     const targetGroupId = viewGroups.find((vg) =>
       vg.viewIds.includes(targetViewId)
     )?.id;
 
-    if (!sourceGroupId || !targetGroupId) return;
+    console.log('🔄 View reorder - source group:', sourceGroupId, 'target group:', targetGroupId);
+    
+    if (!sourceGroupId || !targetGroupId) {
+      console.warn('⚠️ Cannot reorder - missing group IDs');
+      return;
+    }
 
     if (sourceGroupId === targetGroupId) {
       const viewGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
@@ -440,7 +448,8 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     targetViewId?: string
   ) => {
     const draggedView = views.find((v) => v.id === draggedViewId);
-    const sourceGroupId = viewGroups.find((vg) =>
+    // Use the source group from drag data to avoid conflicts
+    const sourceGroupId = draggedItem?.data?.viewGroupId || viewGroups.find((vg) =>
       vg.viewIds.includes(draggedViewId)
     )?.id;
 
@@ -487,6 +496,18 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const handleDeleteView = async (view: View) => {
     try {
       console.log('🗑️ Deleting view:', view.id, view.name);
+      
+      // Step 1: Remove view from all view groups that contain it
+      const groupsContainingView = viewGroups.filter(vg => vg.viewIds.includes(view.id));
+      console.log('  View is in', groupsContainingView.length, 'group(s):', groupsContainingView.map(g => g.name));
+      
+      for (const group of groupsContainingView) {
+        console.log('  Removing from group:', group.name);
+        await viewGroupsService.removeViewFromGroup(group.id, view.id, user.name);
+      }
+      
+      // Step 2: Now delete the view itself
+      console.log('  Deleting view from database');
       await viewsService.deleteView(view.id, user.name);
       console.log('✅ View deleted successfully');
       showSuccess("View Deleted", `${view.name} has been removed successfully.`);
@@ -855,7 +876,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                         }
                         onMouseLeave={handleMouseLeave}
                         draggable
-                        onDragStart={(e) => handleDragStart(e, "view", view.id)}
+                        onDragStart={(e) => handleDragStart(e, "view", view.id, viewGroup.id)}
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                         onDragEnter={(e) => handleDragEnter(e, view.id, "view")}
