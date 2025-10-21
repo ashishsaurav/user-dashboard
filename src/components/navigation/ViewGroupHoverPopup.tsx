@@ -13,6 +13,8 @@ import DeleteConfirmationModal from "../modals/DeleteConfirmationModal";
 import { useNotification } from "../common/NotificationProvider";
 import { DeleteIcon, EditIcon, EyeIcon, ViewGroupIcon } from "../ui/Icons";
 import ActionPopup from "../common/ActionPopup";
+import { viewsService } from "../../services/viewsService";
+import { viewGroupsService } from "../../services/viewGroupsService";
 
 interface ViewGroupHoverPopupProps {
   viewGroup: ViewGroup;
@@ -184,14 +186,28 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     setDeletingViewGroup(viewGroup);
   };
 
-  const handleHideViewGroup = () => {
-    if (!userNavSettings || !onUpdateNavSettings) return;
-    const updatedSettings = {
-      ...userNavSettings,
-      hiddenViewGroups: [...userNavSettings.hiddenViewGroups, viewGroup.id],
-    };
-    onUpdateNavSettings(updatedSettings);
-    showSuccess("View group hidden successfully");
+  const handleHideViewGroup = async () => {
+    try {
+      await viewGroupsService.updateViewGroup(viewGroup.id, user?.name || '', {
+        name: viewGroup.name,
+        isVisible: false,
+        isDefault: viewGroup.isDefault,
+        orderIndex: viewGroup.order,
+      });
+      
+      // Update local state
+      if (onUpdateViewGroups) {
+        const updatedViewGroups = allViewGroups.map((vg) => 
+          vg.id === viewGroup.id ? { ...vg, isVisible: false } : vg
+        );
+        onUpdateViewGroups(updatedViewGroups);
+      }
+      
+      showSuccess("View group hidden successfully");
+    } catch (error) {
+      console.error("Failed to hide view group:", error);
+      showWarning("Failed to hide view group", "Please try again");
+    }
   };
 
   const handleEditView = (view: View) => {
@@ -202,39 +218,81 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     setDeletingView(view);
   };
 
-  const handleHideView = (view: View) => {
-    if (!userNavSettings || !onUpdateNavSettings) return;
-    const updatedSettings = {
-      ...userNavSettings,
-      hiddenViews: [...userNavSettings.hiddenViews, view.id],
-    };
-    onUpdateNavSettings(updatedSettings);
-    showSuccess("View hidden successfully");
+  const handleHideView = async (view: View) => {
+    try {
+      await viewsService.updateView(view.id, user?.name || '', {
+        name: view.name,
+        isVisible: false,
+        orderIndex: view.order,
+      });
+      
+      // Update local state
+      if (onUpdateViews) {
+        const updatedViews = allViews.map((v) => 
+          v.id === view.id ? { ...v, isVisible: false } : v
+        );
+        onUpdateViews(updatedViews);
+      }
+      
+      showSuccess("View hidden successfully");
+    } catch (error) {
+      console.error("Failed to hide view:", error);
+      showWarning("Failed to hide view", "Please try again");
+    }
   };
 
   // Modal handlers - based on AllViewGroupsViews.tsx patterns
-  const handleSaveViewGroup = (updatedViewGroup: ViewGroup) => {
-    if (!onUpdateViewGroups) return;
-    const updated = allViewGroups.map((vg) =>
-      vg.id === updatedViewGroup.id ? updatedViewGroup : vg
-    );
-    onUpdateViewGroups(updated);
-    setEditingViewGroup(null);
-    showSuccess("View group updated successfully");
+  const handleSaveViewGroup = async (updatedViewGroup: ViewGroup) => {
+    try {
+      await viewGroupsService.updateViewGroup(updatedViewGroup.id, user?.name || '', {
+        name: updatedViewGroup.name,
+        isVisible: updatedViewGroup.isVisible,
+        isDefault: updatedViewGroup.isDefault,
+        orderIndex: updatedViewGroup.order,
+      });
+      
+      // Update local state
+      if (onUpdateViewGroups) {
+        const updated = allViewGroups.map((vg) =>
+          vg.id === updatedViewGroup.id ? updatedViewGroup : vg
+        );
+        onUpdateViewGroups(updated);
+      }
+      
+      setEditingViewGroup(null);
+      showSuccess("View group updated successfully");
+    } catch (error) {
+      console.error("Failed to update view group:", error);
+      showWarning("Failed to update view group", "Please try again");
+    }
   };
 
-  const handleSaveView = (updatedView: View) => {
-    if (!onUpdateViews) return;
-    const updated = allViews.map((v) =>
-      v.id === updatedView.id ? updatedView : v
-    );
-    onUpdateViews(updated);
-    setEditingView(null);
-    showSuccess("View updated successfully");
+  const handleSaveView = async (updatedView: View) => {
+    try {
+      await viewsService.updateView(updatedView.id, user?.name || '', {
+        name: updatedView.name,
+        isVisible: updatedView.isVisible,
+        orderIndex: updatedView.order,
+      });
+      
+      // Update local state
+      if (onUpdateViews) {
+        const updated = allViews.map((v) =>
+          v.id === updatedView.id ? updatedView : v
+        );
+        onUpdateViews(updated);
+      }
+      
+      setEditingView(null);
+      showSuccess("View updated successfully");
+    } catch (error) {
+      console.error("Failed to update view:", error);
+      showWarning("Failed to update view", "Please try again");
+    }
   };
 
   // Delete handlers - matching AllViewGroupsViews.tsx pattern
-  const handleDeleteViewGroupConfirm = (
+  const handleDeleteViewGroupConfirm = async (
     action?: "group-only" | "group-and-views"
   ) => {
     if (!deletingViewGroup || !action || !onUpdateViewGroups) return;
@@ -248,60 +306,84 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
       return;
     }
 
-    if (action === "group-only") {
-      const updatedViewGroups = allViewGroups
-        .map((vg) => {
-          if (vg.isDefault) {
-            return {
-              ...vg,
-              viewIds: [...vg.viewIds, ...deletingViewGroup.viewIds],
-            };
-          }
-          return vg;
-        })
-        .filter((vg) => vg.id !== deletingViewGroup.id);
+    try {
+      if (action === "group-only") {
+        // Move views to default group before deleting view group
+        const updatedViewGroups = allViewGroups
+          .map((vg) => {
+            if (vg.isDefault) {
+              return {
+                ...vg,
+                viewIds: [...vg.viewIds, ...deletingViewGroup.viewIds],
+              };
+            }
+            return vg;
+          })
+          .filter((vg) => vg.id !== deletingViewGroup.id);
 
-      onUpdateViewGroups(updatedViewGroups);
-      showSuccess(
-        "View Group Deleted",
-        `"${deletingViewGroup.name}" deleted. Views moved to Default group.`
-      );
-    } else {
-      const viewsToDelete = deletingViewGroup.viewIds;
-      const updatedViews = allViews.filter(
-        (v) => !viewsToDelete.includes(v.id)
-      );
-      const updatedViewGroups = allViewGroups.filter(
-        (vg) => vg.id !== deletingViewGroup.id
-      );
+        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user?.name || '');
+        onUpdateViewGroups(updatedViewGroups);
+        showSuccess(
+          "View Group Deleted",
+          `"${deletingViewGroup.name}" deleted. Views moved to Default group.`
+        );
+      } else {
+        // Delete view group and all its views
+        const viewsToDelete = deletingViewGroup.viewIds;
+        
+        // Delete all views first
+        for (const viewId of viewsToDelete) {
+          await viewsService.deleteView(viewId, user?.name || '');
+        }
+        
+        // Then delete view group
+        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user?.name || '');
+        
+        const updatedViews = allViews.filter(
+          (v) => !viewsToDelete.includes(v.id)
+        );
+        const updatedViewGroups = allViewGroups.filter(
+          (vg) => vg.id !== deletingViewGroup.id
+        );
 
-      if (onUpdateViews) onUpdateViews(updatedViews);
-      onUpdateViewGroups(updatedViewGroups);
-      showSuccess(
-        "View Group and Views Deleted",
-        `"${deletingViewGroup.name}" and all its views have been removed.`
-      );
+        if (onUpdateViews) onUpdateViews(updatedViews);
+        onUpdateViewGroups(updatedViewGroups);
+        showSuccess(
+          "View Group and Views Deleted",
+          `"${deletingViewGroup.name}" and all its views have been removed.`
+        );
+      }
+
+      setDeletingViewGroup(null);
+    } catch (error) {
+      console.error("Failed to delete view group:", error);
+      showWarning("Failed to delete view group", "Please try again");
     }
-
-    setDeletingViewGroup(null);
   };
 
-  const handleConfirmDeleteView = () => {
+  const handleConfirmDeleteView = async () => {
     if (!deletingView || !onUpdateViews || !onUpdateViewGroups) return;
 
-    // Remove view from all view groups
-    const updatedViewGroups = allViewGroups.map((vg) => ({
-      ...vg,
-      viewIds: vg.viewIds.filter((id) => id !== deletingView.id),
-    }));
+    try {
+      await viewsService.deleteView(deletingView.id, user?.name || '');
 
-    // Remove view from views array
-    const updatedViews = allViews.filter((v) => v.id !== deletingView.id);
+      // Remove view from all view groups
+      const updatedViewGroups = allViewGroups.map((vg) => ({
+        ...vg,
+        viewIds: vg.viewIds.filter((id) => id !== deletingView.id),
+      }));
 
-    onUpdateViews(updatedViews);
-    onUpdateViewGroups(updatedViewGroups);
-    setDeletingView(null);
-    showSuccess("View deleted successfully");
+      // Remove view from views array
+      const updatedViews = allViews.filter((v) => v.id !== deletingView.id);
+
+      onUpdateViews(updatedViews);
+      onUpdateViewGroups(updatedViewGroups);
+      setDeletingView(null);
+      showSuccess("View deleted successfully");
+    } catch (error) {
+      console.error("Failed to delete view:", error);
+      showWarning("Failed to delete view", "Please try again");
+    }
   };
 
   const canModify = user?.role === "admin" || user?.role === "user";
