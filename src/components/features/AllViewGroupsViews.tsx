@@ -72,6 +72,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
         isVisible: updatedViewGroup.isVisible,
         isDefault: updatedViewGroup.isDefault,
         orderIndex: updatedViewGroup.order,
+        viewIds: updatedViewGroup.viewIds,
       });
       showSuccess(
         "View group updated",
@@ -92,6 +93,8 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
         name: updatedView.name,
         isVisible: updatedView.isVisible,
         orderIndex: updatedView.order,
+        reportIds: updatedView.reportIds,
+        widgetIds: updatedView.widgetIds,
       });
       showSuccess("View updated", `"${updatedView.name}" has been saved`);
       setEditingView(null);
@@ -587,6 +590,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           isVisible: !vg.isVisible,
           isDefault: vg.isDefault,
           orderIndex: vg.order,
+          viewIds: vg.viewIds,
         });
         showSuccess(
           vg.isVisible ? "View group hidden" : "View group shown",
@@ -600,6 +604,8 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           name: v.name,
           isVisible: !v.isVisible,
           orderIndex: v.order,
+          reportIds: v.reportIds,
+          widgetIds: v.widgetIds,
         });
         showSuccess(
           v.isVisible ? "View hidden" : "View shown",

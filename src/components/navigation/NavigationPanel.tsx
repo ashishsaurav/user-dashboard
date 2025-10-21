@@ -157,10 +157,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         const view = views.find((v) => v.id === id);
         if (!view) return;
 
-        const updatedView = await viewsService.updateView(view.id, user.name, {
+        const updatedView =         await viewsService.updateView(view.id, user.name, {
           name: view.name,
           isVisible: !view.isVisible,
           orderIndex: view.order,
+          reportIds: view.reportIds,
+          widgetIds: view.widgetIds,
         });
         
         // Update local state
@@ -177,11 +179,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         const viewGroup = viewGroups.find((vg) => vg.id === id);
         if (!viewGroup) return;
 
-        const updatedViewGroup = await viewGroupsService.updateViewGroup(viewGroup.id, user.name, {
+        const updatedViewGroup =         await viewGroupsService.updateViewGroup(viewGroup.id, user.name, {
           name: viewGroup.name,
           isVisible: !viewGroup.isVisible,
           isDefault: viewGroup.isDefault,
           orderIndex: viewGroup.order,
+          viewIds: viewGroup.viewIds,
         });
         
         // Update local state
@@ -935,6 +938,8 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                 name: updatedView.name,
                 isVisible: updatedView.isVisible,
                 orderIndex: updatedView.order,
+                reportIds: updatedView.reportIds,
+                widgetIds: updatedView.widgetIds,
               });
               
               // Update local state
@@ -968,6 +973,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                 isVisible: updatedViewGroup.isVisible,
                 isDefault: updatedViewGroup.isDefault,
                 orderIndex: updatedViewGroup.order,
+                viewIds: updatedViewGroup.viewIds,
               });
               
               // Update local state

@@ -193,6 +193,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         isVisible: false,
         isDefault: viewGroup.isDefault,
         orderIndex: viewGroup.order,
+        viewIds: viewGroup.viewIds,
       });
       
       // Update local state
@@ -224,6 +225,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         name: view.name,
         isVisible: false,
         orderIndex: view.order,
+        reportIds: view.reportIds,
+        widgetIds: view.widgetIds,
       });
       
       // Update local state
@@ -249,6 +252,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         isVisible: updatedViewGroup.isVisible,
         isDefault: updatedViewGroup.isDefault,
         orderIndex: updatedViewGroup.order,
+        viewIds: updatedViewGroup.viewIds,
       });
       
       // Update local state
@@ -273,6 +277,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         name: updatedView.name,
         isVisible: updatedView.isVisible,
         orderIndex: updatedView.order,
+        reportIds: updatedView.reportIds,
+        widgetIds: updatedView.widgetIds,
       });
       
       // Update local state

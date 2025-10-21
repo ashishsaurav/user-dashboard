@@ -78,13 +78,20 @@ export class ViewGroupsService {
       isVisible: boolean;
       isDefault: boolean;
       orderIndex: number;
+      viewIds?: string[];
     }
   ): Promise<ViewGroup> {
     const viewGroup = await apiClient.put<ViewGroupDto>(
       API_ENDPOINTS.VIEW_GROUPS.UPDATE(id),
       {
         userId,
-        data,
+        data: {
+          name: data.name,
+          isVisible: data.isVisible,
+          isDefault: data.isDefault,
+          orderIndex: data.orderIndex,
+          viewIds: data.viewIds || [],
+        },
       }
     );
     return this.transformToFrontend(viewGroup);

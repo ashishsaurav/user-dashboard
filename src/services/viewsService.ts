@@ -91,11 +91,19 @@ export class ViewsService {
       name: string;
       isVisible: boolean;
       orderIndex: number;
+      reportIds?: string[];
+      widgetIds?: string[];
     }
   ): Promise<View> {
     const view = await apiClient.put<ViewDto>(API_ENDPOINTS.VIEWS.UPDATE(id), {
       userId,
-      data,
+      data: {
+        name: data.name,
+        isVisible: data.isVisible,
+        orderIndex: data.orderIndex,
+        reportIds: data.reportIds || [],
+        widgetIds: data.widgetIds || [],
+      },
     });
     return this.transformToFrontend(view);
   }
