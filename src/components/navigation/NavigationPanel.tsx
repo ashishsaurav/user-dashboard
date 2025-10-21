@@ -157,10 +157,16 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const getViewGroupViews = (viewGroupId: string): View[] => {
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
     if (!viewGroup) return [];
+    
+    // ✅ CRITICAL FIX: Preserve the order from viewGroup.viewIds
+    // The backend returns viewIds in the correct order (from ViewGroupView.OrderIndex)
+    // DO NOT re-sort by View.order as that's a different global ordering!
     const groupViews = viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean) as View[];
-    return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Return views in the same order as viewGroup.viewIds (already sorted by backend)
+    return groupViews;
   };
 
   // Get visible viewgroups and views
