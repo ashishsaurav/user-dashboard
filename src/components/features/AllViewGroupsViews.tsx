@@ -102,34 +102,125 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     }
   };
 
-  // Handle delete view group
-  const handleDeleteViewGroup = async () => {
-    if (!deletingViewGroup) return;
-
-    try {
-      await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
-      showSuccess(
-        "View group deleted",
-        `"${deletingViewGroup.name}" has been removed`
-      );
-      setDeletingViewGroup(null);
-      onRefresh();
-    } catch (error) {
-      showError("Failed to delete view group", "Please try again");
-    }
-  };
-
-  // Handle delete view
+  // Handle delete view (SAME AS NAVIGATIONPANEL)
   const handleDeleteView = async () => {
     if (!deletingView) return;
 
+    const view = deletingView;
+
     try {
-      await viewsService.deleteView(deletingView.id, user.name);
-      showSuccess("View deleted", `"${deletingView.name}" has been removed`);
+      // Find all view groups containing this view
+      const groupsContainingView = viewGroups.filter((vg: ViewGroup) => 
+        vg.viewIds.includes(view.id)
+      );
+      
+      // Remove view from all groups first (to avoid foreign key errors)
+      for (const group of groupsContainingView) {
+        await viewGroupsService.removeViewFromGroup(group.id, view.id, user.name);
+      }
+      
+      // Now delete the view
+      await viewsService.deleteView(view.id, user.name);
+      
+      showSuccess("View deleted", `"${view.name}" has been removed`);
       setDeletingView(null);
       onRefresh();
-    } catch (error) {
-      showError("Failed to delete view", "Please try again");
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+      showError("Failed to delete view", errorMessage);
+    }
+  };
+
+  // Handle delete view group (SAME AS NAVIGATIONPANEL)
+  const handleDeleteViewGroupConfirm = async (
+    action?: "group-only" | "group-and-views"
+  ) => {
+    if (!deletingViewGroup || !action) return;
+
+    const defaultGroup = viewGroups.find((vg) => vg.isDefault);
+    if (!defaultGroup && action === "group-only") {
+      showError(
+        "Error",
+        "Default group not found. Cannot move views. Please create a default group first."
+      );
+      return;
+    }
+
+    try {
+      if (action === "group-only") {
+        // Move views to default group, then delete the group
+        const viewsInGroup = [...deletingViewGroup.viewIds];
+        
+        if (viewsInGroup.length > 0) {
+          const defaultGroupViewIds = defaultGroup!.viewIds;
+          const viewsToAdd = viewsInGroup.filter(
+            (viewId: string) => !defaultGroupViewIds.includes(viewId)
+          );
+          
+          if (viewsToAdd.length > 0) {
+            await viewGroupsService.addViewsToGroup(
+              defaultGroup!.id,
+              user.name,
+              viewsToAdd
+            );
+          }
+        }
+        
+        // Remove all views from the deleting group
+        for (const viewId of viewsInGroup) {
+          try {
+            await viewGroupsService.removeViewFromGroup(
+              deletingViewGroup.id,
+              viewId,
+              user.name
+            );
+          } catch (error) {
+            // Ignore errors
+          }
+        }
+        
+        // Delete the empty group
+        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
+        
+        showSuccess(
+          "View group deleted",
+          `"${deletingViewGroup.name}" has been removed. Views moved to default group.`
+        );
+      } else {
+        // Delete group and all its views
+        const viewsToDelete = deletingViewGroup.viewIds;
+        
+        for (const viewId of viewsToDelete) {
+          const view = views.find(v => v.id === viewId);
+          if (!view) continue;
+          
+          // Remove view from all groups first
+          const groupsContainingView = viewGroups.filter((vg: ViewGroup) => 
+            vg.viewIds.includes(viewId)
+          );
+          
+          for (const group of groupsContainingView) {
+            await viewGroupsService.removeViewFromGroup(group.id, viewId, user.name);
+          }
+          
+          // Delete the view
+          await viewsService.deleteView(viewId, user.name);
+        }
+        
+        // Delete the group
+        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
+        
+        showSuccess(
+          "View group and views deleted",
+          `"${deletingViewGroup.name}" and all its views have been removed`
+        );
+      }
+
+      setDeletingViewGroup(null);
+      onRefresh();
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+      showError("Failed to delete view group", errorMessage);
     }
   };
 
@@ -668,7 +759,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
         <DeleteConfirmationModal
           type="viewgroup"
           item={deletingViewGroup}
-          onConfirm={handleDeleteViewGroup}
+          onConfirm={handleDeleteViewGroupConfirm}
           onCancel={() => setDeletingViewGroup(null)}
         />
       )}
