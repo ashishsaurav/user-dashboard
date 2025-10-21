@@ -195,11 +195,19 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     e.preventDefault();
     if (!draggedItem) return;
 
-    // Determine position
-    const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    const position = e.clientY < midpoint ? "top" : "bottom";
+    // Determine position with 50% threshold for better UX
+    let position: "top" | "bottom" | "middle" = "middle";
+    if (targetType === "view") {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const height = rect.height;
+      
+      if (y < height * 0.5) {
+        position = "top";
+      } else {
+        position = "bottom";
+      }
+    }
 
     setDragOverItem({ id: targetId, position: position as "top" | "bottom" });
   };
