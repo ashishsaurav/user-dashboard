@@ -52,19 +52,24 @@ export class ViewGroupsService {
     isDefault?: boolean;
     orderIndex?: number;
   }): Promise<ViewGroup> {
+    const requestBody = {
+      userId,
+      data: {
+        name: data.name,
+        isVisible: data.isVisible ?? true,
+        isDefault: data.isDefault ?? false,
+        orderIndex: data.orderIndex ?? 0,
+      },
+    };
+    
+    console.log('🌐 viewGroupsService.createViewGroup - Request body:', JSON.stringify(requestBody, null, 2));
+    
     const viewGroup = await apiClient.post<ViewGroupDto>(
       API_ENDPOINTS.VIEW_GROUPS.CREATE,
-      {
-        userId,
-        data: {
-          name: data.name,
-          isVisible: data.isVisible ?? true,
-          isDefault: data.isDefault ?? false,
-          orderIndex: data.orderIndex ?? 0,
-          // ❌ NO viewIds - backend DTO doesn't support it
-        },
-      }
+      requestBody
     );
+    
+    console.log('✅ viewGroupsService.createViewGroup - Response:', viewGroup);
     return this.transformToFrontend(viewGroup);
   }
 
