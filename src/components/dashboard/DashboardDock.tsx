@@ -137,7 +137,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   }, [apiNavSettings]);
 
   // Enhanced state handlers
-  const handleUpdateViews = (updatedViews: View[]) => {
+  const handleUpdateViews = useCallback((updatedViews: View[]) => {
     const sortedViews = [...updatedViews].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
@@ -152,20 +152,20 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         setSelectedView(updatedSelectedView);
       }
     }
-  };
+  }, [selectedView]);
 
-  const handleUpdateViewGroups = (updatedViewGroups: ViewGroup[]) => {
+  const handleUpdateViewGroups = useCallback((updatedViewGroups: ViewGroup[]) => {
     const sortedGroups = [...updatedViewGroups].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
     setViewGroups(sortedGroups);
     setNavigationUpdateTrigger((prev) => prev + 1);
-  };
+  }, []);
 
-  const handleUpdateNavSettings = (settings: UserNavigationSettings) => {
+  const handleUpdateNavSettings = useCallback((settings: UserNavigationSettings) => {
     setNavSettings(settings);
     setNavigationUpdateTrigger((prev) => prev + 1);
-  };
+  }, []);
 
   // Compute current layout signature based on state
   const computeCurrentSignature = useCallback((): LayoutSignature => {
@@ -331,8 +331,10 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return widgets; // Already filtered by role from API
   };
 
-  // Content creators
-  const createNavigationContent = useCallback(() => {
+  // Content creators - NOT memoized so it always returns fresh content
+  const createNavigationContent = () => {
+    console.log('🔨 Creating navigation content - views:', views.length, 'viewGroups:', viewGroups.length);
+    
     if (isDockCollapsed) {
       return (
         <CollapsedNavigationPanel
@@ -375,27 +377,18 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         onUpdateNavSettings={handleUpdateNavSettings}
         onViewSelect={handleViewSelect}
         selectedView={selectedView}
-        onRefreshData={() => {
-          refetchViews();
-          refetchViewGroups();
-          refetchNavSettings();
+        onRefreshData={async () => {
+          console.log('🔄 Refreshing navigation data...');
+          await Promise.all([
+            refetchViews(),
+            refetchViewGroups(),
+            refetchNavSettings(),
+          ]);
+          console.log('✅ Navigation data refreshed');
         }}
       />
     );
-  }, [
-    isDockCollapsed,
-    user,
-    views,
-    viewGroups,
-    navSettings,
-    selectedView,
-    navigationUpdateTrigger,
-    layoutMode,
-    navPanelPosition,
-    refetchViews,
-    refetchViewGroups,
-    refetchNavSettings,
-  ]);
+  };
 
   const createReportsContent = () => (
     <ViewContentPanel
@@ -1152,6 +1145,19 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     updateLayoutContent,
     user.name,
   ]);
+
+  // Force update navigation content when data changes
+  useEffect(() => {
+    console.log('🔄 Data changed - updating navigation content');
+    console.log('  Views:', views.length);
+    console.log('  View Groups:', viewGroups.length);
+    console.log('  Navigation trigger:', navigationUpdateTrigger);
+    
+    // Force update the layout content
+    if (dockLayoutRef.current) {
+      updateLayoutContent();
+    }
+  }, [views, viewGroups, navSettings, navigationUpdateTrigger, updateLayoutContent]);
 
   // Show loading state
   if (apiLoading) {
