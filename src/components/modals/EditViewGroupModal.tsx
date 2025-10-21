@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { ViewGroup, View, UserNavigationSettings } from "../../types";
+import { viewGroupsService } from "../../services/viewGroupsService";
+import { useNotification } from "../common/NotificationProvider";
 
 interface EditViewGroupModalProps {
   viewGroup: ViewGroup;
@@ -25,6 +27,8 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
   const [formData, setFormData] = useState({
     ...viewGroup,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const { showSuccess, showError } = useNotification();
 
   // Get current user settings - this will sync with base data
   const currentSettings = useMemo((): UserNavigationSettings => {
@@ -55,27 +59,65 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     setLocalHiddenViews([...currentSettings.hiddenViews]);
   }, [viewGroup.id]); // Only reset when editing a different viewgroup
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    console.log("Saving changes:", {
-      viewGroup: formData,
-      hiddenViews: localHiddenViews,
-      originalHidden: currentSettings.hiddenViews,
-    });
-
-    // Save the view group changes
-    onSave(formData);
-
-    // Save visibility changes if there are any changes
-    if (onUpdateNavSettings && user) {
-      const updatedSettings = {
-        ...currentSettings,
+    try {
+      console.log("Saving changes:", {
+        viewGroup: formData,
         hiddenViews: localHiddenViews,
-      };
+        originalHidden: currentSettings.hiddenViews,
+      });
 
-      console.log("Updating navigation settings:", updatedSettings);
-      onUpdateNavSettings(updatedSettings);
+      // 1. Update view group name and basic info
+      await viewGroupsService.updateViewGroup(formData.id, user?.name || '', {
+        name: formData.name,
+        isVisible: formData.isVisible,
+        isDefault: formData.isDefault,
+        orderIndex: formData.order || 0,
+      });
+
+      // 2. Update views in group - calculate what to add/remove
+      const originalViewIds = viewGroup.viewIds;
+      const newViewIds = formData.viewIds;
+      
+      const viewsToAdd = newViewIds.filter(id => !originalViewIds.includes(id));
+      const viewsToRemove = originalViewIds.filter(id => !newViewIds.includes(id));
+
+      // Add new views
+      if (viewsToAdd.length > 0) {
+        await viewGroupsService.addViewsToGroup(formData.id, user?.name || '', viewsToAdd);
+      }
+
+      // Remove views
+      for (const viewId of viewsToRemove) {
+        await viewGroupsService.removeViewFromGroup(formData.id, viewId, user?.name || '');
+      }
+
+      showSuccess(
+        "View Group Updated",
+        `"${formData.name}" has been updated with ${formData.viewIds.length} views`
+      );
+
+      // Save the view group changes
+      onSave(formData);
+
+      // Save visibility changes if there are any changes
+      if (onUpdateNavSettings && user) {
+        const updatedSettings = {
+          ...currentSettings,
+          hiddenViews: localHiddenViews,
+        };
+
+        console.log("Updating navigation settings:", updatedSettings);
+        onUpdateNavSettings(updatedSettings);
+      }
+    } catch (error) {
+      console.error("Failed to update view group:", error);
+      showError("Update Failed", "Could not update view group. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -220,7 +262,7 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
 
           {/* Views Section */}
           <div className="form-section">
-            <h3>Views in Group</h3>
+            <h3>Views in Group ({formData.viewIds.length} selected)</h3>
             <p className="section-description">
               Select which views belong to this group and control their
               navigation visibility
@@ -290,11 +332,16 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
               type="button"
               className="modal-btn modal-btn-secondary"
               onClick={onClose}
+              disabled={isLoading}
             >
               Cancel
             </button>
-            <button type="submit" className="modal-btn modal-btn-primary">
-              Save Changes
+            <button 
+              type="submit" 
+              className="modal-btn modal-btn-primary"
+              disabled={isLoading}
+            >
+              {isLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

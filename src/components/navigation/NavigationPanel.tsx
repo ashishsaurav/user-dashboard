@@ -895,20 +895,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           reports={reports}
           widgets={widgets}
           userRole={user.role}
-          onSave={async (updatedView) => {
-            try {
-              await viewsService.updateView(updatedView.id, user.name, {
-                name: updatedView.name,
-                isVisible: updatedView.isVisible,
-                orderIndex: updatedView.order,
-              });
-              showSuccess("View Updated", `"${updatedView.name}" has been updated successfully.`);
-              setEditingView(null);
-              window.location.reload();
-            } catch (error) {
-              console.error("Failed to update view:", error);
-              showWarning("Failed to update view", "Please try again");
-            }
+          userId={user.name}
+          onSave={(updatedView) => {
+            // Modal now handles all API calls internally
+            setEditingView(null);
+            // Reload to fetch fresh data
+            window.location.reload();
           }}
           onClose={() => setEditingView(null)}
         />
@@ -921,24 +913,11 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           userRole={user.role}
           userNavSettings={[userNavSettings]} // Convert single object to array for modal
           user={user}
-          onSave={async (updatedViewGroup) => {
-            try {
-              await viewGroupsService.updateViewGroup(updatedViewGroup.id, user.name, {
-                name: updatedViewGroup.name,
-                isVisible: updatedViewGroup.isVisible,
-                isDefault: updatedViewGroup.isDefault,
-                orderIndex: updatedViewGroup.order,
-              });
-              showSuccess(
-                "View Group Updated",
-                `"${updatedViewGroup.name}" has been updated successfully.`
-              );
-              setEditingViewGroup(null);
-              window.location.reload();
-            } catch (error) {
-              console.error("Failed to update view group:", error);
-              showWarning("Failed to update view group", "Please try again");
-            }
+          onSave={(updatedViewGroup) => {
+            // Modal now handles all API calls internally
+            setEditingViewGroup(null);
+            // Reload to fetch fresh data
+            window.location.reload();
           }}
           onClose={() => setEditingViewGroup(null)}
           onUpdateNavSettings={(updatedSettings) => {
