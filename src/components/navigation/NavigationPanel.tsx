@@ -529,43 +529,87 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     if (!deletingViewGroup || !action) return;
 
     const defaultGroup = viewGroups.find((vg) => vg.isDefault);
-    if (!defaultGroup) {
+    if (!defaultGroup && action === "group-only") {
       showWarning(
         "Error",
-        "Default group not found. Cannot proceed with deletion."
+        "Default group not found. Cannot move views. Please create a default group first."
       );
       return;
     }
 
     try {
       if (action === "group-only") {
-        // Move views to default group before deleting view group
-        // This is a complex operation - for now, just delete the group
-        console.log('🗑️ Deleting view group (group only):', deletingViewGroup.id);
+        // ✅ Option 1: Delete group only - Move views to default group
+        console.log('🗑️ Deleting view group only:', deletingViewGroup.id, deletingViewGroup.name);
+        console.log('  Moving', deletingViewGroup.viewIds.length, 'views to default group:', defaultGroup!.name);
+        
+        // Step 1: Move all views to default group
+        if (deletingViewGroup.viewIds.length > 0) {
+          // Get views that are NOT already in the default group
+          const defaultGroupViewIds = defaultGroup!.viewIds;
+          const viewsToMove = deletingViewGroup.viewIds.filter(
+            viewId => !defaultGroupViewIds.includes(viewId)
+          );
+          
+          console.log('  Views to move:', viewsToMove.length);
+          
+          if (viewsToMove.length > 0) {
+            console.log('  Adding views to default group');
+            await viewGroupsService.addViewsToGroup(
+              defaultGroup!.id,
+              user.name,
+              viewsToMove
+            );
+          }
+        }
+        
+        // Step 2: Delete the view group
+        console.log('  Deleting view group');
         await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
-        console.log('✅ View group deleted successfully');
+        console.log('✅ View group deleted, views moved to default group');
+        
         showSuccess(
           "View Group Deleted",
-          `${deletingViewGroup.name} deleted. Views moved to other groups.`
+          `"${deletingViewGroup.name}" deleted. ${deletingViewGroup.viewIds.length} views moved to "${defaultGroup!.name}".`
         );
       } else {
-        // Delete view group and all its views
+        // ✅ Option 2: Delete view group AND all its views
         const viewsToDelete = deletingViewGroup.viewIds;
-        console.log('🗑️ Deleting view group and views:', deletingViewGroup.id, viewsToDelete);
+        console.log('🗑️ Deleting view group AND all views:', deletingViewGroup.id, deletingViewGroup.name);
+        console.log('  Will delete', viewsToDelete.length, 'views');
         
-        // Delete all views first
+        // Step 1: Delete all views (using the same logic as handleDeleteView)
         for (const viewId of viewsToDelete) {
-          console.log('  Deleting view:', viewId);
+          const view = views.find(v => v.id === viewId);
+          if (!view) {
+            console.warn('  View not found:', viewId);
+            continue;
+          }
+          
+          console.log('  Deleting view:', view.name, viewId);
+          
+          // Remove from all groups that contain it
+          const groupsContainingView = viewGroups.filter(vg => vg.viewIds.includes(viewId));
+          console.log('    View is in', groupsContainingView.length, 'group(s)');
+          
+          for (const group of groupsContainingView) {
+            console.log('    Removing from group:', group.name);
+            await viewGroupsService.removeViewFromGroup(group.id, viewId, user.name);
+          }
+          
+          // Delete the view
+          console.log('    Deleting view from database');
           await viewsService.deleteView(viewId, user.name);
         }
         
-        // Then delete view group
+        // Step 2: Delete the view group
+        console.log('  Deleting view group');
         await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
         console.log('✅ View group and all views deleted successfully');
         
         showSuccess(
           "View Group and Views Deleted",
-          `${deletingViewGroup.name} and all its views have been removed.`
+          `"${deletingViewGroup.name}" and ${viewsToDelete.length} views have been removed.`
         );
       }
 
