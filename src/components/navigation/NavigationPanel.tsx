@@ -28,6 +28,7 @@ interface NavigationPanelProps {
   onUpdateNavSettings: (settings: UserNavigationSettings) => void;
   onViewSelect?: (view: View) => void; // NEW: View selection handler
   selectedView?: View | null; // NEW: Currently selected view
+  onRefreshData?: () => void; // NEW: Callback to refresh data from parent
 }
 
 const NavigationPanel: React.FC<NavigationPanelProps> = ({
@@ -42,6 +43,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   onUpdateNavSettings,
   onViewSelect,
   selectedView,
+  onRefreshData,
 }) => {
   // Local state
   const [expandedViewGroups, setExpandedViewGroups] = useState<{
@@ -52,6 +54,21 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [deletingViewGroup, setDeletingViewGroup] = useState<any>(null);
   const [deletingView, setDeletingView] = useState<any>(null);
 
+  // Auto-expand all view groups on initial load
+  useEffect(() => {
+    if (viewGroups.length > 0) {
+      const initialExpanded: { [key: string]: boolean } = {};
+      viewGroups.forEach((vg) => {
+        if (!(vg.id in expandedViewGroups)) {
+          initialExpanded[vg.id] = true;
+        }
+      });
+      if (Object.keys(initialExpanded).length > 0) {
+        setExpandedViewGroups((prev) => ({ ...prev, ...initialExpanded }));
+      }
+    }
+  }, [viewGroups]);
+
   // NEW: Responsive layout state
   const [isHorizontalLayout, setIsHorizontalLayout] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -60,7 +77,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [draggedItem, setDraggedItem] = useState<{
     type: "view" | "viewgroup";
     id: string;
-    data?: any;
+    data?: { viewGroupId?: string };
   } | null>(null);
   const [dragOverItem, setDragOverItem] = useState<{
     id: string;
@@ -122,19 +139,29 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
   // Check if item is hidden
   const isItemHidden = (type: "view" | "viewgroup", id: string): boolean => {
-    return type === "view"
-      ? settings.hiddenViews.includes(id)
-      : settings.hiddenViewGroups.includes(id);
+    if (type === "view") {
+      const view = views.find(v => v.id === id);
+      return view ? !view.isVisible : false;
+    } else {
+      const viewGroup = viewGroups.find(vg => vg.id === id);
+      return viewGroup ? !viewGroup.isVisible : false;
+    }
   };
 
   // Get viewgroup views with proper ordering
   const getViewGroupViews = (viewGroupId: string): View[] => {
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
     if (!viewGroup) return [];
+    
+    // ✅ CRITICAL FIX: Preserve the order from viewGroup.viewIds
+    // The backend returns viewIds in the correct order (from ViewGroupView.OrderIndex)
+    // DO NOT re-sort by View.order as that's a different global ordering!
     const groupViews = viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean) as View[];
-    return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
+    
+    // Return views in the same order as viewGroup.viewIds (already sorted by backend)
+    return groupViews;
   };
 
   // Get visible viewgroups and views
@@ -162,11 +189,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           isVisible: !view.isVisible,
           orderIndex: view.order,
         });
-        
-        showSuccess(
-          view.isVisible ? "View hidden" : "View shown",
-          `"${view.name}" is now ${view.isVisible ? "hidden" : "visible"}`
-        );
       } else {
         const viewGroup = viewGroups.find((vg) => vg.id === id);
         if (!viewGroup) return;
@@ -177,15 +199,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           isDefault: viewGroup.isDefault,
           orderIndex: viewGroup.order,
         });
-        
-        showSuccess(
-          viewGroup.isVisible ? "View group hidden" : "View group shown",
-          `"${viewGroup.name}" is now ${viewGroup.isVisible ? "hidden" : "visible"}`
-        );
       }
       
-      // Reload data
-      window.location.reload();
+      // Refresh data from parent
+      if (onRefreshData) {
+        onRefreshData();
+      }
     } catch (error) {
       console.error("Failed to toggle visibility:", error);
       showWarning("Failed to update visibility", "Please try again");
@@ -211,11 +230,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const handleDragStart = (
     e: React.DragEvent,
     type: "view" | "viewgroup",
-    id: string
+    id: string,
+    viewGroupId?: string
   ) => {
     e.stopPropagation();
-    setDraggedItem({ type, id });
-    e.dataTransfer.setData("text/plain", JSON.stringify({ type, id }));
+    setDraggedItem({ type, id, data: { viewGroupId } });
+    e.dataTransfer.setData("text/plain", JSON.stringify({ type, id, viewGroupId }));
     e.dataTransfer.effectAllowed = "move";
     (e.currentTarget as HTMLElement).style.opacity = "0.5";
   };
@@ -237,28 +257,30 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     targetType: "view" | "viewgroup"
   ) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!draggedItem) return;
+    
     let position: "top" | "bottom" | "middle" = "middle";
     if (targetType === "view") {
       const rect = e.currentTarget.getBoundingClientRect();
 
       if (isHorizontalLayout) {
-        // Horizontal layout - use left/right instead of top/bottom
+        // Horizontal layout - use left/right
         const x = e.clientX - rect.left;
         const width = rect.width;
-        if (x < width * 0.33) {
-          position = "top"; // Left side
-        } else if (x > width * 0.66) {
-          position = "bottom"; // Right side
+        if (x < width * 0.5) {
+          position = "top"; // Left half
+        } else {
+          position = "bottom"; // Right half
         }
       } else {
         // Vertical layout - use top/bottom
         const y = e.clientY - rect.top;
         const height = rect.height;
-        if (y < height * 0.33) {
-          position = "top";
-        } else if (y > height * 0.66) {
-          position = "bottom";
+        if (y < height * 0.5) {
+          position = "top"; // Top half
+        } else {
+          position = "bottom"; // Bottom half
         }
       }
     }
@@ -283,19 +305,26 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     e.stopPropagation();
     if (!draggedItem || draggedItem.id === targetId) {
       setDragOverItem(null);
+      setDraggedItem(null);
       return;
     }
 
-    if (draggedItem.type === "viewgroup" && targetType === "viewgroup") {
-      handleViewGroupReorder(draggedItem.id, targetId);
-    } else if (draggedItem.type === "view") {
+    // Store drag data before any state changes
+    const dragData = { ...draggedItem };
+    const dropPosition = dragOverItem?.position;
+    
+    // Clear drag UI state
+    setDragOverItem(null);
+
+    if (dragData.type === "viewgroup" && targetType === "viewgroup") {
+      handleViewGroupReorder(dragData.id, targetId);
+    } else if (dragData.type === "view") {
       if (targetType === "view") {
-        handleViewReorder(draggedItem.id, targetId);
+        handleViewReorder(dragData.id, targetId, dropPosition);
       } else if (targetType === "viewgroup") {
-        handleViewMoveToGroup(draggedItem.id, targetId);
+        handleViewMoveToGroup(dragData.id, targetId);
       }
     }
-    setDragOverItem(null);
   };
 
   // Reorder view groups (API-connected)
@@ -322,30 +351,29 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
       try {
         await viewGroupsService.reorderViewGroups(user.name, items);
-        showSuccess("View groups reordered");
         
-        // Update local state
-        const updatedGroupsWithOrder = reorderedGroups.map((group, index) => ({
-          ...group,
-          order: index,
-        }));
-        onUpdateViewGroups(updatedGroupsWithOrder);
+        if (onRefreshData) {
+          await onRefreshData();
+        }
       } catch (error) {
-        console.error("Failed to reorder view groups:", error);
         showWarning("Failed to save order", "Changes not saved");
+      } finally {
+        setDraggedItem(null);
       }
     }
   };
 
-  const handleViewReorder = async (draggedViewId: string, targetViewId: string) => {
-    const sourceGroupId = viewGroups.find((vg) =>
+  const handleViewReorder = async (draggedViewId: string, targetViewId: string, position?: "top" | "bottom" | "middle") => {
+    const sourceGroupId = draggedItem?.data?.viewGroupId || viewGroups.find((vg) =>
       vg.viewIds.includes(draggedViewId)
     )?.id;
     const targetGroupId = viewGroups.find((vg) =>
       vg.viewIds.includes(targetViewId)
     )?.id;
-
-    if (!sourceGroupId || !targetGroupId) return;
+    
+    if (!sourceGroupId || !targetGroupId) {
+      return;
+    }
 
     if (sourceGroupId === targetGroupId) {
       const viewGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
@@ -366,14 +394,24 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         const reorderedViewIds = [...viewGroup.viewIds];
         const [draggedViewIdItem] = reorderedViewIds.splice(draggedIndex, 1);
 
-        const position = dragOverItem?.position || "middle";
-        let insertIndex = targetIndex;
-        if (position === "top") {
+        // Calculate insert position based on drop position
+        let insertIndex: number;
+        const pos = position || "bottom";
+        
+        if (pos === "top") {
+          // Insert before target
           insertIndex = targetIndex;
-        } else if (position === "bottom") {
-          insertIndex = targetIndex + 1;
+          // Adjust if dragging down (item was removed before target)
+          if (draggedIndex < targetIndex) {
+            insertIndex = targetIndex - 1;
+          }
         } else {
-          insertIndex = targetIndex;
+          // Insert after target (bottom or middle)
+          insertIndex = targetIndex + 1;
+          // Adjust if dragging down
+          if (draggedIndex < targetIndex) {
+            insertIndex = targetIndex;
+          }
         }
 
         reorderedViewIds.splice(insertIndex, 0, draggedViewIdItem);
@@ -384,28 +422,15 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         }));
 
         try {
-          // Call API to persist reorder
           await viewGroupsService.reorderViewsInGroup(sourceGroupId, user.name, items);
-          showSuccess("Views reordered");
           
-          // Update local state
-          const updatedViews = views.map((view) => {
-            if (reorderedViewIds.includes(view.id)) {
-              const newIndex = reorderedViewIds.findIndex((id) => id === view.id);
-              return { ...view, order: newIndex };
-            }
-            return view;
-          });
-
-          const updatedViewGroups = viewGroups.map((vg) =>
-            vg.id === sourceGroupId ? { ...vg, viewIds: reorderedViewIds } : vg
-          );
-
-          onUpdateViews(updatedViews);
-          onUpdateViewGroups(updatedViewGroups);
+          if (onRefreshData) {
+            await onRefreshData();
+          }
         } catch (error) {
-          console.error("Failed to reorder views:", error);
           showWarning("Failed to save order", "Changes not saved");
+        } finally {
+          setDraggedItem(null);
         }
       }
     } else {
@@ -413,81 +438,19 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
   };
 
-  const handleViewMoveToGroup = (
+  const handleViewMoveToGroup = async (
     draggedViewId: string,
     targetGroupId: string,
     targetViewId?: string
   ) => {
     const draggedView = views.find((v) => v.id === draggedViewId);
-    const sourceGroupId = viewGroups.find((vg) =>
+    // Use the source group from drag data to avoid conflicts
+    const sourceGroupId = draggedItem?.data?.viewGroupId || viewGroups.find((vg) =>
       vg.viewIds.includes(draggedViewId)
     )?.id;
 
     if (!draggedView || !sourceGroupId || sourceGroupId === targetGroupId)
       return;
-
-    let updatedViewGroups = [...viewGroups];
-    let newTargetViewIds: string[];
-
-    updatedViewGroups = viewGroups.map((vg) => {
-      if (vg.id === sourceGroupId) {
-        return {
-          ...vg,
-          viewIds: vg.viewIds.filter((vId) => vId !== draggedViewId),
-        };
-      } else if (vg.id === targetGroupId) {
-        if (targetViewId) {
-          const targetIndex = vg.viewIds.findIndex((id) => id === targetViewId);
-          const position = dragOverItem?.position || "bottom";
-          const newViewIds = [...vg.viewIds];
-          let insertIndex = targetIndex;
-          if (position === "top") {
-            insertIndex = targetIndex;
-          } else if (position === "bottom") {
-            insertIndex = targetIndex + 1;
-          } else {
-            insertIndex = targetIndex + 1;
-          }
-
-          newViewIds.splice(insertIndex, 0, draggedViewId);
-          newTargetViewIds = newViewIds;
-          return { ...vg, viewIds: newViewIds };
-        } else {
-          newTargetViewIds = [...vg.viewIds, draggedViewId];
-          return { ...vg, viewIds: newTargetViewIds };
-        }
-      }
-      return vg;
-    });
-
-    const sourceGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
-    const targetGroup = updatedViewGroups.find((vg) => vg.id === targetGroupId);
-
-    const updatedViews = views.map((view) => {
-      if (
-        sourceGroup &&
-        sourceGroup.viewIds.includes(view.id) &&
-        view.id !== draggedViewId
-      ) {
-        const sourceGroupAfterRemoval = updatedViewGroups.find(
-          (vg) => vg.id === sourceGroupId
-        );
-        if (sourceGroupAfterRemoval) {
-          const newIndex = sourceGroupAfterRemoval.viewIds.findIndex(
-            (id) => id === view.id
-          );
-          return { ...view, order: newIndex + 1 };
-        }
-      }
-      if (targetGroup && newTargetViewIds.includes(view.id)) {
-        const newIndex = newTargetViewIds.findIndex((id) => id === view.id);
-        return { ...view, order: newIndex + 1 };
-      }
-      return view;
-    });
-
-    onUpdateViews(updatedViews);
-    onUpdateViewGroups(updatedViewGroups);
 
     const sourceGroupName = viewGroups.find(
       (vg) => vg.id === sourceGroupId
@@ -496,23 +459,37 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       (vg) => vg.id === targetGroupId
     )?.name;
 
-    showSuccess(
-      "View Moved",
-      `${draggedView.name} moved from ${sourceGroupName} to ${targetGroupName}.`
-    );
+    try {
+      await viewGroupsService.removeViewFromGroup(sourceGroupId, draggedViewId, user.name);
+      await viewGroupsService.addViewsToGroup(targetGroupId, user.name, [draggedViewId]);
+      
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (error) {
+      showWarning("Failed to move view", "Changes not saved");
+    } finally {
+      setDraggedItem(null);
+    }
   };
 
   // Delete handlers (API-connected)
   const handleDeleteView = async (view: View) => {
     try {
-      await viewsService.deleteView(view.id, user.name);
-      showSuccess("View Deleted", `${view.name} has been removed successfully.`);
+      const groupsContainingView = viewGroups.filter((vg: ViewGroup) => vg.viewIds.includes(view.id));
       
-      // Reload data
-      window.location.reload();
-    } catch (error) {
-      console.error("Failed to delete view:", error);
-      showWarning("Failed to delete view", "Please try again");
+      for (const group of groupsContainingView) {
+        await viewGroupsService.removeViewFromGroup(group.id, view.id, user.name);
+      }
+      
+      await viewsService.deleteView(view.id, user.name);
+      
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+      showWarning("Failed to delete view", errorMessage);
     }
   };
 
@@ -522,48 +499,73 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     if (!deletingViewGroup || !action) return;
 
     const defaultGroup = viewGroups.find((vg) => vg.isDefault);
-    if (!defaultGroup) {
+    if (!defaultGroup && action === "group-only") {
       showWarning(
         "Error",
-        "Default group not found. Cannot proceed with deletion."
+        "Default group not found. Cannot move views. Please create a default group first."
       );
       return;
     }
 
     try {
       if (action === "group-only") {
-        // Move views to default group before deleting view group
-        // This is a complex operation - for now, just delete the group
+        const viewsInGroup = [...deletingViewGroup.viewIds];
+        
+        if (viewsInGroup.length > 0) {
+          const defaultGroupViewIds = defaultGroup!.viewIds;
+          const viewsToAdd = viewsInGroup.filter(
+            (viewId: string) => !defaultGroupViewIds.includes(viewId)
+          );
+          
+          if (viewsToAdd.length > 0) {
+            await viewGroupsService.addViewsToGroup(
+              defaultGroup!.id,
+              user.name,
+              viewsToAdd
+            );
+          }
+        }
+        
+        for (const viewId of viewsInGroup) {
+          try {
+            await viewGroupsService.removeViewFromGroup(
+              deletingViewGroup.id,
+              viewId,
+              user.name
+            );
+          } catch (error) {
+            // Ignore errors
+          }
+        }
+        
         await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
-        showSuccess(
-          "View Group Deleted",
-          `${deletingViewGroup.name} deleted. Views moved to other groups.`
-        );
       } else {
-        // Delete view group and all its views
         const viewsToDelete = deletingViewGroup.viewIds;
         
-        // Delete all views first
         for (const viewId of viewsToDelete) {
+          const view = views.find(v => v.id === viewId);
+          if (!view) continue;
+          
+          const groupsContainingView = viewGroups.filter((vg: ViewGroup) => vg.viewIds.includes(viewId));
+          
+          for (const group of groupsContainingView) {
+            await viewGroupsService.removeViewFromGroup(group.id, viewId, user.name);
+          }
+          
           await viewsService.deleteView(viewId, user.name);
         }
         
-        // Then delete view group
         await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
-        
-        showSuccess(
-          "View Group and Views Deleted",
-          `${deletingViewGroup.name} and all its views have been removed.`
-        );
       }
 
       setDeletingViewGroup(null);
       
-      // Reload data
-      window.location.reload();
-    } catch (error) {
-      console.error("Failed to delete view group:", error);
-      showWarning("Failed to delete view group", "Please try again");
+      if (onRefreshData) {
+        await onRefreshData();
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+      showWarning("Failed to delete view group", errorMessage);
     }
   };
 
@@ -770,7 +772,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           const groupViews = getVisibleViewsInGroup(viewGroup.id);
           const isExpanded = isHorizontalLayout
             ? true
-            : expandedViewGroups[viewGroup.id]; // Always expanded in horizontal
+            : (expandedViewGroups[viewGroup.id] ?? true); // Default to expanded if not set
           const isHidden = isItemHidden("viewgroup", viewGroup.id);
           const isDragOver = dragOverItem?.id === viewGroup.id;
 
@@ -861,7 +863,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                         }
                         onMouseLeave={handleMouseLeave}
                         draggable
-                        onDragStart={(e) => handleDragStart(e, "view", view.id)}
+                        onDragStart={(e) => handleDragStart(e, "view", view.id, viewGroup.id)}
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                         onDragEnter={(e) => handleDragEnter(e, view.id, "view")}
@@ -895,19 +897,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           reports={reports}
           widgets={widgets}
           userRole={user.role}
-          onSave={async (updatedView) => {
-            try {
-              await viewsService.updateView(updatedView.id, user.name, {
-                name: updatedView.name,
-                isVisible: updatedView.isVisible,
-                orderIndex: updatedView.order,
-              });
-              showSuccess("View Updated", `"${updatedView.name}" has been updated successfully.`);
-              setEditingView(null);
-              window.location.reload();
-            } catch (error) {
-              console.error("Failed to update view:", error);
-              showWarning("Failed to update view", "Please try again");
+          userId={user.name}
+          onSave={(updatedView) => {
+            // Modal handles all API calls internally
+            setEditingView(null);
+            // Refresh data from parent
+            if (onRefreshData) {
+              onRefreshData();
             }
           }}
           onClose={() => setEditingView(null)}
@@ -921,23 +917,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           userRole={user.role}
           userNavSettings={[userNavSettings]} // Convert single object to array for modal
           user={user}
-          onSave={async (updatedViewGroup) => {
-            try {
-              await viewGroupsService.updateViewGroup(updatedViewGroup.id, user.name, {
-                name: updatedViewGroup.name,
-                isVisible: updatedViewGroup.isVisible,
-                isDefault: updatedViewGroup.isDefault,
-                orderIndex: updatedViewGroup.order,
-              });
-              showSuccess(
-                "View Group Updated",
-                `"${updatedViewGroup.name}" has been updated successfully.`
-              );
-              setEditingViewGroup(null);
-              window.location.reload();
-            } catch (error) {
-              console.error("Failed to update view group:", error);
-              showWarning("Failed to update view group", "Please try again");
+          onSave={(updatedViewGroup) => {
+            // Modal handles all API calls internally
+            setEditingViewGroup(null);
+            // Refresh data from parent
+            if (onRefreshData) {
+              onRefreshData();
             }
           }}
           onClose={() => setEditingViewGroup(null)}

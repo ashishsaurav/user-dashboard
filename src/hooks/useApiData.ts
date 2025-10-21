@@ -3,7 +3,7 @@
  * Custom hook to load data from backend API
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, Report, Widget, View, ViewGroup, UserNavigationSettings } from '../types';
 import { reportsService } from '../services/reportsService';
 import { widgetsService } from '../services/widgetsService';
@@ -68,42 +68,7 @@ export function useApiData(user: User | null) {
           loading: false,
           error: null,
         });
-
-        console.log('✅ API Data loaded successfully', {
-          reports: reports.length,
-          widgets: widgets.length,
-          views: views.length,
-          viewGroups: viewGroups.length,
-        });
-        
-        // Debug: Show first view details
-        if (views.length > 0) {
-          const firstView = views[0];
-          console.log('🔍 Sample View Data:', {
-            name: firstView.name,
-            reportIds: firstView.reportIds,
-            widgetIds: firstView.widgetIds,
-            totalReports: firstView.reportIds.length,
-            totalWidgets: firstView.widgetIds.length
-          });
-          
-          console.log('🔍 Available Reports:', reports.map(r => ({ id: r.id, name: r.name })));
-          console.log('🔍 Available Widgets:', widgets.map(w => ({ id: w.id, name: w.name })));
-          
-          // Check which IDs are missing
-          const missingReports = firstView.reportIds.filter(id => !reports.find(r => r.id === id));
-          const missingWidgets = firstView.widgetIds.filter(id => !widgets.find(w => w.id === id));
-          
-          if (missingReports.length > 0 || missingWidgets.length > 0) {
-            console.warn('⚠️ View has items user cannot access:', {
-              view: firstView.name,
-              missingReports,
-              missingWidgets
-            });
-          }
-        }
       } catch (error: any) {
-        console.error('❌ Error loading API data:', error);
         setState(prev => ({
           ...prev,
           loading: false,
@@ -115,35 +80,37 @@ export function useApiData(user: User | null) {
     loadData();
   }, [user]);
 
-  const refetchViews = async () => {
+  const refetchViews = useCallback(async () => {
     if (!user) return;
     try {
+      console.log('🔄 Refetching views for user:', user.name);
       const views = await viewsService.getUserViews(user.name);
+      console.log('✅ Views refetched:', views.length);
       setState(prev => ({ ...prev, views }));
     } catch (error) {
-      console.error('Error refetching views:', error);
+      console.error('❌ Error refetching views:', error);
     }
-  };
+  }, [user]);
 
-  const refetchViewGroups = async () => {
+  const refetchViewGroups = useCallback(async () => {
     if (!user) return;
     try {
       const viewGroups = await viewGroupsService.getUserViewGroups(user.name);
       setState(prev => ({ ...prev, viewGroups }));
     } catch (error) {
-      console.error('Error refetching view groups:', error);
+      // Silent fail
     }
-  };
+  }, [user]);
 
-  const refetchNavSettings = async () => {
+  const refetchNavSettings = useCallback(async () => {
     if (!user) return;
     try {
       const navSettings = await navigationService.getNavigationSettings(user.name);
       setState(prev => ({ ...prev, navSettings }));
     } catch (error) {
-      console.error('Error refetching navigation settings:', error);
+      // Silent fail
     }
-  };
+  }, [user]);
 
   return {
     ...state,

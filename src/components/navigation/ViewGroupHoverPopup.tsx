@@ -32,6 +32,7 @@ interface ViewGroupHoverPopupProps {
   onUpdateViews?: (views: View[]) => void;
   onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
   onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
+  onRefreshData?: () => void; // NEW: Callback to refresh data from parent
   // Dock position for smart popup placement
   dockPosition?: "left" | "right";
 }
@@ -53,6 +54,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
+  onRefreshData,
   dockPosition = "left",
 }) => {
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -214,23 +216,21 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
 
   // Modal handlers - based on AllViewGroupsViews.tsx patterns
   const handleSaveViewGroup = (updatedViewGroup: ViewGroup) => {
-    if (!onUpdateViewGroups) return;
-    const updated = allViewGroups.map((vg) =>
-      vg.id === updatedViewGroup.id ? updatedViewGroup : vg
-    );
-    onUpdateViewGroups(updated);
     setEditingViewGroup(null);
     showSuccess("View group updated successfully");
+    // Refresh data from parent
+    if (onRefreshData) {
+      onRefreshData();
+    }
   };
 
   const handleSaveView = (updatedView: View) => {
-    if (!onUpdateViews) return;
-    const updated = allViews.map((v) =>
-      v.id === updatedView.id ? updatedView : v
-    );
-    onUpdateViews(updated);
     setEditingView(null);
     showSuccess("View updated successfully");
+    // Refresh data from parent
+    if (onRefreshData) {
+      onRefreshData();
+    }
   };
 
   // Delete handlers - matching AllViewGroupsViews.tsx pattern
@@ -483,6 +483,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
           reports={reports}
           widgets={widgets}
           userRole={user?.role || "viewer"}
+          userId={user?.name || ""}
           onSave={handleSaveView}
           onClose={() => setEditingView(null)}
         />

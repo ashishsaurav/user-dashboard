@@ -108,15 +108,16 @@ const NotificationProvider: React.FC<NotificationProviderProps> = ({
 
       {/* Render Notifications */}
       {notifications.map((notification, index) => (
-        <SuccessNotification
-          key={notification.id}
-          message={notification.message}
-          subMessage={notification.subMessage}
-          type={notification.type}
-          isVisible={true}
-          duration={notification.duration}
-          onClose={() => removeNotification(notification.id)}
-        />
+        // <SuccessNotification
+        //   key={notification.id}
+        //   message={notification.message}
+        //   subMessage={notification.subMessage}
+        //   type={notification.type}
+        //   isVisible={true}
+        //   duration={notification.duration}
+        //   onClose={() => removeNotification(notification.id)}
+        // />
+        <></>
       ))}
     </NotificationContext.Provider>
   );

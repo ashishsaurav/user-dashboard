@@ -19,6 +19,7 @@ interface CollapsedNavigationPanelProps {
   onUpdateViews?: (views: View[]) => void;
   onUpdateViewGroups?: (viewGroups: ViewGroup[]) => void;
   onUpdateNavSettings?: (settings: UserNavigationSettings) => void;
+  onRefreshData?: () => void; // NEW: Callback to refresh data from parent
   // Add reports and widgets for modals
   reports?: any[];
   widgets?: any[];
@@ -36,6 +37,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   onUpdateViews,
   onUpdateViewGroups,
   onUpdateNavSettings,
+  onRefreshData,
   reports = [],
   widgets = [],
   popupPosition = 'left',
@@ -46,9 +48,14 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Get ordered and visible view groups
+  console.log('📊 CollapsedNavigationPanel - viewGroups:', viewGroups.length);
+  console.log('📊 CollapsedNavigationPanel - views:', views.length);
+  
   const orderedViewGroups = viewGroups
     .filter((vg) => vg.isVisible && !userNavSettings.hiddenViewGroups.includes(vg.id))
     .sort((a, b) => (a.order || 0) - (b.order || 0));
+  
+  console.log('🔍 CollapsedNavigationPanel - visible groups:', orderedViewGroups.length);
 
   // Get views for a specific view group
   const getViewsForGroup = (viewGroupId: string) => {
@@ -209,10 +216,11 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
           userNavSettings={userNavSettings}
           reports={reports}
           widgets={widgets}
-          onUpdateViews={onUpdateViews}
-          onUpdateViewGroups={onUpdateViewGroups}
-          onUpdateNavSettings={onUpdateNavSettings}
-          dockPosition={popupPosition}
+            onUpdateViews={onUpdateViews}
+            onUpdateViewGroups={onUpdateViewGroups}
+            onUpdateNavSettings={onUpdateNavSettings}
+            onRefreshData={onRefreshData}
+            dockPosition={popupPosition}
         />
       )}
     </div>

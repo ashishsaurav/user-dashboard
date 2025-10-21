@@ -46,8 +46,6 @@ class ApiClient {
     config.signal = controller.signal;
 
     try {
-      console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`);
-      
       const response = await fetch(url, config);
       clearTimeout(timeoutId);
 
@@ -69,8 +67,6 @@ class ApiClient {
 
       // Parse JSON response
       const data = await response.json();
-      console.log(`✅ API Response: ${options.method || 'GET'} ${url}`, data);
-      
       return data as T;
     } catch (error) {
       clearTimeout(timeoutId);

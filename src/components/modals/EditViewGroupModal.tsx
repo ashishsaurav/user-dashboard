@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { ViewGroup, View, UserNavigationSettings } from "../../types";
+import { viewGroupsService } from "../../services/viewGroupsService";
+import { useNotification } from "../common/NotificationProvider";
 
 interface EditViewGroupModalProps {
   viewGroup: ViewGroup;
@@ -25,57 +27,76 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
   const [formData, setFormData] = useState({
     ...viewGroup,
   });
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Track local visibility changes (don't save until form submit)
+  const [localVisibilityChanges, setLocalVisibilityChanges] = useState<Record<string, boolean>>({});
+  
+  const { showSuccess, showError } = useNotification();
 
-  // Get current user settings - this will sync with base data
-  const currentSettings = useMemo((): UserNavigationSettings => {
-    const settings = userNavSettings.find((s) => s.userId === user?.name);
-    return (
-      settings || {
-        userId: user?.name || "",
-        viewGroupOrder: [],
-        viewOrders: {},
-        hiddenViewGroups: [],
-        hiddenViews: [],
-      }
-    );
-  }, [userNavSettings, user?.name]);
 
-  // Initialize local hidden views with CURRENT base data - will sync properly
-  const [localHiddenViews, setLocalHiddenViews] = useState<string[]>(() => {
-    console.log(
-      "Initializing local hidden views:",
-      currentSettings.hiddenViews
-    );
-    return [...currentSettings.hiddenViews]; // Create a copy to avoid mutation
-  });
-
-  // Reset local state when modal reopens with new data
-  React.useEffect(() => {
-    console.log("Syncing with new base data:", currentSettings.hiddenViews);
-    setLocalHiddenViews([...currentSettings.hiddenViews]);
-  }, [viewGroup.id]); // Only reset when editing a different viewgroup
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
 
-    console.log("Saving changes:", {
-      viewGroup: formData,
-      hiddenViews: localHiddenViews,
-      originalHidden: currentSettings.hiddenViews,
-    });
+    try {
 
-    // Save the view group changes
-    onSave(formData);
+      // 1. Update view group name and basic info
+      await viewGroupsService.updateViewGroup(formData.id, user?.name || '', {
+        name: formData.name,
+        isVisible: formData.isVisible,
+        isDefault: formData.isDefault,
+        orderIndex: formData.order || 0,
+      });
 
-    // Save visibility changes if there are any changes
-    if (onUpdateNavSettings && user) {
-      const updatedSettings = {
-        ...currentSettings,
-        hiddenViews: localHiddenViews,
-      };
+      // 2. Update views in group - calculate what to add/remove
+      const originalViewIds = viewGroup.viewIds;
+      const newViewIds = formData.viewIds;
+      
+      const viewsToAdd = newViewIds.filter(id => !originalViewIds.includes(id));
+      const viewsToRemove = originalViewIds.filter(id => !newViewIds.includes(id));
 
-      console.log("Updating navigation settings:", updatedSettings);
-      onUpdateNavSettings(updatedSettings);
+      // Add new views
+      if (viewsToAdd.length > 0) {
+        await viewGroupsService.addViewsToGroup(formData.id, user?.name || '', viewsToAdd);
+      }
+
+      // Remove views
+      for (const viewId of viewsToRemove) {
+        await viewGroupsService.removeViewFromGroup(formData.id, viewId, user?.name || '');
+      }
+
+      // 3. Save visibility changes for each view that was toggled
+      if (Object.keys(localVisibilityChanges).length > 0) {
+        const viewsServiceModule = await import('../../services/viewsService');
+        for (const [viewId, isVisible] of Object.entries(localVisibilityChanges)) {
+          const view = views.find(v => v.id === viewId);
+          if (view) {
+            try {
+              await viewsServiceModule.viewsService.updateView(view.id, user?.name || '', {
+                name: view.name,
+                isVisible: isVisible,
+                orderIndex: view.order || 0,
+              });
+            } catch (error) {
+              // Continue even if one fails
+            }
+          }
+        }
+      }
+
+      showSuccess(
+        "View Group Updated",
+        `"${formData.name}" has been updated with ${formData.viewIds.length} views`
+      );
+
+      // Save the view group changes
+      setLocalVisibilityChanges({});
+      onSave(formData);
+    } catch (error) {
+      showError("Update Failed", "Could not update view group. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -88,29 +109,31 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     });
   };
 
-  // LOCAL VISIBILITY TOGGLE: Update local state only
+  // Toggle visibility locally (save on form submit)
   const handleVisibilityToggle = (viewId: string) => {
-    setLocalHiddenViews((prev) => {
-      const isCurrentlyHidden = prev.includes(viewId);
-      const newState = isCurrentlyHidden
-        ? prev.filter((id) => id !== viewId) // Show view
-        : [...prev, viewId]; // Hide view
+    const view = views.find(v => v.id === viewId);
+    if (!view) return;
 
-      console.log(`Toggling view ${viewId}:`, {
-        wasHidden: isCurrentlyHidden,
-        newHidden: !isCurrentlyHidden,
-        newState,
-      });
-
-      return newState;
+    setLocalVisibilityChanges((prev: Record<string, boolean>) => {
+      const currentVisibility = prev.hasOwnProperty(viewId) ? prev[viewId] : view.isVisible;
+      return {
+        ...prev,
+        [viewId]: !currentVisibility
+      };
     });
   };
 
-  // Check if view is hidden (using local state)
+  // Check if view is hidden (using local changes or View.isVisible)
   const isViewHidden = (viewId: string): boolean => {
-    const hidden = localHiddenViews.includes(viewId);
-    // console.log(`View ${viewId} is hidden:`, hidden);
-    return hidden;
+    const view = views.find(v => v.id === viewId);
+    if (!view) return false;
+    
+    // Check local changes first, fallback to actual value
+    if (localVisibilityChanges.hasOwnProperty(viewId)) {
+      return !localVisibilityChanges[viewId];
+    }
+    
+    return !view.isVisible;
   };
 
   // Icons
@@ -216,11 +239,27 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
                 </p>
               )}
             </div>
+
+            <div className="form-group">
+              <label className="modern-checkbox">
+                <input
+                  type="checkbox"
+                  checked={formData.isVisible}
+                  onChange={(e) =>
+                    setFormData({ ...formData, isVisible: e.target.checked })
+                  }
+                />
+                <span className="checkmark"></span>
+                <span className="checkbox-label">
+                  Visible in navigation panel
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* Views Section */}
           <div className="form-section">
-            <h3>Views in Group</h3>
+            <h3>Views in Group ({formData.viewIds.length} selected)</h3>
             <p className="section-description">
               Select which views belong to this group and control their
               navigation visibility
@@ -290,11 +329,16 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
               type="button"
               className="modal-btn modal-btn-secondary"
               onClick={onClose}
+              disabled={isLoading}
             >
               Cancel
             </button>
-            <button type="submit" className="modal-btn modal-btn-primary">
-              Save Changes
+            <button 
+              type="submit" 
+              className="modal-btn modal-btn-primary"
+              disabled={isLoading}
+            >
+              {isLoading ? "Saving..." : "Save Changes"}
             </button>
           </div>
         </form>

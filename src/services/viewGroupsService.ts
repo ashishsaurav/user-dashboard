@@ -43,27 +43,30 @@ export class ViewGroupsService {
 
   /**
    * Create view group
+   * Note: Backend CreateViewGroupDto does NOT include viewIds
+   * Use addViewsToGroup() separately to add views
    */
   async createViewGroup(userId: string, data: {
     name: string;
-    isVisible?: boolean;
-    isDefault?: boolean;
-    orderIndex?: number;
-    viewIds?: string[];
+    isVisible: boolean;
+    isDefault: boolean;
+    orderIndex: number;
   }): Promise<ViewGroup> {
+    const safeOrderIndex = Math.min(Math.max(0, data.orderIndex), 2147483647);
+    
     const viewGroup = await apiClient.post<ViewGroupDto>(
       API_ENDPOINTS.VIEW_GROUPS.CREATE,
       {
         userId,
         data: {
           name: data.name,
-          isVisible: data.isVisible ?? true,
-          isDefault: data.isDefault ?? false,
-          orderIndex: data.orderIndex ?? 0,
-          viewIds: data.viewIds || [],
+          isVisible: data.isVisible,
+          isDefault: data.isDefault,
+          orderIndex: safeOrderIndex,
         },
       }
     );
+    
     return this.transformToFrontend(viewGroup);
   }
 

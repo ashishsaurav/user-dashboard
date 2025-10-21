@@ -10,6 +10,9 @@ import {
   Report,
   Widget,
 } from "../../types";
+import { viewsService } from "../../services/viewsService";
+import { viewGroupsService } from "../../services/viewGroupsService";
+import { useNotification } from "../common/NotificationProvider";
 import { useApiData } from "../../hooks/useApiData";
 import { useTheme } from "../../contexts/ThemeContext";
 import ManageModal from "../modals/ManageModal";
@@ -115,27 +118,29 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   );
 
-  // Update local state when API data changes
+  // Update local state when API data changes (FIXED: removed length check)
   useEffect(() => {
-    if (apiViews.length > 0) {
-      setViews(apiViews);
-    }
+    console.log('📊 API Views updated:', apiViews.length);
+    setViews(apiViews);
+    setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
   }, [apiViews]);
 
   useEffect(() => {
-    if (apiViewGroups.length > 0) {
-      setViewGroups(apiViewGroups);
-    }
+    console.log('📊 API ViewGroups updated:', apiViewGroups.length);
+    setViewGroups(apiViewGroups);
+    setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
   }, [apiViewGroups]);
 
   useEffect(() => {
     if (apiNavSettings) {
+      console.log('📊 API NavSettings updated');
       setNavSettings(apiNavSettings);
+      setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
     }
   }, [apiNavSettings]);
 
   // Enhanced state handlers
-  const handleUpdateViews = (updatedViews: View[]) => {
+  const handleUpdateViews = useCallback((updatedViews: View[]) => {
     const sortedViews = [...updatedViews].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
@@ -150,29 +155,20 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         setSelectedView(updatedSelectedView);
       }
     }
-    
-    // Optionally refetch from API to sync
-    refetchViews();
-  };
+  }, [selectedView]);
 
-  const handleUpdateViewGroups = (updatedViewGroups: ViewGroup[]) => {
+  const handleUpdateViewGroups = useCallback((updatedViewGroups: ViewGroup[]) => {
     const sortedGroups = [...updatedViewGroups].sort(
       (a, b) => (a.order || 0) - (b.order || 0)
     );
     setViewGroups(sortedGroups);
     setNavigationUpdateTrigger((prev) => prev + 1);
-    
-    // Optionally refetch from API to sync
-    refetchViewGroups();
-  };
+  }, []);
 
-  const handleUpdateNavSettings = (settings: UserNavigationSettings) => {
+  const handleUpdateNavSettings = useCallback((settings: UserNavigationSettings) => {
     setNavSettings(settings);
     setNavigationUpdateTrigger((prev) => prev + 1);
-    
-    // Optionally refetch from API to sync
-    refetchNavSettings();
-  };
+  }, []);
 
   // Compute current layout signature based on state
   const computeCurrentSignature = useCallback((): LayoutSignature => {
@@ -338,8 +334,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return widgets; // Already filtered by role from API
   };
 
-  // Content creators
-  const createNavigationContent = useCallback(() => {
+  // Content creators - NOT memoized so it always returns fresh content
+  const createNavigationContent = () => {
+    
     if (isDockCollapsed) {
       return (
         <CollapsedNavigationPanel
@@ -355,6 +352,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           reports={getUserAccessibleReports()}
           widgets={getUserAccessibleWidgets()}
           popupPosition={navPanelPosition}
+          onRefreshData={async () => {
+            console.log('🔄 Refreshing navigation data...');
+            await Promise.all([
+              refetchViews(),
+              refetchViewGroups(),
+              refetchNavSettings(),
+            ]);
+            console.log('✅ Navigation data refreshed');
+          }}
         />
       );
     }
@@ -373,19 +379,18 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         onUpdateNavSettings={handleUpdateNavSettings}
         onViewSelect={handleViewSelect}
         selectedView={selectedView}
+        onRefreshData={async () => {
+          console.log('🔄 Refreshing navigation data...');
+          await Promise.all([
+            refetchViews(),
+            refetchViewGroups(),
+            refetchNavSettings(),
+          ]);
+          console.log('✅ Navigation data refreshed');
+        }}
       />
     );
-  }, [
-    isDockCollapsed,
-    user,
-    views,
-    viewGroups,
-    navSettings,
-    selectedView,
-    navigationUpdateTrigger,
-    layoutMode,
-    navPanelPosition,
-  ]);
+  };
 
   const createReportsContent = () => (
     <ViewContentPanel
@@ -1143,6 +1148,19 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     user.name,
   ]);
 
+  // Force update navigation content when data changes
+  useEffect(() => {
+    console.log('🔄 Data changed - updating navigation content');
+    console.log('  Views:', views.length);
+    console.log('  View Groups:', viewGroups.length);
+    console.log('  Navigation trigger:', navigationUpdateTrigger);
+    
+    // Force update the layout content
+    if (dockLayoutRef.current) {
+      updateLayoutContent();
+    }
+  }, [views, viewGroups, navSettings, navigationUpdateTrigger, updateLayoutContent]);
+
   // Show loading state
   if (apiLoading) {
     return (
@@ -1231,22 +1249,86 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onUpdateViews={handleUpdateViews}
           onUpdateViewGroups={handleUpdateViewGroups}
           onUpdateNavSettings={handleUpdateNavSettings}
-          onAddView={(newView, viewGroupIds) => {
-            const updatedViews = [...views, newView];
-            handleUpdateViews(updatedViews);
-            if (viewGroupIds && viewGroupIds.length > 0) {
-              const updatedViewGroups = viewGroups.map((vg) => {
-                if (viewGroupIds.includes(vg.id)) {
-                  return { ...vg, viewIds: [...vg.viewIds, newView.id] };
-                }
-                return vg;
+          onRefreshData={async () => {
+            await Promise.all([refetchViews(), refetchViewGroups(), refetchNavSettings()]);
+          }}
+          onAddView={async (newView, viewGroupIds) => {
+            try {
+              console.log('🆕 Creating new view:', newView.name, 'for groups:', viewGroupIds);
+              
+              // ✅ Step 1: Create the view via API (backend returns view with real ID)
+              // Use a reasonable orderIndex (current count) instead of Date.now()
+              const orderIndex = views.length;
+              
+              const createdView = await viewsService.createView(user.name, {
+                name: newView.name,
+                reportIds: newView.reportIds,
+                widgetIds: newView.widgetIds,
+                isVisible: true,
+                orderIndex: orderIndex,
               });
-              handleUpdateViewGroups(updatedViewGroups);
+              console.log('  ✅ View created in database with ID:', createdView.id);
+              
+              // Step 2: Add view to selected groups via API (use backend-generated ID)
+              if (viewGroupIds && viewGroupIds.length > 0) {
+                for (const groupId of viewGroupIds) {
+                  console.log('  Adding view to group:', groupId);
+                  await viewGroupsService.addViewsToGroup(groupId, user.name, [createdView.id]);
+                }
+                console.log('  ✅ View added to', viewGroupIds.length, 'groups');
+              }
+              
+              // Step 3: Refresh all data
+              console.log('  🔄 Refreshing data...');
+              await Promise.all([refetchViews(), refetchViewGroups()]);
+              console.log('✅ View created and data refreshed');
+            } catch (error: any) {
+              console.error('❌ Failed to create view:', error);
+              const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+              // Show error notification
+              alert(`Failed to create view: ${errorMessage}`);
             }
           }}
-          onAddViewGroup={(newViewGroup) => {
-            const updatedViewGroups = [...viewGroups, newViewGroup];
-            handleUpdateViewGroups(updatedViewGroups);
+          onAddViewGroup={async (newViewGroup) => {
+            try {
+              console.log('🆕 Creating new view group:', newViewGroup.name);
+              console.log('  With views:', newViewGroup.viewIds);
+              
+    // ✅ Step 1: Create the view group via API (WITHOUT viewIds)
+    // Use a reasonable orderIndex (current count) instead of Date.now() which is too large for Int32
+    const orderIndex = viewGroups.length;
+    
+    const createdViewGroup = await viewGroupsService.createViewGroup(user.name, {
+      name: newViewGroup.name,
+      isVisible: newViewGroup.isVisible ?? true,
+      isDefault: newViewGroup.isDefault ?? false,
+      orderIndex: orderIndex,
+    });
+              console.log('  ✅ View group created in database with ID:', createdViewGroup.id);
+              
+              // ✅ Step 2: Add views to the group (if any selected)
+              if (newViewGroup.viewIds && newViewGroup.viewIds.length > 0) {
+                console.log('  Adding', newViewGroup.viewIds.length, 'views to group');
+                await viewGroupsService.addViewsToGroup(
+                  createdViewGroup.id,
+                  user.name,
+                  newViewGroup.viewIds
+                );
+                console.log('  ✅ Views added to group');
+              } else {
+                console.log('  No views to add (empty group)');
+              }
+              
+              // ✅ Step 3: Refresh all data
+              console.log('  🔄 Refreshing data...');
+              await Promise.all([refetchViewGroups(), refetchNavSettings()]);
+              console.log('✅ View group created and data refreshed');
+            } catch (error: any) {
+              console.error('❌ Failed to create view group:', error);
+              const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+              // Show error notification
+              alert(`Failed to create view group: ${errorMessage}`);
+            }
           }}
           views={views}
           viewGroups={viewGroups}

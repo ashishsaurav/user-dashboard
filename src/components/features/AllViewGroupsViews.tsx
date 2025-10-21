@@ -38,6 +38,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
   const [draggedItem, setDraggedItem] = useState<{
     type: "view" | "viewgroup";
     id: string;
+    data?: { viewGroupId?: string };
   } | null>(null);
   const [dragOverItem, setDragOverItem] = useState<{
     id: string;
@@ -57,11 +58,12 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
     if (!viewGroup) return [];
 
+    // Preserve backend ordering from viewGroup.viewIds
     const groupViews = viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean) as View[];
 
-    return groupViews.sort((a, b) => (a.order || 0) - (b.order || 0));
+    return groupViews;
   };
 
   // Handle save view group
@@ -80,7 +82,6 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       setEditingViewGroup(null);
       onRefresh();
     } catch (error) {
-      console.error("Failed to update view group:", error);
       showError("Failed to update view group", "Please try again");
     }
   };
@@ -97,55 +98,199 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       setEditingView(null);
       onRefresh();
     } catch (error) {
-      console.error("Failed to update view:", error);
       showError("Failed to update view", "Please try again");
     }
   };
 
-  // Handle delete view group
-  const handleDeleteViewGroup = async () => {
-    if (!deletingViewGroup) return;
-
-    try {
-      await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
-      showSuccess(
-        "View group deleted",
-        `"${deletingViewGroup.name}" has been removed`
-      );
-      setDeletingViewGroup(null);
-      onRefresh();
-    } catch (error) {
-      console.error("Failed to delete view group:", error);
-      showError("Failed to delete view group", "Please try again");
-    }
-  };
-
-  // Handle delete view
+  // Handle delete view (SAME AS NAVIGATIONPANEL)
   const handleDeleteView = async () => {
     if (!deletingView) return;
 
+    const view = deletingView;
+
     try {
-      await viewsService.deleteView(deletingView.id, user.name);
-      showSuccess("View deleted", `"${deletingView.name}" has been removed`);
+      // Find all view groups containing this view
+      const groupsContainingView = viewGroups.filter((vg: ViewGroup) =>
+        vg.viewIds.includes(view.id)
+      );
+
+      // Remove view from all groups first (to avoid foreign key errors)
+      for (const group of groupsContainingView) {
+        await viewGroupsService.removeViewFromGroup(
+          group.id,
+          view.id,
+          user.name
+        );
+      }
+
+      // Now delete the view
+      await viewsService.deleteView(view.id, user.name);
+
+      showSuccess("View deleted", `"${view.name}" has been removed`);
       setDeletingView(null);
       onRefresh();
-    } catch (error) {
-      console.error("Failed to delete view:", error);
-      showError("Failed to delete view", "Please try again");
+    } catch (error: any) {
+      const errorMessage =
+        error?.message || error?.data?.message || "Unknown error";
+      showError("Failed to delete view", errorMessage);
     }
   };
 
-  // Drag and drop handlers
-  const handleDragStart = (
-    e: React.DragEvent,
+  // Handle delete view group (SAME AS NAVIGATIONPANEL)
+  const handleDeleteViewGroupConfirm = async (
+    action?: "group-only" | "group-and-views"
+  ) => {
+    if (!deletingViewGroup || !action) return;
+
+    const defaultGroup = viewGroups.find((vg) => vg.isDefault);
+    if (!defaultGroup && action === "group-only") {
+      showError(
+        "Error",
+        "Default group not found. Cannot move views. Please create a default group first."
+      );
+      return;
+    }
+
+    try {
+      if (action === "group-only") {
+        // Move views to default group, then delete the group
+        const viewsInGroup = [...deletingViewGroup.viewIds];
+
+        if (viewsInGroup.length > 0) {
+          const defaultGroupViewIds = defaultGroup!.viewIds;
+          const viewsToAdd = viewsInGroup.filter(
+            (viewId: string) => !defaultGroupViewIds.includes(viewId)
+          );
+
+          if (viewsToAdd.length > 0) {
+            await viewGroupsService.addViewsToGroup(
+              defaultGroup!.id,
+              user.name,
+              viewsToAdd
+            );
+          }
+        }
+
+        // Remove all views from the deleting group
+        for (const viewId of viewsInGroup) {
+          try {
+            await viewGroupsService.removeViewFromGroup(
+              deletingViewGroup.id,
+              viewId,
+              user.name
+            );
+          } catch (error) {
+            // Ignore errors
+          }
+        }
+
+        // Delete the empty group
+        await viewGroupsService.deleteViewGroup(
+          deletingViewGroup.id,
+          user.name
+        );
+
+        showSuccess(
+          "View group deleted",
+          `"${deletingViewGroup.name}" has been removed. Views moved to default group.`
+        );
+      } else {
+        // Delete group and all its views
+        const viewsToDelete = deletingViewGroup.viewIds;
+
+        for (const viewId of viewsToDelete) {
+          const view = views.find((v) => v.id === viewId);
+          if (!view) continue;
+
+          // Remove view from all groups first
+          const groupsContainingView = viewGroups.filter((vg: ViewGroup) =>
+            vg.viewIds.includes(viewId)
+          );
+
+          for (const group of groupsContainingView) {
+            await viewGroupsService.removeViewFromGroup(
+              group.id,
+              viewId,
+              user.name
+            );
+          }
+
+          // Delete the view
+          await viewsService.deleteView(viewId, user.name);
+        }
+
+        // Delete the group
+        await viewGroupsService.deleteViewGroup(
+          deletingViewGroup.id,
+          user.name
+        );
+
+        showSuccess(
+          "View group and views deleted",
+          `"${deletingViewGroup.name}" and all its views have been removed`
+        );
+      }
+
+      setDeletingViewGroup(null);
+      onRefresh();
+    } catch (error: any) {
+      const errorMessage =
+        error?.message || error?.data?.message || "Unknown error";
+      showError("Failed to delete view group", errorMessage);
+    }
+  };
+
+  // Handle toggle visibility
+  const handleToggleVisibility = async (
     type: "view" | "viewgroup",
     id: string
   ) => {
-    setDraggedItem({ type, id });
-    e.dataTransfer.effectAllowed = "move";
+    try {
+      if (type === "viewgroup") {
+        const vg = viewGroups.find((v) => v.id === id);
+        if (!vg) return;
+
+        await viewGroupsService.updateViewGroup(vg.id, user.name, {
+          name: vg.name,
+          isVisible: !vg.isVisible,
+          isDefault: vg.isDefault,
+          orderIndex: vg.order,
+        });
+      } else {
+        const v = views.find((view) => view.id === id);
+        if (!v) return;
+
+        await viewsService.updateView(v.id, user.name, {
+          name: v.name,
+          isVisible: !v.isVisible,
+          orderIndex: v.order,
+        });
+      }
+      onRefresh();
+    } catch (error) {
+      showError("Failed to update visibility", "Please try again");
+    }
   };
 
-  const handleDragEnd = () => {
+  // Drag handlers
+  const handleDragStart = (
+    e: React.DragEvent,
+    type: "view" | "viewgroup",
+    id: string,
+    viewGroupId?: string
+  ) => {
+    e.stopPropagation();
+    setDraggedItem({ type, id, data: { viewGroupId } });
+    e.dataTransfer.setData(
+      "text/plain",
+      JSON.stringify({ type, id, viewGroupId })
+    );
+    e.dataTransfer.effectAllowed = "move";
+    (e.currentTarget as HTMLElement).style.opacity = "0.5";
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.opacity = "1";
     setDraggedItem(null);
     setDragOverItem(null);
   };
@@ -161,35 +306,253 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     targetType: "view" | "viewgroup"
   ) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!draggedItem) return;
 
-    // Determine position
-    const target = e.currentTarget as HTMLElement;
-    const rect = target.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    const position = e.clientY < midpoint ? "top" : "bottom";
+    let position: "top" | "bottom" | "middle" = "middle";
+    if (targetType === "view") {
+      const rect = e.currentTarget.getBoundingClientRect();
 
-    setDragOverItem({ id: targetId, position: position as "top" | "bottom" });
+      const y = e.clientY - rect.top;
+      const height = rect.height;
+      if (y < height * 0.5) {
+        position = "top"; // Top half
+      } else {
+        position = "bottom"; // Bottom half
+      }
+      
+      console.log('👆 DragEnter VIEW:', { 
+        targetId, 
+        y, 
+        height, 
+        threshold: height * 0.5, 
+        position,
+        draggedId: draggedItem?.id,
+        draggedType: draggedItem?.type
+      });
+    } else {
+      console.log('👆 DragEnter VIEWGROUP:', { targetId });
+    }
+    setDragOverItem({ id: targetId, position });
   };
 
-  const handleDragLeave = () => {
-    // Don't clear immediately to prevent flickering
+  const handleDragLeave = (e: React.DragEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX;
+    const y = e.clientY;
+    if (x < rect.left || x > rect.right || y < rect.top || y > rect.bottom) {
+      setDragOverItem(null);
+    }
   };
 
-  const handleDrop = async (
+  const handleDrop = (
     e: React.DragEvent,
     targetId: string,
     targetType: "view" | "viewgroup"
   ) => {
     e.preventDefault();
-    if (!draggedItem || !dragOverItem) return;
+    e.stopPropagation();
+    if (!draggedItem || draggedItem.id === targetId) {
+      setDragOverItem(null);
+      setDraggedItem(null);
+      return;
+    }
 
-    // For now, show success message
-    // Full implementation would call reorder
-    showSuccess("Drag and drop", "Use up/down buttons for now");
+    // Store drag data before any state changes
+    const dragData = { ...draggedItem };
+    const dropPosition = dragOverItem?.position;
 
-    setDraggedItem(null);
+    // Clear drag UI state
     setDragOverItem(null);
+
+    if (dragData.type === "viewgroup" && targetType === "viewgroup") {
+      handleViewGroupReorder(dragData.id, targetId);
+    } else if (dragData.type === "view") {
+      if (targetType === "view") {
+        handleViewReorder(dragData.id, targetId, dropPosition);
+      } else if (targetType === "viewgroup") {
+        handleViewMoveToGroup(dragData.id, targetId);
+      }
+    }
+  };
+
+  // Reorder view groups (API-connected)
+  const handleViewGroupReorder = async (
+    draggedGroupId: string,
+    targetGroupId: string
+  ) => {
+    const draggedIndex = viewGroups.findIndex((vg) => vg.id === draggedGroupId);
+    const targetIndex = viewGroups.findIndex((vg) => vg.id === targetGroupId);
+
+    if (
+      draggedIndex !== -1 &&
+      targetIndex !== -1 &&
+      draggedIndex !== targetIndex
+    ) {
+      const reorderedGroups = [...viewGroups];
+      const [draggedGroup] = reorderedGroups.splice(draggedIndex, 1);
+      reorderedGroups.splice(targetIndex, 0, draggedGroup);
+
+      const items = reorderedGroups.map((group, index) => ({
+        id: group.id,
+        orderIndex: index,
+      }));
+
+      try {
+        await viewGroupsService.reorderViewGroups(user.name, items);
+
+        if (onRefresh) {
+          await onRefresh();
+        }
+      } catch (error) {
+      } finally {
+        setDraggedItem(null);
+      }
+    }
+  };
+
+  const handleViewReorder = async (
+    draggedViewId: string,
+    targetViewId: string,
+    position?: "top" | "bottom" | "middle"
+  ) => {
+    const sourceGroupId =
+      draggedItem?.data?.viewGroupId ||
+      viewGroups.find((vg) => vg.viewIds.includes(draggedViewId))?.id;
+    const targetGroupId = viewGroups.find((vg) =>
+      vg.viewIds.includes(targetViewId)
+    )?.id;
+
+    console.log('📋 handleViewReorder called:', {
+      draggedViewId,
+      targetViewId,
+      position,
+      sourceGroupId,
+      targetGroupId,
+      same: sourceGroupId === targetGroupId
+    });
+
+    if (!sourceGroupId || !targetGroupId) {
+      console.log('❌ Missing source or target group ID');
+      return;
+    }
+
+    if (sourceGroupId === targetGroupId) {
+      const viewGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
+      if (!viewGroup) {
+        console.log('❌ View group not found:', sourceGroupId);
+        return;
+      }
+
+      const draggedIndex = viewGroup.viewIds.findIndex(
+        (id) => id === draggedViewId
+      );
+      const targetIndex = viewGroup.viewIds.findIndex(
+        (id) => id === targetViewId
+      );
+
+      console.log('📋 Indices:', { draggedIndex, targetIndex, viewIds: viewGroup.viewIds });
+
+      if (
+        draggedIndex !== -1 &&
+        targetIndex !== -1 &&
+        draggedIndex !== targetIndex
+      ) {
+        const reorderedViewIds = [...viewGroup.viewIds];
+        const [draggedViewIdItem] = reorderedViewIds.splice(draggedIndex, 1);
+
+        // Calculate insert position based on drop position
+        let insertIndex: number;
+        const pos = position || "bottom";
+
+        if (pos === "top") {
+          // Insert before target
+          insertIndex = targetIndex;
+          // Adjust if dragging down (item was removed before target)
+          if (draggedIndex < targetIndex) {
+            insertIndex = targetIndex - 1;
+          }
+        } else {
+          // Insert after target (bottom or middle)
+          insertIndex = targetIndex + 1;
+          // Adjust if dragging down
+          if (draggedIndex < targetIndex) {
+            insertIndex = targetIndex;
+          }
+        }
+
+        reorderedViewIds.splice(insertIndex, 0, draggedViewIdItem);
+
+        const items = reorderedViewIds.map((id, index) => ({
+          id,
+          orderIndex: index,
+        }));
+
+        console.log('📋 Final reordered array:', reorderedViewIds);
+        console.log('📋 Calling API with items:', items);
+
+        try {
+          await viewGroupsService.reorderViewsInGroup(
+            sourceGroupId,
+            user.name,
+            items
+          );
+          
+          console.log('✅ API call successful!');
+
+          if (onRefresh) {
+            await onRefresh();
+          }
+        } catch (error) {
+          console.error('❌ API call failed:', error);
+        } finally {
+          setDraggedItem(null);
+        }
+      }
+    } else {
+      console.log('⚠️ Different groups - calling handleViewMoveToGroup');
+      handleViewMoveToGroup(draggedViewId, targetGroupId, targetViewId);
+    }
+  };
+
+  const handleViewMoveToGroup = async (
+    draggedViewId: string,
+    targetGroupId: string,
+    targetViewId?: string
+  ) => {
+    const draggedView = views.find((v) => v.id === draggedViewId);
+    // Use the source group from drag data to avoid conflicts
+    const sourceGroupId =
+      draggedItem?.data?.viewGroupId ||
+      viewGroups.find((vg) => vg.viewIds.includes(draggedViewId))?.id;
+
+    if (!draggedView || !sourceGroupId || sourceGroupId === targetGroupId)
+      return;
+
+    const sourceGroupName = viewGroups.find(
+      (vg) => vg.id === sourceGroupId
+    )?.name;
+    const targetGroupName = viewGroups.find(
+      (vg) => vg.id === targetGroupId
+    )?.name;
+
+    try {
+      await viewGroupsService.removeViewFromGroup(
+        sourceGroupId,
+        draggedViewId,
+        user.name
+      );
+      await viewGroupsService.addViewsToGroup(targetGroupId, user.name, [
+        draggedViewId,
+      ]);
+
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (error) {
+    } finally {
+      setDraggedItem(null);
+    }
   };
 
   const sortedViewGroups = [...viewGroups].sort(
@@ -454,7 +817,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
                             }`}
                             draggable={true}
                             onDragStart={(e) =>
-                              handleDragStart(e, "view", view.id)
+                              handleDragStart(e, "view", view.id, viewGroup.id)
                             }
                             onDragEnd={handleDragEnd}
                             onDragOver={handleDragOver}
@@ -535,6 +898,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           viewGroup={editingViewGroup}
           views={views}
           userRole={user.role}
+          user={user}
           onSave={handleSaveViewGroup}
           onClose={() => setEditingViewGroup(null)}
         />
@@ -546,6 +910,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           reports={reports}
           widgets={widgets}
           userRole={user.role}
+          userId={user.name}
           onSave={handleSaveView}
           onClose={() => setEditingView(null)}
         />
@@ -556,7 +921,7 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
         <DeleteConfirmationModal
           type="viewgroup"
           item={deletingViewGroup}
-          onConfirm={handleDeleteViewGroup}
+          onConfirm={handleDeleteViewGroupConfirm}
           onCancel={() => setDeletingViewGroup(null)}
         />
       )}
@@ -571,47 +936,6 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       )}
     </div>
   );
-
-  // Helper function for toggle visibility
-  async function handleToggleVisibility(
-    type: "view" | "viewgroup",
-    id: string
-  ) {
-    try {
-      if (type === "viewgroup") {
-        const vg = viewGroups.find((v) => v.id === id);
-        if (!vg) return;
-
-        await viewGroupsService.updateViewGroup(vg.id, user.name, {
-          name: vg.name,
-          isVisible: !vg.isVisible,
-          isDefault: vg.isDefault,
-          orderIndex: vg.order,
-        });
-        showSuccess(
-          vg.isVisible ? "View group hidden" : "View group shown",
-          `"${vg.name}" is now ${vg.isVisible ? "hidden" : "visible"}`
-        );
-      } else {
-        const v = views.find((view) => view.id === id);
-        if (!v) return;
-
-        await viewsService.updateView(v.id, user.name, {
-          name: v.name,
-          isVisible: !v.isVisible,
-          orderIndex: v.order,
-        });
-        showSuccess(
-          v.isVisible ? "View hidden" : "View shown",
-          `"${v.name}" is now ${v.isVisible ? "hidden" : "visible"}`
-        );
-      }
-      onRefresh();
-    } catch (error) {
-      console.error("Failed to toggle visibility:", error);
-      showError("Failed to update visibility", "Please try again");
-    }
-  }
 };
 
 export default AllViewGroupsViews;

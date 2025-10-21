@@ -362,6 +362,7 @@ const GmailNavigationPanel: React.FC<GmailNavigationPanelProps> = ({
       {editingView && (
         <EditViewModal
           userRole={user.role}
+          userId={user.name}
           view={editingView}
           reports={reports}
           widgets={widgets}
