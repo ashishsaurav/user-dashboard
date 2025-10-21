@@ -133,6 +133,38 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     }
   };
 
+  // Handle toggle visibility
+  const handleToggleVisibility = async (
+    type: "view" | "viewgroup",
+    id: string
+  ) => {
+    try {
+      if (type === "viewgroup") {
+        const vg = viewGroups.find((v) => v.id === id);
+        if (!vg) return;
+
+        await viewGroupsService.updateViewGroup(vg.id, user.name, {
+          name: vg.name,
+          isVisible: !vg.isVisible,
+          isDefault: vg.isDefault,
+          orderIndex: vg.order,
+        });
+      } else {
+        const v = views.find((view) => view.id === id);
+        if (!v) return;
+
+        await viewsService.updateView(v.id, user.name, {
+          name: v.name,
+          isVisible: !v.isVisible,
+          orderIndex: v.order,
+        });
+      }
+      onRefresh();
+    } catch (error) {
+      showError("Failed to update visibility", "Please try again");
+    }
+  };
+
   // Drag and drop handlers
   const handleDragStart = (
     e: React.DragEvent,
