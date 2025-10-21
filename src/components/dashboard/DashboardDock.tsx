@@ -1251,9 +1251,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onUpdateViewGroups={handleUpdateViewGroups}
           onUpdateNavSettings={handleUpdateNavSettings}
           onRefreshData={async () => {
-            console.log('🔄 NavigationManageModal - Refreshing all data...');
             await Promise.all([refetchViews(), refetchViewGroups(), refetchNavSettings()]);
-            console.log('✅ All data refreshed');
           }}
           onAddView={async (newView, viewGroupIds) => {
             try {

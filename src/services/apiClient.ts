@@ -46,18 +46,12 @@ class ApiClient {
     config.signal = controller.signal;
 
     try {
-      console.log(`🌐 API Request: ${options.method || 'GET'} ${url}`);
-      if (config.body) {
-        console.log('  Request body:', config.body);
-      }
-      
       const response = await fetch(url, config);
       clearTimeout(timeoutId);
 
       // Handle non-OK responses
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error(`❌ API Error: ${options.method || 'GET'} ${url} (${response.status})`, errorData);
         throw new ApiError(
           response.status,
           response.statusText,
@@ -73,8 +67,6 @@ class ApiClient {
 
       // Parse JSON response
       const data = await response.json();
-      console.log(`✅ API Response: ${options.method || 'GET'} ${url}`, data);
-      
       return data as T;
     } catch (error) {
       clearTimeout(timeoutId);

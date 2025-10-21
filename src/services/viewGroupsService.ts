@@ -52,27 +52,21 @@ export class ViewGroupsService {
     isDefault: boolean;
     orderIndex: number;
   }): Promise<ViewGroup> {
-    // Ensure orderIndex is a valid Int32 (max 2,147,483,647)
     const safeOrderIndex = Math.min(Math.max(0, data.orderIndex), 2147483647);
-    
-    const requestBody = {
-      userId,
-      data: {
-        name: data.name,
-        isVisible: data.isVisible,
-        isDefault: data.isDefault,
-        orderIndex: safeOrderIndex,
-      },
-    };
-    
-    console.log('🌐 viewGroupsService.createViewGroup - Request body:', JSON.stringify(requestBody, null, 2));
     
     const viewGroup = await apiClient.post<ViewGroupDto>(
       API_ENDPOINTS.VIEW_GROUPS.CREATE,
-      requestBody
+      {
+        userId,
+        data: {
+          name: data.name,
+          isVisible: data.isVisible,
+          isDefault: data.isDefault,
+          orderIndex: safeOrderIndex,
+        },
+      }
     );
     
-    console.log('✅ viewGroupsService.createViewGroup - Response:', viewGroup);
     return this.transformToFrontend(viewGroup);
   }
 
