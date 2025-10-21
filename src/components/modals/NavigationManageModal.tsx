@@ -19,8 +19,9 @@ interface NavigationManageModalProps {
   onUpdateViews: (updatedViews: View[]) => void;
   onUpdateViewGroups: (updatedViewGroups: ViewGroup[]) => void;
   onUpdateNavSettings: (settings: UserNavigationSettings) => void;
-  onAddView: (newView: View, viewGroupIds?: string[]) => void;
-  onAddViewGroup: (newViewGroup: ViewGroup) => void;
+  onAddView: (newView: View, viewGroupIds?: string[]) => Promise<void>;
+  onAddViewGroup: (newViewGroup: ViewGroup) => Promise<void>;
+  onRefreshData?: () => Promise<void>;
   views: View[];
   viewGroups: ViewGroup[];
   userNavSettings: UserNavigationSettings[];
@@ -38,6 +39,7 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
   onUpdateNavSettings,
   onAddView,
   onAddViewGroup,
+  onRefreshData,
   views,
   viewGroups,
   userNavSettings,
@@ -104,10 +106,11 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
               viewGroups={viewGroups}
               reports={getUserAccessibleReports()}
               widgets={getUserAccessibleWidgets()}
-              onRefresh={() => {
+              onRefresh={async () => {
                 // Trigger parent refresh
-                onClose();
-                window.location.reload();
+                if (onRefreshData) {
+                  await onRefreshData();
+                }
               }}
             />
           )}
@@ -116,8 +119,8 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
               user={user}
               views={views}
               userNavSettings={userNavSettings}
-              onAddViewGroup={(newViewGroup) => {
-                onAddViewGroup(newViewGroup);
+              onAddViewGroup={async (newViewGroup) => {
+                await onAddViewGroup(newViewGroup);
                 setActiveTab("all");
               }}
               onUpdateNavSettings={(updatedSettings) => {
@@ -135,7 +138,10 @@ const NavigationManageModal: React.FC<NavigationManageModalProps> = ({
               reports={getUserAccessibleReports()}
               widgets={getUserAccessibleWidgets()}
               viewGroups={viewGroups}
-              onAddView={onAddView}
+              onAddView={async (newView, viewGroupIds) => {
+                await onAddView(newView, viewGroupIds);
+                setActiveTab("all");
+              }}
             />
           )}
         </div>

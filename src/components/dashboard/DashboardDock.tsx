@@ -10,6 +10,9 @@ import {
   Report,
   Widget,
 } from "../../types";
+import { viewsService } from "../../services/viewsService";
+import { viewGroupsService } from "../../services/viewGroupsService";
+import { useNotification } from "../common/NotificationProvider";
 import { useApiData } from "../../hooks/useApiData";
 import { useTheme } from "../../contexts/ThemeContext";
 import ManageModal from "../modals/ManageModal";
@@ -1247,22 +1250,67 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onUpdateViews={handleUpdateViews}
           onUpdateViewGroups={handleUpdateViewGroups}
           onUpdateNavSettings={handleUpdateNavSettings}
-          onAddView={(newView, viewGroupIds) => {
-            const updatedViews = [...views, newView];
-            handleUpdateViews(updatedViews);
-            if (viewGroupIds && viewGroupIds.length > 0) {
-              const updatedViewGroups = viewGroups.map((vg) => {
-                if (viewGroupIds.includes(vg.id)) {
-                  return { ...vg, viewIds: [...vg.viewIds, newView.id] };
-                }
-                return vg;
+          onRefreshData={async () => {
+            console.log('🔄 NavigationManageModal - Refreshing all data...');
+            await Promise.all([refetchViews(), refetchViewGroups(), refetchNavSettings()]);
+            console.log('✅ All data refreshed');
+          }}
+          onAddView={async (newView, viewGroupIds) => {
+            try {
+              console.log('🆕 Creating new view:', newView.name, 'for groups:', viewGroupIds);
+              
+              // Step 1: Create the view via API (backend returns view with real ID)
+              const createdView = await viewsService.createView(user.name, {
+                name: newView.name,
+                reportIds: newView.reportIds,
+                widgetIds: newView.widgetIds,
               });
-              handleUpdateViewGroups(updatedViewGroups);
+              console.log('  ✅ View created in database with ID:', createdView.id);
+              
+              // Step 2: Add view to selected groups via API (use backend-generated ID)
+              if (viewGroupIds && viewGroupIds.length > 0) {
+                for (const groupId of viewGroupIds) {
+                  console.log('  Adding view to group:', groupId);
+                  await viewGroupsService.addViewsToGroup(groupId, user.name, [createdView.id]);
+                }
+                console.log('  ✅ View added to', viewGroupIds.length, 'groups');
+              }
+              
+              // Step 3: Refresh all data
+              console.log('  🔄 Refreshing data...');
+              await Promise.all([refetchViews(), refetchViewGroups()]);
+              console.log('✅ View created and data refreshed');
+            } catch (error: any) {
+              console.error('❌ Failed to create view:', error);
+              const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+              // Show error notification
+              alert(`Failed to create view: ${errorMessage}`);
             }
           }}
-          onAddViewGroup={(newViewGroup) => {
-            const updatedViewGroups = [...viewGroups, newViewGroup];
-            handleUpdateViewGroups(updatedViewGroups);
+          onAddViewGroup={async (newViewGroup) => {
+            try {
+              console.log('🆕 Creating new view group:', newViewGroup.name);
+              
+              // Step 1: Create the view group via API
+              await viewGroupsService.createViewGroup(user.name, {
+                name: newViewGroup.name,
+                viewIds: newViewGroup.viewIds,
+                isVisible: newViewGroup.isVisible,
+                isDefault: newViewGroup.isDefault,
+                orderIndex: newViewGroup.order,
+              });
+              console.log('  ✅ View group created in database');
+              
+              // Step 2: Refresh all data
+              console.log('  🔄 Refreshing data...');
+              await Promise.all([refetchViewGroups(), refetchNavSettings()]);
+              console.log('✅ View group created and data refreshed');
+            } catch (error: any) {
+              console.error('❌ Failed to create view group:', error);
+              const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+              // Show error notification
+              alert(`Failed to create view group: ${errorMessage}`);
+            }
           }}
           views={views}
           viewGroups={viewGroups}
