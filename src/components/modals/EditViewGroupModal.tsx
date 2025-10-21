@@ -28,6 +28,10 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     ...viewGroup,
   });
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Track local visibility changes (don't save until form submit)
+  const [localVisibilityChanges, setLocalVisibilityChanges] = useState<Record<string, boolean>>({});
+  
   const { showSuccess, showError } = useNotification();
 
 
@@ -110,7 +114,7 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     const view = views.find(v => v.id === viewId);
     if (!view) return;
 
-    setLocalVisibilityChanges(prev => {
+    setLocalVisibilityChanges((prev: Record<string, boolean>) => {
       const currentVisibility = prev.hasOwnProperty(viewId) ? prev[viewId] : view.isVisible;
       return {
         ...prev,

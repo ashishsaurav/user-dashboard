@@ -29,6 +29,9 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
     viewIds: [] as string[], // Explicit type annotation
   });
 
+  // Track local visibility changes (don't save until form submit)
+  const [localVisibilityChanges, setLocalVisibilityChanges] = useState<Record<string, boolean>>({});
+
   const { showSuccess } = useNotification();
 
 
@@ -51,7 +54,7 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
     // Save visibility changes for each view that was toggled
     if (Object.keys(localVisibilityChanges).length > 0) {
       const viewsService = await import('../../services/viewsService');
-      for (const [viewId, isVisible] of Object.entries(localVisibilityChanges)) {
+      for (const [viewId, isVisible] of Object.entries(localVisibilityChanges) as [string, boolean][]) {
         const view = views.find(v => v.id === viewId);
         if (view) {
           try {
@@ -95,7 +98,7 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
     const view = views.find(v => v.id === viewId);
     if (!view) return;
 
-    setLocalVisibilityChanges(prev => {
+    setLocalVisibilityChanges((prev: Record<string, boolean>) => {
       const currentVisibility = prev.hasOwnProperty(viewId) ? prev[viewId] : view.isVisible;
       return {
         ...prev,
