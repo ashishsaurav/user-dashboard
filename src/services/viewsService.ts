@@ -68,16 +68,25 @@ export class ViewsService {
     reportIds?: string[];
     widgetIds?: string[];
   }): Promise<View> {
-    const view = await apiClient.post<ViewDto>(API_ENDPOINTS.VIEWS.CREATE, {
+    // Ensure orderIndex is a valid Int32 (max 2,147,483,647)
+    const safeOrderIndex = Math.min(Math.max(0, data.orderIndex ?? 0), 2147483647);
+    
+    const requestBody = {
       userId,
       data: {
         name: data.name,
         isVisible: data.isVisible ?? true,
-        orderIndex: data.orderIndex ?? 0,
+        orderIndex: safeOrderIndex,
         reportIds: data.reportIds || [],
         widgetIds: data.widgetIds || [],
       },
-    });
+    };
+    
+    console.log('🌐 viewsService.createView - Request body:', JSON.stringify(requestBody, null, 2));
+    
+    const view = await apiClient.post<ViewDto>(API_ENDPOINTS.VIEWS.CREATE, requestBody);
+    
+    console.log('✅ viewsService.createView - Response:', view);
     return this.transformToFrontend(view);
   }
 

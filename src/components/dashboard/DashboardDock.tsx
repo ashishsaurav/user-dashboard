@@ -1259,11 +1259,16 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             try {
               console.log('🆕 Creating new view:', newView.name, 'for groups:', viewGroupIds);
               
-              // Step 1: Create the view via API (backend returns view with real ID)
+              // ✅ Step 1: Create the view via API (backend returns view with real ID)
+              // Use a reasonable orderIndex (current count) instead of Date.now()
+              const orderIndex = views.length;
+              
               const createdView = await viewsService.createView(user.name, {
                 name: newView.name,
                 reportIds: newView.reportIds,
                 widgetIds: newView.widgetIds,
+                isVisible: true,
+                orderIndex: orderIndex,
               });
               console.log('  ✅ View created in database with ID:', createdView.id);
               
@@ -1292,13 +1297,16 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               console.log('🆕 Creating new view group:', newViewGroup.name);
               console.log('  With views:', newViewGroup.viewIds);
               
-              // ✅ Step 1: Create the view group via API (WITHOUT viewIds)
-              const createdViewGroup = await viewGroupsService.createViewGroup(user.name, {
-                name: newViewGroup.name,
-                isVisible: newViewGroup.isVisible,
-                isDefault: newViewGroup.isDefault,
-                orderIndex: newViewGroup.order,
-              });
+    // ✅ Step 1: Create the view group via API (WITHOUT viewIds)
+    // Use a reasonable orderIndex (current count) instead of Date.now() which is too large for Int32
+    const orderIndex = viewGroups.length;
+    
+    const createdViewGroup = await viewGroupsService.createViewGroup(user.name, {
+      name: newViewGroup.name,
+      isVisible: newViewGroup.isVisible ?? true,
+      isDefault: newViewGroup.isDefault ?? false,
+      orderIndex: orderIndex,
+    });
               console.log('  ✅ View group created in database with ID:', createdViewGroup.id);
               
               // ✅ Step 2: Add views to the group (if any selected)

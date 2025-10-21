@@ -48,17 +48,20 @@ export class ViewGroupsService {
    */
   async createViewGroup(userId: string, data: {
     name: string;
-    isVisible?: boolean;
-    isDefault?: boolean;
-    orderIndex?: number;
+    isVisible: boolean;
+    isDefault: boolean;
+    orderIndex: number;
   }): Promise<ViewGroup> {
+    // Ensure orderIndex is a valid Int32 (max 2,147,483,647)
+    const safeOrderIndex = Math.min(Math.max(0, data.orderIndex), 2147483647);
+    
     const requestBody = {
       userId,
       data: {
         name: data.name,
-        isVisible: data.isVisible ?? true,
-        isDefault: data.isDefault ?? false,
-        orderIndex: data.orderIndex ?? 0,
+        isVisible: data.isVisible,
+        isDefault: data.isDefault,
+        orderIndex: safeOrderIndex,
       },
     };
     
