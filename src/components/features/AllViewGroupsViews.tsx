@@ -177,7 +177,8 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     (e.currentTarget as HTMLElement).style.opacity = "0.5";
   };
 
-  const handleDragEnd = () => {
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.opacity = "1";
     setDraggedItem(null);
     setDragOverItem(null);
   };
@@ -222,14 +223,84 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
     targetType: "view" | "viewgroup"
   ) => {
     e.preventDefault();
-    if (!draggedItem || !dragOverItem) return;
+    if (!draggedItem || draggedItem.id === targetId) {
+      setDragOverItem(null);
+      setDraggedItem(null);
+      return;
+    }
 
-    // For now, show success message
-    // Full implementation would call reorder
-    showSuccess("Drag and drop", "Use up/down buttons for now");
-
-    setDraggedItem(null);
+    const dragData = { ...draggedItem };
+    const dropPosition = dragOverItem?.position;
+    
     setDragOverItem(null);
+
+    try {
+      if (dragData.type === "viewgroup" && targetType === "viewgroup") {
+        // Reorder view groups
+        const draggedIndex = viewGroups.findIndex(vg => vg.id === dragData.id);
+        const targetIndex = viewGroups.findIndex(vg => vg.id === targetId);
+        
+        if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+          const reorderedGroups = [...viewGroups];
+          const [draggedGroup] = reorderedGroups.splice(draggedIndex, 1);
+          reorderedGroups.splice(targetIndex, 0, draggedGroup);
+
+          const items = reorderedGroups.map((group, index) => ({
+            id: group.id,
+            orderIndex: index,
+          }));
+
+          await viewGroupsService.reorderViewGroups(user.name, items);
+          onRefresh();
+        }
+      } else if (dragData.type === "view" && targetType === "view") {
+        // Reorder views within same group
+        const sourceGroupId = dragData.data?.viewGroupId;
+        const targetGroupId = viewGroups.find(vg => vg.viewIds.includes(targetId))?.id;
+        
+        if (sourceGroupId && targetGroupId && sourceGroupId === targetGroupId) {
+          const viewGroup = viewGroups.find(vg => vg.id === sourceGroupId);
+          if (!viewGroup) return;
+
+          const draggedIndex = viewGroup.viewIds.findIndex(id => id === dragData.id);
+          const targetIndex = viewGroup.viewIds.findIndex(id => id === targetId);
+          
+          if (draggedIndex !== -1 && targetIndex !== -1 && draggedIndex !== targetIndex) {
+            const reorderedViewIds = [...viewGroup.viewIds];
+            const [draggedViewId] = reorderedViewIds.splice(draggedIndex, 1);
+
+            let insertIndex: number;
+            const pos = dropPosition || "bottom";
+            
+            if (pos === "top") {
+              insertIndex = targetIndex;
+              if (draggedIndex < targetIndex) {
+                insertIndex = targetIndex - 1;
+              }
+            } else {
+              insertIndex = targetIndex + 1;
+              if (draggedIndex < targetIndex) {
+                insertIndex = targetIndex;
+              }
+            }
+
+            reorderedViewIds.splice(insertIndex, 0, draggedViewId);
+
+            const items = reorderedViewIds.map((id, index) => ({
+              id,
+              orderIndex: index,
+            }));
+
+            await viewGroupsService.reorderViewsInGroup(sourceGroupId, user.name, items);
+            onRefresh();
+          }
+        }
+      }
+    } catch (error) {
+      showError("Failed to reorder", "Changes not saved");
+    } finally {
+      setDraggedItem(null);
+    }
   };
 
   const sortedViewGroups = [...viewGroups].sort(
