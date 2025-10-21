@@ -30,45 +30,12 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const { showSuccess, showError } = useNotification();
 
-  // Get current user settings - this will sync with base data
-  const currentSettings = useMemo((): UserNavigationSettings => {
-    const settings = userNavSettings.find((s) => s.userId === user?.name);
-    return (
-      settings || {
-        userId: user?.name || "",
-        viewGroupOrder: [],
-        viewOrders: {},
-        hiddenViewGroups: [],
-        hiddenViews: [],
-      }
-    );
-  }, [userNavSettings, user?.name]);
-
-  // Initialize local hidden views with CURRENT base data - will sync properly
-  const [localHiddenViews, setLocalHiddenViews] = useState<string[]>(() => {
-    console.log(
-      "Initializing local hidden views:",
-      currentSettings.hiddenViews
-    );
-    return [...currentSettings.hiddenViews]; // Create a copy to avoid mutation
-  });
-
-  // Reset local state when modal reopens with new data
-  React.useEffect(() => {
-    console.log("Syncing with new base data:", currentSettings.hiddenViews);
-    setLocalHiddenViews([...currentSettings.hiddenViews]);
-  }, [viewGroup.id]); // Only reset when editing a different viewgroup
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      console.log("Saving changes:", {
-        viewGroup: formData,
-        hiddenViews: localHiddenViews,
-        originalHidden: currentSettings.hiddenViews,
-      });
 
       // 1. Update view group name and basic info
       await viewGroupsService.updateViewGroup(formData.id, user?.name || '', {
@@ -102,17 +69,6 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
 
       // Save the view group changes
       onSave(formData);
-
-      // Save visibility changes if there are any changes
-      if (onUpdateNavSettings && user) {
-        const updatedSettings = {
-          ...currentSettings,
-          hiddenViews: localHiddenViews,
-        };
-
-        console.log("Updating navigation settings:", updatedSettings);
-        onUpdateNavSettings(updatedSettings);
-      }
     } catch (error) {
       console.error("Failed to update view group:", error);
       showError("Update Failed", "Could not update view group. Please try again.");
@@ -130,29 +86,35 @@ const EditViewGroupModal: React.FC<EditViewGroupModalProps> = ({
     });
   };
 
-  // LOCAL VISIBILITY TOGGLE: Update local state only
-  const handleVisibilityToggle = (viewId: string) => {
-    setLocalHiddenViews((prev) => {
-      const isCurrentlyHidden = prev.includes(viewId);
-      const newState = isCurrentlyHidden
-        ? prev.filter((id) => id !== viewId) // Show view
-        : [...prev, viewId]; // Hide view
+  // Toggle visibility by updating View.isVisible via API
+  const handleVisibilityToggle = async (viewId: string) => {
+    const view = views.find(v => v.id === viewId);
+    if (!view || !user) return;
 
-      console.log(`Toggling view ${viewId}:`, {
-        wasHidden: isCurrentlyHidden,
-        newHidden: !isCurrentlyHidden,
-        newState,
+    try {
+      const viewsService = await import('../../services/viewsService');
+      await viewsService.viewsService.updateView(view.id, user.name, {
+        name: view.name,
+        isVisible: !view.isVisible,
+        orderIndex: view.order || 0,
       });
 
-      return newState;
-    });
+      showSuccess(
+        view.isVisible ? "View hidden" : "View shown",
+        `"${view.name}" ${view.isVisible ? 'will be hidden' : 'will be shown'} in navigation`
+      );
+      
+      // Trigger parent refresh to update UI
+      onSave(formData);
+    } catch (error) {
+      showError("Update Failed", "Could not update view visibility");
+    }
   };
 
-  // Check if view is hidden (using local state)
+  // Check if view is hidden (using View.isVisible)
   const isViewHidden = (viewId: string): boolean => {
-    const hidden = localHiddenViews.includes(viewId);
-    // console.log(`View ${viewId} is hidden:`, hidden);
-    return hidden;
+    const view = views.find(v => v.id === viewId);
+    return view ? !view.isVisible : false;
   };
 
   // Icons

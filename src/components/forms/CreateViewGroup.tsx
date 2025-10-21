@@ -31,28 +31,6 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
 
   const { showSuccess } = useNotification();
 
-  // Get current user settings - same logic as EditViewGroupModal
-  const currentSettings = useMemo((): UserNavigationSettings => {
-    const settings = userNavSettings.find((s) => s.userId === user?.name);
-    return (
-      settings || {
-        userId: user?.name || "",
-        viewGroupOrder: [],
-        viewOrders: {},
-        hiddenViewGroups: [],
-        hiddenViews: [],
-      }
-    );
-  }, [userNavSettings, user?.name]);
-
-  // Initialize local hidden views with CURRENT base data
-  const [localHiddenViews, setLocalHiddenViews] = useState<string[]>(() => {
-    console.log(
-      "CreateViewGroup - Initializing local hidden views:",
-      currentSettings.hiddenViews
-    );
-    return [...currentSettings.hiddenViews];
-  });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -71,36 +49,16 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
     };
 
     onAddViewGroup(newViewGroup);
-    console.log("Creating new view group:", newViewGroup);
 
-    // Save visibility changes if there are any changes
-    if (onUpdateNavSettings && user) {
-      const updatedSettings = {
-        ...currentSettings,
-        hiddenViews: localHiddenViews,
-      };
-
-      console.log(
-        "CreateViewGroup - Updating navigation settings:",
-        updatedSettings
-      );
-      onUpdateNavSettings(updatedSettings);
-    }
-
-    // Show beautiful success notification
     showSuccess(
       "View Group Created Successfully!",
       `"${formData.name}" has been created and is ready to organize your views.`
     );
 
-    // Reset form and visibility state
     setFormData({
       name: "",
-      viewIds: [] as string[], // Explicit type
+      viewIds: [] as string[],
     });
-
-    // Reset visibility to current settings
-    setLocalHiddenViews([...currentSettings.hiddenViews]);
   };
 
   const handleViewToggle = (viewId: string, checked: boolean) => {
@@ -112,27 +70,32 @@ const CreateViewGroup: React.FC<CreateViewGroupProps> = ({
     }));
   };
 
-  // LOCAL VISIBILITY TOGGLE: Update local state only - same as EditViewGroupModal
-  const handleVisibilityToggle = (viewId: string) => {
-    setLocalHiddenViews((prev) => {
-      const isCurrentlyHidden = prev.includes(viewId);
-      const newState = isCurrentlyHidden
-        ? prev.filter((id) => id !== viewId) // Show view
-        : [...prev, viewId]; // Hide view
+  // Toggle visibility by updating View.isVisible via API
+  const handleVisibilityToggle = async (viewId: string) => {
+    const view = views.find(v => v.id === viewId);
+    if (!view) return;
 
-      console.log(`CreateViewGroup - Toggling view ${viewId}:`, {
-        wasHidden: isCurrentlyHidden,
-        newHidden: !isCurrentlyHidden,
-        newState,
+    try {
+      const viewsService = await import('../../services/viewsService');
+      await viewsService.viewsService.updateView(view.id, user.name, {
+        name: view.name,
+        isVisible: !view.isVisible,
+        orderIndex: view.order || 0,
       });
 
-      return newState;
-    });
+      showSuccess(
+        view.isVisible ? "View hidden" : "View shown",
+        `"${view.name}" ${view.isVisible ? 'will be hidden' : 'will be shown'} in navigation`
+      );
+    } catch (error) {
+      // Silent fail for create form
+    }
   };
 
-  // Check if view is hidden (using local state) - same as EditViewGroupModal
+  // Check if view is hidden (using View.isVisible)
   const isViewHidden = (viewId: string): boolean => {
-    return localHiddenViews.includes(viewId);
+    const view = views.find(v => v.id === viewId);
+    return view ? !view.isVisible : false;
   };
 
   // Icons - same as EditViewGroupModal
