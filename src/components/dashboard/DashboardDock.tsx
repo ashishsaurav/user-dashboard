@@ -1290,18 +1290,31 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onAddViewGroup={async (newViewGroup) => {
             try {
               console.log('🆕 Creating new view group:', newViewGroup.name);
+              console.log('  With views:', newViewGroup.viewIds);
               
-              // Step 1: Create the view group via API
-              await viewGroupsService.createViewGroup(user.name, {
+              // ✅ Step 1: Create the view group via API (WITHOUT viewIds)
+              const createdViewGroup = await viewGroupsService.createViewGroup(user.name, {
                 name: newViewGroup.name,
-                viewIds: newViewGroup.viewIds,
                 isVisible: newViewGroup.isVisible,
                 isDefault: newViewGroup.isDefault,
                 orderIndex: newViewGroup.order,
               });
-              console.log('  ✅ View group created in database');
+              console.log('  ✅ View group created in database with ID:', createdViewGroup.id);
               
-              // Step 2: Refresh all data
+              // ✅ Step 2: Add views to the group (if any selected)
+              if (newViewGroup.viewIds && newViewGroup.viewIds.length > 0) {
+                console.log('  Adding', newViewGroup.viewIds.length, 'views to group');
+                await viewGroupsService.addViewsToGroup(
+                  createdViewGroup.id,
+                  user.name,
+                  newViewGroup.viewIds
+                );
+                console.log('  ✅ Views added to group');
+              } else {
+                console.log('  No views to add (empty group)');
+              }
+              
+              // ✅ Step 3: Refresh all data
               console.log('  🔄 Refreshing data...');
               await Promise.all([refetchViewGroups(), refetchNavSettings()]);
               console.log('✅ View group created and data refreshed');

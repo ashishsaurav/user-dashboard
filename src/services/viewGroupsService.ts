@@ -43,13 +43,14 @@ export class ViewGroupsService {
 
   /**
    * Create view group
+   * Note: Backend CreateViewGroupDto does NOT include viewIds
+   * Use addViewsToGroup() separately to add views
    */
   async createViewGroup(userId: string, data: {
     name: string;
     isVisible?: boolean;
     isDefault?: boolean;
     orderIndex?: number;
-    viewIds?: string[];
   }): Promise<ViewGroup> {
     const viewGroup = await apiClient.post<ViewGroupDto>(
       API_ENDPOINTS.VIEW_GROUPS.CREATE,
@@ -60,7 +61,7 @@ export class ViewGroupsService {
           isVisible: data.isVisible ?? true,
           isDefault: data.isDefault ?? false,
           orderIndex: data.orderIndex ?? 0,
-          viewIds: data.viewIds || [],
+          // ❌ NO viewIds - backend DTO doesn't support it
         },
       }
     );
