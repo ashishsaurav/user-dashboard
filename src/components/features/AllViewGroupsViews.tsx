@@ -320,6 +320,18 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       } else {
         position = "bottom"; // Bottom half
       }
+      
+      console.log('👆 DragEnter VIEW:', { 
+        targetId, 
+        y, 
+        height, 
+        threshold: height * 0.5, 
+        position,
+        draggedId: draggedItem?.id,
+        draggedType: draggedItem?.type
+      });
+    } else {
+      console.log('👆 DragEnter VIEWGROUP:', { targetId });
     }
     setDragOverItem({ id: targetId, position });
   };
@@ -411,13 +423,26 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       vg.viewIds.includes(targetViewId)
     )?.id;
 
+    console.log('📋 handleViewReorder called:', {
+      draggedViewId,
+      targetViewId,
+      position,
+      sourceGroupId,
+      targetGroupId,
+      same: sourceGroupId === targetGroupId
+    });
+
     if (!sourceGroupId || !targetGroupId) {
+      console.log('❌ Missing source or target group ID');
       return;
     }
 
     if (sourceGroupId === targetGroupId) {
       const viewGroup = viewGroups.find((vg) => vg.id === sourceGroupId);
-      if (!viewGroup) return;
+      if (!viewGroup) {
+        console.log('❌ View group not found:', sourceGroupId);
+        return;
+      }
 
       const draggedIndex = viewGroup.viewIds.findIndex(
         (id) => id === draggedViewId
@@ -425,6 +450,8 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
       const targetIndex = viewGroup.viewIds.findIndex(
         (id) => id === targetViewId
       );
+
+      console.log('📋 Indices:', { draggedIndex, targetIndex, viewIds: viewGroup.viewIds });
 
       if (
         draggedIndex !== -1 &&
@@ -461,22 +488,29 @@ const AllViewGroupsViews: React.FC<AllViewGroupsViewsProps> = ({
           orderIndex: index,
         }));
 
+        console.log('📋 Final reordered array:', reorderedViewIds);
+        console.log('📋 Calling API with items:', items);
+
         try {
           await viewGroupsService.reorderViewsInGroup(
             sourceGroupId,
             user.name,
             items
           );
+          
+          console.log('✅ API call successful!');
 
           if (onRefresh) {
             await onRefresh();
           }
         } catch (error) {
+          console.error('❌ API call failed:', error);
         } finally {
           setDraggedItem(null);
         }
       }
     } else {
+      console.log('⚠️ Different groups - calling handleViewMoveToGroup');
       handleViewMoveToGroup(draggedViewId, targetGroupId, targetViewId);
     }
   };
