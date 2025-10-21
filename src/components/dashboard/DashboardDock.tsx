@@ -115,22 +115,24 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   );
 
-  // Update local state when API data changes
+  // Update local state when API data changes (FIXED: removed length check)
   useEffect(() => {
-    if (apiViews.length > 0) {
-      setViews(apiViews);
-    }
+    console.log('📊 API Views updated:', apiViews.length);
+    setViews(apiViews);
+    setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
   }, [apiViews]);
 
   useEffect(() => {
-    if (apiViewGroups.length > 0) {
-      setViewGroups(apiViewGroups);
-    }
+    console.log('📊 API ViewGroups updated:', apiViewGroups.length);
+    setViewGroups(apiViewGroups);
+    setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
   }, [apiViewGroups]);
 
   useEffect(() => {
     if (apiNavSettings) {
+      console.log('📊 API NavSettings updated');
       setNavSettings(apiNavSettings);
+      setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
     }
   }, [apiNavSettings]);
 
@@ -150,9 +152,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         setSelectedView(updatedSelectedView);
       }
     }
-    
-    // Optionally refetch from API to sync
-    refetchViews();
   };
 
   const handleUpdateViewGroups = (updatedViewGroups: ViewGroup[]) => {
@@ -161,17 +160,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
     setViewGroups(sortedGroups);
     setNavigationUpdateTrigger((prev) => prev + 1);
-    
-    // Optionally refetch from API to sync
-    refetchViewGroups();
   };
 
   const handleUpdateNavSettings = (settings: UserNavigationSettings) => {
     setNavSettings(settings);
     setNavigationUpdateTrigger((prev) => prev + 1);
-    
-    // Optionally refetch from API to sync
-    refetchNavSettings();
   };
 
   // Compute current layout signature based on state
@@ -355,10 +348,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           reports={getUserAccessibleReports()}
           widgets={getUserAccessibleWidgets()}
           popupPosition={navPanelPosition}
-          onRefreshData={() => {
-            refetchViews();
-            refetchViewGroups();
-            refetchNavSettings();
+          onRefreshData={async () => {
+            console.log('🔄 Refreshing navigation data...');
+            await Promise.all([
+              refetchViews(),
+              refetchViewGroups(),
+              refetchNavSettings(),
+            ]);
+            console.log('✅ Navigation data refreshed');
           }}
         />
       );
@@ -395,6 +392,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     navigationUpdateTrigger,
     layoutMode,
     navPanelPosition,
+    refetchViews,
+    refetchViewGroups,
+    refetchNavSettings,
   ]);
 
   const createReportsContent = () => (

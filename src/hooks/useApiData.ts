@@ -3,7 +3,7 @@
  * Custom hook to load data from backend API
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { User, Report, Widget, View, ViewGroup, UserNavigationSettings } from '../types';
 import { reportsService } from '../services/reportsService';
 import { widgetsService } from '../services/widgetsService';
@@ -115,35 +115,41 @@ export function useApiData(user: User | null) {
     loadData();
   }, [user]);
 
-  const refetchViews = async () => {
+  const refetchViews = useCallback(async () => {
     if (!user) return;
     try {
+      console.log('🔄 Refetching views for user:', user.name);
       const views = await viewsService.getUserViews(user.name);
+      console.log('✅ Views refetched:', views.length);
       setState(prev => ({ ...prev, views }));
     } catch (error) {
-      console.error('Error refetching views:', error);
+      console.error('❌ Error refetching views:', error);
     }
-  };
+  }, [user]);
 
-  const refetchViewGroups = async () => {
+  const refetchViewGroups = useCallback(async () => {
     if (!user) return;
     try {
+      console.log('🔄 Refetching view groups for user:', user.name);
       const viewGroups = await viewGroupsService.getUserViewGroups(user.name);
+      console.log('✅ View groups refetched:', viewGroups.length);
       setState(prev => ({ ...prev, viewGroups }));
     } catch (error) {
-      console.error('Error refetching view groups:', error);
+      console.error('❌ Error refetching view groups:', error);
     }
-  };
+  }, [user]);
 
-  const refetchNavSettings = async () => {
+  const refetchNavSettings = useCallback(async () => {
     if (!user) return;
     try {
+      console.log('🔄 Refetching navigation settings for user:', user.name);
       const navSettings = await navigationService.getNavigationSettings(user.name);
+      console.log('✅ Navigation settings refetched');
       setState(prev => ({ ...prev, navSettings }));
     } catch (error) {
-      console.error('Error refetching navigation settings:', error);
+      console.error('❌ Error refetching navigation settings:', error);
     }
-  };
+  }, [user]);
 
   return {
     ...state,
