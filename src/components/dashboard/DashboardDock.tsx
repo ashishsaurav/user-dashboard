@@ -52,6 +52,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     refetchViews,
     refetchViewGroups,
     refetchNavSettings,
+    refetchReports,
+    refetchWidgets,
   } = useApiData(user);
 
   // Modal states
@@ -1405,11 +1407,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <ManageModal
           user={user}
           onClose={() => setShowManageModal(false)}
-          onRefreshData={() => {
-            // Refresh views and viewgroups data after changes
-            refetchViews();
-            refetchViewGroups();
-            refetchNavSettings();
+          onRefreshData={async () => {
+            // Refresh all data after changes (reports, widgets, views, viewgroups)
+            console.log('🔄 Refreshing all data from ManageModal...');
+            await Promise.all([
+              refetchReports(),
+              refetchWidgets(),
+              refetchViews(),
+              refetchViewGroups(),
+              refetchNavSettings(),
+            ]);
+            console.log('✅ All data refreshed');
           }}
         />
       )}

@@ -112,10 +112,36 @@ export function useApiData(user: User | null) {
     }
   }, [user]);
 
+  const refetchReports = useCallback(async () => {
+    if (!user) return;
+    try {
+      console.log('🔄 Refetching reports for role:', user.role);
+      const reports = await reportsService.getReportsByRole(user.role);
+      console.log('✅ Reports refetched:', reports.length);
+      setState(prev => ({ ...prev, reports }));
+    } catch (error) {
+      console.error('❌ Error refetching reports:', error);
+    }
+  }, [user]);
+
+  const refetchWidgets = useCallback(async () => {
+    if (!user) return;
+    try {
+      console.log('🔄 Refetching widgets for role:', user.role);
+      const widgets = await widgetsService.getWidgetsByRole(user.role);
+      console.log('✅ Widgets refetched:', widgets.length);
+      setState(prev => ({ ...prev, widgets }));
+    } catch (error) {
+      console.error('❌ Error refetching widgets:', error);
+    }
+  }, [user]);
+
   return {
     ...state,
     refetchViews,
     refetchViewGroups,
     refetchNavSettings,
+    refetchReports,
+    refetchWidgets,
   };
 }
