@@ -3,6 +3,7 @@ import { View, Report, Widget } from "../../types";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 import PowerBIEmbedReport from "../powerbi/PowerBIEmbedReport";
 import PowerBIEmbedVisual from "../powerbi/PowerBIEmbedVisual";
+import { parsePowerBIReportUrl, parsePowerBIVisualUrl } from "../../utils/powerBIUrlParser";
 import "./styles/ViewContentPanel.css";
 
 interface ViewContentPanelProps {
@@ -348,13 +349,26 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               const activeReport = viewReports.find(r => r.id === activeReportTab);
               if (!activeReport) return null;
               
-              // Check if report has PowerBI configuration
-              if (activeReport.workspaceId && activeReport.reportId) {
+              // Try to get PowerBI config from URL or direct fields
+              let workspaceId = activeReport.workspaceId;
+              let reportId = activeReport.reportId;
+              
+              // If not in fields, try parsing from URL
+              if ((!workspaceId || !reportId) && activeReport.url) {
+                const config = parsePowerBIReportUrl(activeReport.url);
+                if (config) {
+                  workspaceId = config.workspaceId;
+                  reportId = config.reportId;
+                }
+              }
+              
+              // Check if we have valid PowerBI configuration
+              if (workspaceId && reportId) {
                 return (
                   <div className="powerbi-report-container">
                     <PowerBIEmbedReport
-                      workspaceId={activeReport.workspaceId}
-                      reportId={activeReport.reportId}
+                      workspaceId={workspaceId}
+                      reportId={reportId}
                       reportName={activeReport.name}
                     />
                   </div>
@@ -368,7 +382,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                     <ReportsIcon />
                     <h3>Report Not Configured</h3>
                     <p>This report doesn't have PowerBI configuration yet.</p>
-                    <small>WorkspaceId and ReportId are required.</small>
+                    <small>Provide a valid PowerBI URL or WorkspaceId/ReportId.</small>
                   </div>
                 </div>
               );
@@ -407,8 +421,24 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
           const isDragOver = dragOverWidget === widget.id;
           const isDragging = draggedWidget === widget.id;
           
-          // Check if widget has PowerBI configuration
-          const hasPowerBIConfig = widget.workspaceId && widget.reportId && widget.pageName && widget.visualName;
+          // Try to get PowerBI config from URL or direct fields
+          let workspaceId = widget.workspaceId;
+          let reportId = widget.reportId;
+          let pageName = widget.pageName;
+          let visualName = widget.visualName;
+          
+          // If not in fields, try parsing from URL
+          if ((!workspaceId || !reportId || !pageName || !visualName) && widget.url) {
+            const config = parsePowerBIVisualUrl(widget.url);
+            if (config) {
+              workspaceId = workspaceId || config.workspaceId;
+              reportId = reportId || config.reportId;
+              pageName = pageName || config.pageName;
+              visualName = visualName || config.visualName;
+            }
+          }
+          
+          const hasPowerBIConfig = workspaceId && reportId && pageName && visualName;
 
           return (
             <div
@@ -445,10 +475,10 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               <div className="widget-content">
                 {hasPowerBIConfig ? (
                   <PowerBIEmbedVisual
-                    workspaceId={widget.workspaceId!}
-                    reportId={widget.reportId!}
-                    pageName={widget.pageName!}
-                    visualName={widget.visualName!}
+                    workspaceId={workspaceId!}
+                    reportId={reportId!}
+                    pageName={pageName!}
+                    visualName={visualName!}
                     widgetName={widget.name}
                   />
                 ) : (
@@ -456,7 +486,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                     <WidgetsIcon />
                     <h4>Widget Not Configured</h4>
                     <p>PowerBI configuration required</p>
-                    <small>WorkspaceId, ReportId, PageName, and VisualName needed</small>
+                    <small>Provide a valid PowerBI visual URL</small>
                   </div>
                 )}
               </div>
