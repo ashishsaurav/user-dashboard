@@ -152,14 +152,32 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
           }, timeUntilRefresh);
         }
       } catch (err: any) {
+        console.error("🚨 CAUGHT ERROR in setupTokenRefreshTimer:", {
+          isMounted,
+          embedKey,
+          errorType: typeof err,
+          errorConstructor: err?.constructor?.name,
+          hasMessage: !!err?.message,
+          errorMessage: err?.message,
+          errorString: String(err),
+          errorKeys: err ? Object.keys(err) : [],
+          fullError: err,
+        });
+        
         if (!isMounted) {
           console.log("⏹️  Component unmounted, ignoring error:", embedKey);
           return;
         }
 
-        const errorMessage =
-          err?.message ||
-          (typeof err === "string" ? err : "Failed to load visual");
+        // Extract error message with multiple fallbacks
+        let errorMessage = "Unknown error occurred";
+        if (err?.message) {
+          errorMessage = err.message;
+        } else if (typeof err === "string") {
+          errorMessage = err;
+        } else if (err?.toString && err.toString() !== "[object Object]") {
+          errorMessage = err.toString();
+        }
         
         console.error("❌ PowerBI Visual embed failed:", {
           embedKey,
@@ -167,8 +185,8 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
           reportId,
           pageName,
           visualName,
-          error: errorMessage,
-          fullError: err,
+          extractedError: errorMessage,
+          originalError: err,
         });
 
         if (isMounted) {
