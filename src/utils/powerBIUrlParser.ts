@@ -19,8 +19,8 @@ export interface PowerBIReportConfig {
  * URL: https://app.powerbi.com/groups/{groupId}/reports/{reportId}/ReportSection{pageId}?visual={visualId}
  */
 export interface PowerBIVisualConfig extends PowerBIReportConfig {
-  pageName: string; // This is actually pageId (e.g., "2b4d7fbedf856b2b08bf")
-  visualName: string; // This is actually visualId (e.g., "5be3c870890700486d85")
+  pageName: string; // Full page name: "ReportSection2b4d7fbedf856b2b08bf"
+  visualName: string; // Visual ID from query param: "5be3c870890700486d85" (optional, empty for reports)
 }
 
 export function parsePowerBIReportUrl(url: string): PowerBIReportConfig | null {
@@ -65,37 +65,37 @@ export function parsePowerBIVisualUrl(url: string): PowerBIVisualConfig | null {
       return null;
     }
 
-    // Extract pageId from ReportSection{pageId}
+    // Extract full pageName including "ReportSection" prefix
     // Example: ReportSection2b4d7fbedf856b2b08bf
-    const pagePattern = /ReportSection([a-f0-9]+)/i;
+    const pagePattern = /(ReportSection[a-f0-9]+)/i;
     const pageMatch = url.match(pagePattern);
     
-    // Extract visualId from query parameter 'visual'
+    // Extract visualId from query parameter 'visual' (optional)
     const urlObj = new URL(url);
     const visualId = urlObj.searchParams.get('visual');
 
     if (!pageMatch || !pageMatch[1]) {
-      console.warn('PowerBI Visual URL missing pageId (ReportSection):', {
+      console.warn('PowerBI URL missing pageName (ReportSection):', {
         url,
         pageMatch: pageMatch?.[0]
       });
       return null;
     }
 
-    if (!visualId) {
-      console.warn('PowerBI Visual URL missing visualId (visual query param):', {
-        url,
-        hasVisualParam: urlObj.searchParams.has('visual')
-      });
-      return null;
-    }
+    const pageName = pageMatch[1]; // e.g., "ReportSection2b4d7fbedf856b2b08bf" (full string)
+    const visualName = visualId || ''; // Empty string if no visual param (for report URL)
 
-    const pageId = pageMatch[1]; // e.g., "2b4d7fbedf856b2b08bf"
+    console.log('✅ Parsed PowerBI URL:', {
+      workspaceId: reportConfig.workspaceId,
+      reportId: reportConfig.reportId,
+      pageName,
+      visualName: visualName || '(none - report URL)'
+    });
 
     return {
       ...reportConfig,
-      pageName: pageId,    // This is the pageId (used as pageName in PowerBI API)
-      visualName: visualId, // This is the visualId (used as visualName in PowerBI API)
+      pageName,    // Full "ReportSection{id}" string
+      visualName,  // Visual ID from query param, or empty
     };
   } catch (error) {
     console.error('Error parsing PowerBI visual URL:', error);
