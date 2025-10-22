@@ -1,9 +1,9 @@
-import React, { useEffect, useRef, useState } from 'react';
-import * as powerbi from 'powerbi-client';
-import { models } from 'powerbi-client';
-import { powerBIService } from '../../services/powerBIService';
-import { powerBIEmbedRegistry } from '../../services/powerBIEmbedRegistry';
-import './PowerBIEmbed.css';
+import React, { useEffect, useRef, useState } from "react";
+import * as powerbi from "powerbi-client";
+import { models } from "powerbi-client";
+import { powerBIService } from "../../services/powerBIService";
+import { powerBIEmbedRegistry } from "../../services/powerBIEmbedRegistry";
+import "./PowerBIEmbed.css";
 
 interface PowerBIEmbedReportProps {
   workspaceId: string;
@@ -20,7 +20,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 }) => {
   const reportContainerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>('');
+  const [error, setError] = useState<string>("");
   const reportRef = useRef<powerbi.Report | null>(null);
   const powerbiService = useRef(
     new powerbi.service.Service(
@@ -33,7 +33,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     let isMounted = true;
-    const embedKey = powerBIEmbedRegistry.generateKey('report', {
+    const embedKey = powerBIEmbedRegistry.generateKey("report", {
       workspaceId,
       reportId,
       pageName,
@@ -41,7 +41,10 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 
     const setupTokenRefreshTimer = async () => {
       try {
-        const embedInfo = await powerBIService.getEmbedToken(workspaceId, reportId);
+        const embedInfo = await powerBIService.getEmbedToken(
+          workspaceId,
+          reportId
+        );
         const refreshBuffer = 5 * 60 * 1000; // 5 minutes
         const tokenExpiration = parseInt(embedInfo.tokenExpiration);
         const timeUntilRefresh = Math.max(0, tokenExpiration - refreshBuffer);
@@ -53,19 +56,19 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
         if (cachedReport && cachedReport.setAccessToken) {
           // Reuse cached embed
           reportRef.current = cachedReport;
-          await reportRef.current.setAccessToken(embedInfo.embedToken);
-          console.log('♻️  Reused cached report, refreshed token:', embedKey);
+          await reportRef.current?.setAccessToken(embedInfo.embedToken);
+          console.log("♻️  Reused cached report, refreshed token:", embedKey);
           setLoading(false);
         } else if (reportRef.current && reportRef.current.setAccessToken) {
           // Report already embedded in this instance, just refresh token
           await reportRef.current.setAccessToken(embedInfo.embedToken);
-          console.log('🔄 PowerBI report token refreshed for', embedKey);
+          console.log("🔄 PowerBI report token refreshed for", embedKey);
         } else if (reportContainerRef.current) {
           // Initial embed - only happens once per unique report+page combination
-          console.log('🎯 Embedding PowerBI report (first time):', embedKey);
-          
+          console.log("🎯 Embedding PowerBI report (first time):", embedKey);
+
           const config: powerbi.IReportEmbedConfiguration = {
-            type: 'report',
+            type: "report",
             id: reportId,
             embedUrl: embedInfo.embedUrl,
             accessToken: embedInfo.embedToken,
@@ -77,40 +80,48 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
               background: models.BackgroundType.Transparent,
               layoutType: models.LayoutType.Custom,
               customLayout: {
-                displayOption: models.DisplayOption.FitToPage,
+                displayOption: models.DisplayOption.FitToWidth,
               },
             },
           };
 
-          const report = powerbiService.current.embed(reportContainerRef.current, config);
+          const report = powerbiService.current.embed(
+            reportContainerRef.current,
+            config
+          );
           reportRef.current = report as powerbi.Report;
 
           // Store in global registry
-          powerBIEmbedRegistry.set(embedKey, report, reportContainerRef.current, 'report');
+          powerBIEmbedRegistry.set(
+            embedKey,
+            report,
+            reportContainerRef.current,
+            "report"
+          );
 
-          report.on('loaded', async () => {
-            console.log('✅ PowerBI report loaded:', embedKey);
-            
+          report.on("loaded", async () => {
+            console.log("✅ PowerBI report loaded:", embedKey);
+
             // If specific page provided, set it as active
             if (pageName && reportRef.current) {
               try {
                 await reportRef.current.setPage(pageName);
-                console.log('📄 Set active page to:', pageName);
+                console.log("📄 Set active page to:", pageName);
               } catch (e) {
-                console.warn('Could not set page:', e);
+                console.warn("Could not set page:", e);
               }
             }
-            
+
             setLoading(false);
           });
 
-          report.on('rendered', () => {
-            console.log('✅ PowerBI report rendered:', embedKey);
+          report.on("rendered", () => {
+            console.log("✅ PowerBI report rendered:", embedKey);
           });
 
-          report.on('error', (event: any) => {
-            console.error('❌ PowerBI report error:', event.detail);
-            setError(event.detail?.message || 'Error loading report');
+          report.on("error", (event: any) => {
+            console.error("❌ PowerBI report error:", event.detail);
+            setError(event.detail?.message || "Error loading report");
             setLoading(false);
           });
         }
@@ -118,20 +129,22 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
         if (isMounted) {
           timeoutId = setTimeout(() => {
             if (isMounted) {
-              console.log('⏰ Token expiring soon, refreshing...', embedKey);
+              console.log("⏰ Token expiring soon, refreshing...", embedKey);
               setupTokenRefreshTimer();
             }
           }, timeUntilRefresh);
         }
       } catch (err: any) {
         if (!isMounted) {
-          console.log('⏹️  Component unmounted, ignoring error:', embedKey);
+          console.log("⏹️  Component unmounted, ignoring error:", embedKey);
           return;
         }
-        
-        const errorMessage = err?.message || (typeof err === 'string' ? err : 'Failed to load report');
-        console.error('❌ Failed to fetch PowerBI token:', errorMessage);
-        
+
+        const errorMessage =
+          err?.message ||
+          (typeof err === "string" ? err : "Failed to load report");
+        console.error("❌ Failed to fetch PowerBI token:", errorMessage);
+
         if (isMounted) {
           setError(errorMessage);
           setLoading(false);
@@ -146,7 +159,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
-      console.log('🧹 Cleaning up PowerBIEmbedReport:', embedKey);
+      console.log("🧹 Cleaning up PowerBIEmbedReport:", embedKey);
       // Keep embed in registry for reuse
     };
   }, [workspaceId, reportId, pageName]);
@@ -165,25 +178,33 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
       if (reportContainerRef.current && reportRef.current) {
         const width = reportContainerRef.current.clientWidth;
         const height = reportContainerRef.current.clientHeight;
-        
+
         try {
           // Resize the active page
           if (pageName) {
-            await reportRef.current.resizePage(models.PageSizeType.Custom, width, height);
+            await reportRef.current.resizePage(
+              models.PageSizeType.Custom,
+              width,
+              height
+            );
           } else {
-            await reportRef.current.resizeActivePage(models.PageSizeType.Custom, width, height);
+            await reportRef.current.resizeActivePage(
+              models.PageSizeType.Custom,
+              width,
+              height
+            );
           }
-          console.log('📐 Resized PowerBI report to', width, 'x', height);
+          console.log("📐 Resized PowerBI report to", width, "x", height);
         } catch (e) {
           // Resize may fail if report not fully loaded yet
-          console.debug('Resize not ready yet:', e);
+          console.debug("Resize not ready yet:", e);
         }
       }
     };
 
     const debouncedResize = debounce(handleResize, 150);
     const resizeObserver = new ResizeObserver(debouncedResize);
-    
+
     if (reportContainerRef.current) {
       resizeObserver.observe(reportContainerRef.current);
     }
@@ -197,7 +218,14 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     return (
       <div className="powerbi-error">
         <div className="error-content">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg
+            width="48"
+            height="48"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="8" x2="12" y2="12" />
             <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -217,7 +245,11 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
           <p>Loading {reportName}...</p>
         </div>
       )}
-      <div ref={reportContainerRef} className="powerbi-report" style={{ width: '100%', height: '100%' }} />
+      <div
+        ref={reportContainerRef}
+        className="powerbi-report"
+        style={{ width: "100%", height: "100%" }}
+      />
     </div>
   );
 };
