@@ -347,17 +347,18 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
           {/* Render ALL report tabs but only show the active one */}
           <div className="tab-content-container">
             {viewReports.map((report) => {
-              // Try to get PowerBI config from URL or direct fields
+              // Always parse URL to get full config including pageName
+              let reportConfig = null;
               let workspaceId = report.workspaceId;
               let reportId = report.reportId;
-              let reportConfig = null;
+              let pageName = undefined;
               
-              // If not in fields, try parsing from URL
-              if ((!workspaceId || !reportId) && report.url) {
+              if (report.url) {
                 reportConfig = parsePowerBIReportUrl(report.url);
                 if (reportConfig) {
-                  workspaceId = reportConfig.workspaceId;
-                  reportId = reportConfig.reportId;
+                  workspaceId = workspaceId || reportConfig.workspaceId;
+                  reportId = reportId || reportConfig.reportId;
+                  pageName = reportConfig.pageName; // Get page name from URL
                 }
               }
               
@@ -376,7 +377,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                         workspaceId={workspaceId!}
                         reportId={reportId!}
                         reportName={report.name}
-                        pageName={reportConfig?.pageName} // Include specific page if in URL
+                        pageName={pageName} // Include specific page from URL
                       />
                     </div>
                   ) : (

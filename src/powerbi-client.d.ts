@@ -60,6 +60,7 @@ declare module "powerbi-client" {
     id: string;
     embedUrl: string;
     accessToken: string;
+    pageName?: string;
   }
 
   export interface IVisualEmbedConfiguration extends IEmbedConfiguration {
