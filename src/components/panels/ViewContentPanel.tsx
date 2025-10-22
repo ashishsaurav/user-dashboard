@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { View, Report, Widget } from "../../types";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
+import PowerBIEmbedReport from "../powerbi/PowerBIEmbedReport";
+import PowerBIEmbedVisual from "../powerbi/PowerBIEmbedVisual";
+import { parsePowerBIReportUrl, parsePowerBIVisualUrl } from "../../utils/powerBIUrlParser";
 import "./styles/ViewContentPanel.css";
 
 interface ViewContentPanelProps {
@@ -295,10 +298,30 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               const dragOverClass = isDragOver
                 ? `drag-over-${dragOverPosition}`
                 : "";
+              
+              // Generate stable key for tab (same logic as content)
+              let workspaceId = report.workspaceId;
+              let reportId = report.reportId;
+              let pageName = undefined;
+              
+              if (report.url) {
+                const reportConfig = parsePowerBIReportUrl(report.url);
+                if (reportConfig) {
+                  workspaceId = workspaceId || reportConfig.workspaceId;
+                  reportId = reportId || reportConfig.reportId;
+                  pageName = reportConfig.pageName;
+                }
+              }
+              
+              const tabStableKey = workspaceId && reportId && pageName
+                ? `tab-${workspaceId}-${reportId}-${pageName}`
+                : workspaceId && reportId
+                ? `tab-${workspaceId}-${reportId}`
+                : `tab-${report.id}`;
 
               return (
                 <div
-                  key={report.id}
+                  key={tabStableKey}
                   className={`tab-item orderable-tab ${
                     activeReportTab === report.id ? "active" : ""
                   } ${
@@ -341,91 +364,62 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
             })}
           </div>
 
-          <div className="tab-content">
-            {activeReportTab && (
-              <div className="reports-table-container">
-                <table className="reports-table">
-                  <thead>
-                    <tr>
-                      <th>Report Item</th>
-                      <th>Type</th>
-                      <th>Status</th>
-                      <th>Last Updated</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: 8 }, (_, i) => {
-                      const activeReport = viewReports.find(
-                        (r) => r.id === activeReportTab
-                      );
-                      return (
-                        <tr key={i}>
-                          <td>
-                            <div className="report-cell">
-                              <ReportsIcon />
-                              <div className="report-cell-content">
-                                <div className="report-title">
-                                  {activeReport?.name} - Item {i + 1}
-                                </div>
-                                <div className="report-description">
-                                  Sample report data for visualization
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="type-badge">
-                              {activeReport?.type || "Report"}
-                            </span>
-                          </td>
-                          <td>
-                            <span
-                              className={`status-badge ${
-                                i % 3 === 0
-                                  ? "success"
-                                  : i % 3 === 1
-                                  ? "warning"
-                                  : "info"
-                              }`}
-                            >
-                              {i % 3 === 0
-                                ? "Active"
-                                : i % 3 === 1
-                                ? "Pending"
-                                : "Draft"}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="date-text">
-                              {new Date(
-                                Date.now() - i * 86400000
-                              ).toLocaleDateString()}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="action-buttons">
-                              <button
-                                className="action-btn view-btn"
-                                title="View Report"
-                              >
-                                <ViewIcon />
-                              </button>
-                              <button
-                                className="action-btn edit-btn"
-                                title="Edit Report"
-                              >
-                                <EditIcon />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          {/* Render ALL report tabs but only show the active one */}
+          <div className="tab-content-container">
+            {viewReports.map((report) => {
+              // Always parse URL to get full config including pageName
+              let reportConfig = null;
+              let workspaceId = report.workspaceId;
+              let reportId = report.reportId;
+              let pageName = undefined;
+              
+              if (report.url) {
+                reportConfig = parsePowerBIReportUrl(report.url);
+                if (reportConfig) {
+                  workspaceId = workspaceId || reportConfig.workspaceId;
+                  reportId = reportId || reportConfig.reportId;
+                  pageName = reportConfig.pageName; // Get page name from URL
+                }
+              }
+              
+              const isActive = activeReportTab === report.id;
+              const hasPowerBIConfig = workspaceId && reportId;
+              
+              // Generate stable key based on PowerBI config to prevent re-renders on reorder
+              const stableKey = workspaceId && reportId && pageName
+                ? `report-${workspaceId}-${reportId}-${pageName}`
+                : workspaceId && reportId
+                ? `report-${workspaceId}-${reportId}`
+                : `report-${report.id}`;
+              
+              return (
+                <div 
+                  key={stableKey}
+                  className="tab-content"
+                  style={{ display: isActive ? 'block' : 'none' }}
+                >
+                  {hasPowerBIConfig ? (
+                    <div className="powerbi-report-container">
+                      <PowerBIEmbedReport
+                        workspaceId={workspaceId!}
+                        reportId={reportId!}
+                        reportName={report.name}
+                        pageName={pageName} // Include specific page from URL
+                      />
+                    </div>
+                  ) : (
+                    <div className="report-no-config">
+                      <div className="no-config-message">
+                        <ReportsIcon />
+                        <h3>Report Not Configured</h3>
+                        <p>This report doesn't have PowerBI configuration yet.</p>
+                        <small>Provide a valid PowerBI URL or WorkspaceId/ReportId.</small>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
         {removeConfirmation && (
@@ -456,13 +450,37 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
   return (
     <div className="content-panel widgets-panel">
       <div className="widgets-grid orderable-widgets">
-        {viewWidgets.map((widget, index) => {
+        {viewWidgets.map((widget) => {
           const isDragOver = dragOverWidget === widget.id;
           const isDragging = draggedWidget === widget.id;
+          
+          // Try to get PowerBI config from URL or direct fields
+          let workspaceId = widget.workspaceId;
+          let reportId = widget.reportId;
+          let pageName = widget.pageName;
+          let visualName = widget.visualName;
+          
+          // If not in fields, try parsing from URL
+          if ((!workspaceId || !reportId || !pageName || !visualName) && widget.url) {
+            const config = parsePowerBIVisualUrl(widget.url);
+            if (config) {
+              workspaceId = workspaceId || config.workspaceId;
+              reportId = reportId || config.reportId;
+              pageName = pageName || config.pageName;
+              visualName = visualName || config.visualName;
+            }
+          }
+          
+          const hasPowerBIConfig = workspaceId && reportId && pageName && visualName;
 
+          // Generate stable key based on PowerBI config to prevent re-renders on reorder
+          const widgetStableKey = workspaceId && reportId && pageName && visualName
+            ? `widget-${workspaceId}-${reportId}-${pageName}-${visualName}`
+            : `widget-${widget.id}`;
+          
           return (
             <div
-              key={widget.id}
+              key={widgetStableKey}
               className={`widget-card orderable-widget ${
                 isDragging ? "dragging" : ""
               } ${isDragOver ? "drag-over" : ""}`}
@@ -493,25 +511,22 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                 </button>
               </div>
               <div className="widget-content">
-                <div className="widget-placeholder">
-                  <WidgetsIcon />
-                  <h4>Widget Content</h4>
-                  <p>Dummy widget data - {widget.type}</p>
-                  <div className="widget-metrics">
-                    <div className="metric">
-                      <span className="metric-value">
-                        {Math.floor(Math.random() * 1000)}
-                      </span>
-                      <span className="metric-label">Value A</span>
-                    </div>
-                    <div className="metric">
-                      <span className="metric-value">
-                        {Math.floor(Math.random() * 100)}%
-                      </span>
-                      <span className="metric-label">Value B</span>
-                    </div>
+                {hasPowerBIConfig ? (
+                  <PowerBIEmbedVisual
+                    workspaceId={workspaceId!}
+                    reportId={reportId!}
+                    pageName={pageName!}
+                    visualName={visualName!}
+                    widgetName={widget.name}
+                  />
+                ) : (
+                  <div className="widget-no-config">
+                    <WidgetsIcon />
+                    <h4>Widget Not Configured</h4>
+                    <p>PowerBI configuration required</p>
+                    <small>Provide a valid PowerBI visual URL</small>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           );

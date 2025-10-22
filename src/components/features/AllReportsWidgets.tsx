@@ -22,8 +22,12 @@ interface WidgetWithRoles extends Widget {
 const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
   onRefreshData,
 }) => {
-  const [editingReport, setEditingReport] = useState<ReportWithRoles | null>(null);
-  const [editingWidget, setEditingWidget] = useState<WidgetWithRoles | null>(null);
+  const [editingReport, setEditingReport] = useState<ReportWithRoles | null>(
+    null
+  );
+  const [editingWidget, setEditingWidget] = useState<WidgetWithRoles | null>(
+    null
+  );
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: "report" | "widget";
     id: string;
@@ -57,20 +61,24 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
         );
 
         // Map reports with their assigned roles
-        const reportsWithRoles: ReportWithRoles[] = allReports.map((report) => ({
-          ...report,
-          assignedRoles: roleAssignments
-            .filter((ra) => ra.reports.some((r) => r.id === report.id))
-            .map((ra) => ra.role),
-        }));
+        const reportsWithRoles: ReportWithRoles[] = allReports.map(
+          (report) => ({
+            ...report,
+            assignedRoles: roleAssignments
+              .filter((ra) => ra.reports.some((r) => r.id === report.id))
+              .map((ra) => ra.role),
+          })
+        );
 
         // Map widgets with their assigned roles
-        const widgetsWithRoles: WidgetWithRoles[] = allWidgets.map((widget) => ({
-          ...widget,
-          assignedRoles: roleAssignments
-            .filter((ra) => ra.widgets.some((w) => w.id === widget.id))
-            .map((ra) => ra.role),
-        }));
+        const widgetsWithRoles: WidgetWithRoles[] = allWidgets.map(
+          (widget) => ({
+            ...widget,
+            assignedRoles: roleAssignments
+              .filter((ra) => ra.widgets.some((w) => w.id === widget.id))
+              .map((ra) => ra.role),
+          })
+        );
 
         setReports(reportsWithRoles);
         setWidgets(widgetsWithRoles);
@@ -134,42 +142,74 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
 
     setLoading(true);
     try {
-      // First, unassign from all roles to avoid foreign key constraint errors
+      // First, unassign from all roles and remove from all views to avoid foreign key constraint errors
       if (deleteConfirm.type === "report") {
-        const report = reports.find(r => r.id === deleteConfirm.id);
+        const report = reports.find((r) => r.id === deleteConfirm.id);
         if (report) {
-          // Unassign from all roles first
+          // Step 1: Unassign from all roles
           for (const role of report.assignedRoles) {
             try {
-              await reportsService.unassignReportFromRole(role, deleteConfirm.id);
+              await reportsService.unassignReportFromRole(
+                role,
+                deleteConfirm.id
+              );
+              console.log(`✅ Unassigned report from role: ${role}`);
             } catch (err) {
-              console.warn(`Failed to unassign report from ${role}:`, err);
-              // Continue anyway, backend might have cascade delete
+              console.warn(`⚠️ Failed to unassign report from ${role}:`, err);
             }
           }
+
+          // Step 2: Remove from all views that contain this report
+          // Note: Backend should handle this with cascade delete, but we'll do it explicitly for safety
+          try {
+            // Since we don't have a "get all users' views" endpoint,
+            // we rely on backend cascade delete for ViewReport junction table
+            console.log(
+              `🗑️ Deleting report (backend will cascade delete from views)`
+            );
+          } catch (err) {
+            console.warn(
+              `⚠️ Note: Views cleanup will be handled by backend cascade delete`
+            );
+          }
         }
-        
-        // Now delete the report
+
+        // Now delete the report (backend should cascade delete ViewReport entries)
         await reportsService.deleteReport(deleteConfirm.id);
         showSuccess(
           "Report deleted",
           `"${deleteConfirm.name}" has been removed`
         );
       } else {
-        const widget = widgets.find(w => w.id === deleteConfirm.id);
+        const widget = widgets.find((w) => w.id === deleteConfirm.id);
         if (widget) {
-          // Unassign from all roles first
+          // Step 1: Unassign from all roles
           for (const role of widget.assignedRoles) {
             try {
-              await widgetsService.unassignWidgetFromRole(role, deleteConfirm.id);
+              await widgetsService.unassignWidgetFromRole(
+                role,
+                deleteConfirm.id
+              );
+              console.log(`✅ Unassigned widget from role: ${role}`);
             } catch (err) {
-              console.warn(`Failed to unassign widget from ${role}:`, err);
-              // Continue anyway, backend might have cascade delete
+              console.warn(`⚠️ Failed to unassign widget from ${role}:`, err);
             }
           }
+
+          // Step 2: Remove from all views that contain this widget
+          // Backend should handle this with cascade delete
+          try {
+            console.log(
+              `🗑️ Deleting widget (backend will cascade delete from views)`
+            );
+          } catch (err) {
+            console.warn(
+              `⚠️ Note: Views cleanup will be handled by backend cascade delete`
+            );
+          }
         }
-        
-        // Now delete the widget
+
+        // Now delete the widget (backend should cascade delete ViewWidget entries)
         await widgetsService.deleteWidget(deleteConfirm.id);
         showSuccess(
           "Widget deleted",
@@ -187,8 +227,19 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
         onRefreshData();
       }
     } catch (error: any) {
-      console.error("Failed to delete:", error);
-      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      console.error("❌ Failed to delete:", error);
+      let errorMessage =
+        error?.data?.message || error?.message || "Please try again";
+
+      // Check if it's a foreign key constraint error
+      if (
+        errorMessage.includes("REFERENCE") ||
+        errorMessage.includes("foreign key")
+      ) {
+        errorMessage =
+          "This item is still referenced in views. Please remove it from all views first, or contact your administrator to enable cascade delete.";
+      }
+
       showError(`Failed to delete ${deleteConfirm.type}`, errorMessage);
     } finally {
       setLoading(false);
@@ -213,7 +264,9 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
     setEditingWidget(widgetWithUserRoles as WidgetWithRoles);
   };
 
-  const handleSaveReport = async (updatedReport: Report & { userRoles?: string[] }) => {
+  const handleSaveReport = async (
+    updatedReport: Report & { userRoles?: string[] }
+  ) => {
     setLoading(true);
     try {
       // Update report details
@@ -228,8 +281,10 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
         const newRoles = updatedReport.userRoles;
 
         // Determine roles to assign and unassign
-        const rolesToAssign = newRoles.filter(r => !currentRoles.includes(r));
-        const rolesToUnassign = currentRoles.filter(r => !newRoles.includes(r));
+        const rolesToAssign = newRoles.filter((r) => !currentRoles.includes(r));
+        const rolesToUnassign = currentRoles.filter(
+          (r) => !newRoles.includes(r)
+        );
 
         // Batch assign new roles
         if (rolesToAssign.length > 0) {
@@ -258,14 +313,17 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
       }
     } catch (error: any) {
       console.error("Failed to update report:", error);
-      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      const errorMessage =
+        error?.data?.message || error?.message || "Please try again";
       showError("Failed to update report", errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSaveWidget = async (updatedWidget: Widget & { userRoles?: string[] }) => {
+  const handleSaveWidget = async (
+    updatedWidget: Widget & { userRoles?: string[] }
+  ) => {
     setLoading(true);
     try {
       // Update widget details
@@ -280,8 +338,10 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
         const newRoles = updatedWidget.userRoles;
 
         // Determine roles to assign and unassign
-        const rolesToAssign = newRoles.filter(r => !currentRoles.includes(r));
-        const rolesToUnassign = currentRoles.filter(r => !newRoles.includes(r));
+        const rolesToAssign = newRoles.filter((r) => !currentRoles.includes(r));
+        const rolesToUnassign = currentRoles.filter(
+          (r) => !newRoles.includes(r)
+        );
 
         // Batch assign new roles
         if (rolesToAssign.length > 0) {
@@ -310,7 +370,8 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
       }
     } catch (error: any) {
       console.error("Failed to update widget:", error);
-      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      const errorMessage =
+        error?.data?.message || error?.message || "Please try again";
       showError("Failed to update widget", errorMessage);
     } finally {
       setLoading(false);

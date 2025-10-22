@@ -15,6 +15,7 @@ import ActionPopup from "../common/ActionPopup";
 import { viewsService } from "../../services/viewsService";
 import { viewGroupsService } from "../../services/viewGroupsService";
 import { navigationService } from "../../services/navigationService";
+import "./styles/NavigationPanel.css";
 
 interface NavigationPanelProps {
   user: User;
@@ -54,20 +55,50 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [deletingViewGroup, setDeletingViewGroup] = useState<any>(null);
   const [deletingView, setDeletingView] = useState<any>(null);
 
-  // Auto-expand all view groups on initial load
+  // Track if we've initialized the expanded state - USE REF to prevent re-initialization
+  const hasInitializedRef = useRef(false);
+
+  // Load expanded state from navigation settings - ONLY ONCE
   useEffect(() => {
-    if (viewGroups.length > 0) {
+    if (viewGroups.length > 0 && !hasInitializedRef.current) {
       const initialExpanded: { [key: string]: boolean } = {};
-      viewGroups.forEach((vg) => {
-        if (!(vg.id in expandedViewGroups)) {
+
+      console.log("🔄 Initializing view group expand state");
+      console.log(
+        "  Saved expandedViewGroups:",
+        userNavSettings.expandedViewGroups
+      );
+      console.log("  ViewGroups count:", viewGroups.length);
+
+      // CRITICAL: If expandedViewGroups exists (even as empty array), use it
+      // Empty array [] means ALL COLLAPSED (user clicked "Collapse All")
+      if (
+        userNavSettings.expandedViewGroups !== undefined &&
+        userNavSettings.expandedViewGroups !== null
+      ) {
+        console.log("  ✅ Using saved state from backend");
+        viewGroups.forEach((vg) => {
+          const isExpanded = userNavSettings.expandedViewGroups!.includes(
+            vg.id
+          );
+          initialExpanded[vg.id] = isExpanded;
+          console.log(
+            `    ${vg.name}: ${isExpanded ? "EXPANDED" : "COLLAPSED"}`
+          );
+        });
+      } else {
+        console.log("  ⚠️ No saved state - defaulting to all expanded");
+        // Default: expand all (only if no saved state exists at all)
+        viewGroups.forEach((vg) => {
           initialExpanded[vg.id] = true;
-        }
-      });
-      if (Object.keys(initialExpanded).length > 0) {
-        setExpandedViewGroups((prev) => ({ ...prev, ...initialExpanded }));
+        });
       }
+
+      console.log("  ✅ Final expanded state:", initialExpanded);
+      setExpandedViewGroups(initialExpanded);
+      hasInitializedRef.current = true;
     }
-  }, [viewGroups]);
+  }, [viewGroups, userNavSettings]);
 
   // NEW: Responsive layout state
   const [isHorizontalLayout, setIsHorizontalLayout] = useState(false);
@@ -122,28 +153,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     };
   }, [isHorizontalLayout]);
 
-  // FIXED: Get current user settings - now expects single object
-  const getCurrentUserSettings = (): UserNavigationSettings => {
-    return (
-      userNavSettings || {
-        userId: user.name,
-        viewGroupOrder: [],
-        viewOrders: {},
-        hiddenViewGroups: [],
-        hiddenViews: [],
-      }
-    );
-  };
-
-  const settings = getCurrentUserSettings();
-
   // Check if item is hidden
   const isItemHidden = (type: "view" | "viewgroup", id: string): boolean => {
     if (type === "view") {
-      const view = views.find(v => v.id === id);
+      const view = views.find((v) => v.id === id);
       return view ? !view.isVisible : false;
     } else {
-      const viewGroup = viewGroups.find(vg => vg.id === id);
+      const viewGroup = viewGroups.find((vg) => vg.id === id);
       return viewGroup ? !viewGroup.isVisible : false;
     }
   };
@@ -152,14 +168,14 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const getViewGroupViews = (viewGroupId: string): View[] => {
     const viewGroup = viewGroups.find((vg) => vg.id === viewGroupId);
     if (!viewGroup) return [];
-    
+
     // ✅ CRITICAL FIX: Preserve the order from viewGroup.viewIds
     // The backend returns viewIds in the correct order (from ViewGroupView.OrderIndex)
     // DO NOT re-sort by View.order as that's a different global ordering!
     const groupViews = viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean) as View[];
-    
+
     // Return views in the same order as viewGroup.viewIds (already sorted by backend)
     return groupViews;
   };
@@ -178,7 +194,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   };
 
   // Toggle visibility (API-connected)
-  const handleToggleVisibility = async (type: "view" | "viewgroup", id: string) => {
+  const handleToggleVisibility = async (
+    type: "view" | "viewgroup",
+    id: string
+  ) => {
     try {
       if (type === "view") {
         const view = views.find((v) => v.id === id);
@@ -200,7 +219,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           orderIndex: viewGroup.order,
         });
       }
-      
+
       // Refresh data from parent
       if (onRefreshData) {
         onRefreshData();
@@ -218,13 +237,92 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
   };
 
-  // Toggle expansion
-  const toggleViewGroupExpansion = (viewGroupId: string) => {
-    setExpandedViewGroups((prev) => ({
-      ...prev,
-      [viewGroupId]: !prev[viewGroupId],
-    }));
+  // Toggle expansion with persistence
+  const toggleViewGroupExpansion = async (viewGroupId: string) => {
+    const newExpanded = {
+      ...expandedViewGroups,
+      [viewGroupId]: !expandedViewGroups[viewGroupId],
+    };
+    setExpandedViewGroups(newExpanded);
+
+    // Save to backend
+    await saveExpandedState(newExpanded);
   };
+
+  // Collapse all view groups
+  const handleCollapseAll = async () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    viewGroups.forEach((vg) => {
+      allCollapsed[vg.id] = false;
+    });
+    setExpandedViewGroups(allCollapsed);
+
+    // Save to backend
+    await saveExpandedState(allCollapsed);
+  };
+
+  // Expand all view groups
+  const handleExpandAll = async () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    viewGroups.forEach((vg) => {
+      allExpanded[vg.id] = true;
+    });
+    setExpandedViewGroups(allExpanded);
+
+    // Save to backend
+    await saveExpandedState(allExpanded);
+  };
+
+  // Save expanded state to navigation settings
+  const saveExpandedState = async (expandedState: {
+    [key: string]: boolean;
+  }) => {
+    try {
+      const expandedIds = Object.keys(expandedState).filter(
+        (id) => expandedState[id]
+      );
+
+      console.log("💾 Saving view group expand/collapse state:", expandedIds);
+      console.log("  Total groups:", Object.keys(expandedState).length);
+      console.log("  Expanded count:", expandedIds.length);
+
+      const updatedSettings: UserNavigationSettings = {
+        ...userNavSettings,
+        expandedViewGroups: expandedIds,
+      };
+
+      await navigationService.updateNavigationSettings(
+        user.name,
+        updatedSettings
+      );
+      onUpdateNavSettings(updatedSettings);
+
+      console.log("✅ Saved to backend successfully");
+    } catch (error) {
+      console.error("❌ Failed to save expand/collapse state:", error);
+      // Don't show error to user - this is a non-critical operation
+    }
+  };
+
+  // Check if all view groups are expanded or collapsed
+  const visibleViewGroups = getVisibleOrderedViewGroups();
+  const areAllExpanded = visibleViewGroups.every(
+    (vg) => expandedViewGroups[vg.id] === true
+  );
+  const areAllCollapsed = visibleViewGroups.every(
+    (vg) => expandedViewGroups[vg.id] === false
+  );
+
+  // Debug logging
+  useEffect(() => {
+    if (Object.keys(expandedViewGroups).length > 0) {
+      const expandedCount = Object.values(expandedViewGroups).filter(
+        (v) => v === true
+      ).length;
+      const totalCount = Object.keys(expandedViewGroups).length;
+      console.log(`📊 View groups: ${expandedCount}/${totalCount} expanded`);
+    }
+  }, [expandedViewGroups]);
 
   // Drag handlers
   const handleDragStart = (
@@ -235,7 +333,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   ) => {
     e.stopPropagation();
     setDraggedItem({ type, id, data: { viewGroupId } });
-    e.dataTransfer.setData("text/plain", JSON.stringify({ type, id, viewGroupId }));
+    e.dataTransfer.setData(
+      "text/plain",
+      JSON.stringify({ type, id, viewGroupId })
+    );
     e.dataTransfer.effectAllowed = "move";
     (e.currentTarget as HTMLElement).style.opacity = "0.5";
   };
@@ -259,7 +360,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     e.preventDefault();
     e.stopPropagation();
     if (!draggedItem) return;
-    
+
     let position: "top" | "bottom" | "middle" = "middle";
     if (targetType === "view") {
       const rect = e.currentTarget.getBoundingClientRect();
@@ -312,7 +413,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     // Store drag data before any state changes
     const dragData = { ...draggedItem };
     const dropPosition = dragOverItem?.position;
-    
+
     // Clear drag UI state
     setDragOverItem(null);
 
@@ -351,7 +452,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
 
       try {
         await viewGroupsService.reorderViewGroups(user.name, items);
-        
+
         if (onRefreshData) {
           await onRefreshData();
         }
@@ -363,14 +464,18 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
   };
 
-  const handleViewReorder = async (draggedViewId: string, targetViewId: string, position?: "top" | "bottom" | "middle") => {
-    const sourceGroupId = draggedItem?.data?.viewGroupId || viewGroups.find((vg) =>
-      vg.viewIds.includes(draggedViewId)
-    )?.id;
+  const handleViewReorder = async (
+    draggedViewId: string,
+    targetViewId: string,
+    position?: "top" | "bottom" | "middle"
+  ) => {
+    const sourceGroupId =
+      draggedItem?.data?.viewGroupId ||
+      viewGroups.find((vg) => vg.viewIds.includes(draggedViewId))?.id;
     const targetGroupId = viewGroups.find((vg) =>
       vg.viewIds.includes(targetViewId)
     )?.id;
-    
+
     if (!sourceGroupId || !targetGroupId) {
       return;
     }
@@ -397,7 +502,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         // Calculate insert position based on drop position
         let insertIndex: number;
         const pos = position || "bottom";
-        
+
         if (pos === "top") {
           // Insert before target
           insertIndex = targetIndex;
@@ -422,8 +527,12 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         }));
 
         try {
-          await viewGroupsService.reorderViewsInGroup(sourceGroupId, user.name, items);
-          
+          await viewGroupsService.reorderViewsInGroup(
+            sourceGroupId,
+            user.name,
+            items
+          );
+
           if (onRefreshData) {
             await onRefreshData();
           }
@@ -445,24 +554,23 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   ) => {
     const draggedView = views.find((v) => v.id === draggedViewId);
     // Use the source group from drag data to avoid conflicts
-    const sourceGroupId = draggedItem?.data?.viewGroupId || viewGroups.find((vg) =>
-      vg.viewIds.includes(draggedViewId)
-    )?.id;
+    const sourceGroupId =
+      draggedItem?.data?.viewGroupId ||
+      viewGroups.find((vg) => vg.viewIds.includes(draggedViewId))?.id;
 
     if (!draggedView || !sourceGroupId || sourceGroupId === targetGroupId)
       return;
 
-    const sourceGroupName = viewGroups.find(
-      (vg) => vg.id === sourceGroupId
-    )?.name;
-    const targetGroupName = viewGroups.find(
-      (vg) => vg.id === targetGroupId
-    )?.name;
-
     try {
-      await viewGroupsService.removeViewFromGroup(sourceGroupId, draggedViewId, user.name);
-      await viewGroupsService.addViewsToGroup(targetGroupId, user.name, [draggedViewId]);
-      
+      await viewGroupsService.removeViewFromGroup(
+        sourceGroupId,
+        draggedViewId,
+        user.name
+      );
+      await viewGroupsService.addViewsToGroup(targetGroupId, user.name, [
+        draggedViewId,
+      ]);
+
       if (onRefreshData) {
         await onRefreshData();
       }
@@ -476,19 +584,26 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   // Delete handlers (API-connected)
   const handleDeleteView = async (view: View) => {
     try {
-      const groupsContainingView = viewGroups.filter((vg: ViewGroup) => vg.viewIds.includes(view.id));
-      
+      const groupsContainingView = viewGroups.filter((vg: ViewGroup) =>
+        vg.viewIds.includes(view.id)
+      );
+
       for (const group of groupsContainingView) {
-        await viewGroupsService.removeViewFromGroup(group.id, view.id, user.name);
+        await viewGroupsService.removeViewFromGroup(
+          group.id,
+          view.id,
+          user.name
+        );
       }
-      
+
       await viewsService.deleteView(view.id, user.name);
-      
+
       if (onRefreshData) {
         await onRefreshData();
       }
     } catch (error: any) {
-      const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+      const errorMessage =
+        error?.message || error?.data?.message || "Unknown error";
       showWarning("Failed to delete view", errorMessage);
     }
   };
@@ -510,13 +625,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     try {
       if (action === "group-only") {
         const viewsInGroup = [...deletingViewGroup.viewIds];
-        
+
         if (viewsInGroup.length > 0) {
           const defaultGroupViewIds = defaultGroup!.viewIds;
           const viewsToAdd = viewsInGroup.filter(
             (viewId: string) => !defaultGroupViewIds.includes(viewId)
           );
-          
+
           if (viewsToAdd.length > 0) {
             await viewGroupsService.addViewsToGroup(
               defaultGroup!.id,
@@ -525,7 +640,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             );
           }
         }
-        
+
         for (const viewId of viewsInGroup) {
           try {
             await viewGroupsService.removeViewFromGroup(
@@ -537,34 +652,47 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
             // Ignore errors
           }
         }
-        
-        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
+
+        await viewGroupsService.deleteViewGroup(
+          deletingViewGroup.id,
+          user.name
+        );
       } else {
         const viewsToDelete = deletingViewGroup.viewIds;
-        
+
         for (const viewId of viewsToDelete) {
-          const view = views.find(v => v.id === viewId);
+          const view = views.find((v) => v.id === viewId);
           if (!view) continue;
-          
-          const groupsContainingView = viewGroups.filter((vg: ViewGroup) => vg.viewIds.includes(viewId));
-          
+
+          const groupsContainingView = viewGroups.filter((vg: ViewGroup) =>
+            vg.viewIds.includes(viewId)
+          );
+
           for (const group of groupsContainingView) {
-            await viewGroupsService.removeViewFromGroup(group.id, viewId, user.name);
+            await viewGroupsService.removeViewFromGroup(
+              group.id,
+              viewId,
+              user.name
+            );
           }
-          
+
           await viewsService.deleteView(viewId, user.name);
         }
-        
-        await viewGroupsService.deleteViewGroup(deletingViewGroup.id, user.name);
+
+        await viewGroupsService.deleteViewGroup(
+          deletingViewGroup.id,
+          user.name
+        );
       }
 
       setDeletingViewGroup(null);
-      
+
       if (onRefreshData) {
         await onRefreshData();
       }
     } catch (error: any) {
-      const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+      const errorMessage =
+        error?.message || error?.data?.message || "Unknown error";
       showWarning("Failed to delete view group", errorMessage);
     }
   };
@@ -638,24 +766,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     };
   }, []);
 
-  // Icons
-  const ChevronIcon = ({ expanded }: { expanded: boolean }) => (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      style={{
-        transform: expanded ? "rotate(90deg)" : "rotate(0deg)",
-        transition: "transform 0.2s ease",
-      }}
-    >
-      <polyline points="9 18 15 12 9 6" />
-    </svg>
-  );
-
   const ViewGroupIcon = () => (
     <svg
       width="16"
@@ -669,7 +779,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     </svg>
   );
 
-  const ViewIcon = () => (
+  const CollapseAllIcon = () => (
     <svg
       width="14"
       height="14"
@@ -678,81 +788,20 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       stroke="currentColor"
       strokeWidth="2"
     >
-      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-      <polyline points="14,2 14,8 20,8" />
+      <polyline points="6 9 12 15 18 9" />
     </svg>
   );
 
-  const EditIcon = () => (
+  const ExpandAllIcon = () => (
     <svg
-      width="12"
-      height="12"
+      width="14"
+      height="14"
       viewBox="0 0 24 24"
       fill="none"
       stroke="currentColor"
       strokeWidth="2"
     >
-      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 1 2-2v-7" />
-      <path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-    </svg>
-  );
-
-  const DeleteIcon = () => (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <polyline points="3,6 5,6 21,6" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-    </svg>
-  );
-
-  const EyeIcon = ({ isVisible }: { isVisible: boolean }) =>
-    isVisible ? (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-        <circle cx="12" cy="12" r="3" />
-      </svg>
-    ) : (
-      <svg
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-        <line x1="1" y1="1" x2="23" y2="23" />
-      </svg>
-    );
-
-  const DragIcon = () => (
-    <svg
-      width="12"
-      height="12"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-    >
-      <circle cx="9" cy="12" r="1" />
-      <circle cx="9" cy="5" r="1" />
-      <circle cx="9" cy="19" r="1" />
-      <circle cx="15" cy="12" r="1" />
-      <circle cx="15" cy="5" r="1" />
-      <circle cx="15" cy="19" r="1" />
+      <polyline points="18 15 12 9 6 15" />
     </svg>
   );
 
@@ -763,6 +812,30 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         isHorizontalLayout ? "horizontal-layout" : "vertical-layout"
       }`}
     >
+      {/* Collapse/Expand Buttons - Compact with short text */}
+      {!isHorizontalLayout && (
+        <div className="nav-toolbar">
+          <button
+            className="nav-toolbar-btn nav-toolbar-btn-compact"
+            onClick={handleExpandAll}
+            title="Expand All View Groups"
+            disabled={visibleViewGroups.length === 0 || areAllExpanded}
+          >
+            <ExpandAllIcon />
+            <span>Expand</span>
+          </button>
+          <button
+            className="nav-toolbar-btn nav-toolbar-btn-compact"
+            onClick={handleCollapseAll}
+            title="Collapse All View Groups"
+            disabled={visibleViewGroups.length === 0 || areAllCollapsed}
+          >
+            <CollapseAllIcon />
+            <span>Collapse</span>
+          </button>
+        </div>
+      )}
+
       <div
         className={`nav-menu ${
           isHorizontalLayout ? "nav-menu-horizontal" : "nav-menu-vertical"
@@ -772,8 +845,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
           const groupViews = getVisibleViewsInGroup(viewGroup.id);
           const isExpanded = isHorizontalLayout
             ? true
-            : (expandedViewGroups[viewGroup.id] ?? true); // Default to expanded if not set
-          const isHidden = isItemHidden("viewgroup", viewGroup.id);
+            : expandedViewGroups[viewGroup.id] ?? true; // Default to expanded if not set
           const isDragOver = dragOverItem?.id === viewGroup.id;
 
           return (
@@ -825,23 +897,13 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                   }`}
                 >
                   {groupViews.map((view) => {
-                    const viewIsHidden = isItemHidden("view", view.id);
                     const viewReports = view.reportIds
                       .map((id) => reports.find((r) => r.id === id))
                       .filter((r): r is Report => r !== undefined);
                     const viewWidgets = view.widgetIds
                       .map((id) => widgets.find((w) => w.id === id))
                       .filter((w): w is Widget => w !== undefined);
-                    
-                    // Debug: Log count mismatch
-                    if (view.reportIds.length !== viewReports.length || view.widgetIds.length !== viewWidgets.length) {
-                      console.warn(`⚠️ NavigationPanel - "${view.name}":`);
-                      console.warn(`  Reports: ${viewReports.length}/${view.reportIds.length} accessible`);
-                      console.warn(`  Widgets: ${viewWidgets.length}/${view.widgetIds.length} accessible`);
-                      console.warn(`  Missing Reports:`, view.reportIds.filter(id => !reports.find(r => r.id === id)));
-                      console.warn(`  Missing Widgets:`, view.widgetIds.filter(id => !widgets.find(w => w.id === id)));
-                    }
-                    
+
                     const isViewDragOver = dragOverItem?.id === view.id;
                     const dragPosition = dragOverItem?.position;
                     const isSelected = selectedView?.id === view.id;
@@ -863,7 +925,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                         }
                         onMouseLeave={handleMouseLeave}
                         draggable
-                        onDragStart={(e) => handleDragStart(e, "view", view.id, viewGroup.id)}
+                        onDragStart={(e) =>
+                          handleDragStart(e, "view", view.id, viewGroup.id)
+                        }
                         onDragEnd={handleDragEnd}
                         onDragOver={handleDragOver}
                         onDragEnter={(e) => handleDragEnter(e, view.id, "view")}

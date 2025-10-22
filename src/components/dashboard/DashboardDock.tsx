@@ -12,6 +12,7 @@ import {
 } from "../../types";
 import { viewsService } from "../../services/viewsService";
 import { viewGroupsService } from "../../services/viewGroupsService";
+import { navigationService } from "../../services/navigationService";
 import { useNotification } from "../common/NotificationProvider";
 import { useApiData } from "../../hooks/useApiData";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -52,6 +53,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     refetchViews,
     refetchViewGroups,
     refetchNavSettings,
+    refetchReports,
+    refetchWidgets,
   } = useApiData(user);
 
   // Modal states
@@ -69,8 +72,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const [reportsVisible, setReportsVisible] = useState(true);
   const [widgetsVisible, setWidgetsVisible] = useState(true);
 
-  // Navigation state - dock level collapse
-  const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+  // Navigation state - dock level collapse - Initialize from saved state
+  const [isDockCollapsed, setIsDockCollapsed] = useState(() => {
+    // Try to load from API nav settings first
+    return apiNavSettings?.isNavigationCollapsed ?? false;
+  });
 
   // Layout mode state - horizontal or vertical
   const [layoutMode, setLayoutMode] = useState<"horizontal" | "vertical">(
@@ -89,9 +95,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
-
-  // Track layout structure to detect when we need full reload
-  const [layoutStructure, setLayoutStructure] = useState<string>("");
 
   // Track current layout signature for persistence
   const [currentSignature, setCurrentSignature] = useState<LayoutSignature>("");
@@ -115,6 +118,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       viewOrders: {},
       hiddenViewGroups: [],
       hiddenViews: [],
+      expandedViewGroups: [],
+      isNavigationCollapsed: false,
     }
   );
 
@@ -135,8 +140,25 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   useEffect(() => {
     if (apiNavSettings) {
-      console.log("📊 API NavSettings updated");
+      console.log("📊 API NavSettings updated:", apiNavSettings);
       setNavSettings(apiNavSettings);
+
+      // Load saved navigation collapse state - respect backend value
+      const savedCollapseState = apiNavSettings.isNavigationCollapsed;
+      console.log("💾 Backend navigation collapse state:", savedCollapseState);
+
+      // Only set if we have a defined value from backend
+      if (savedCollapseState !== undefined && savedCollapseState !== null) {
+        console.log("✅ Applying saved collapse state:", savedCollapseState);
+        setIsDockCollapsed(savedCollapseState);
+      } else {
+        console.log("ℹ️ No saved collapse state - using default (false)");
+      }
+
+      // Mark that initial state has been loaded
+      hasLoadedInitialStateRef.current = true;
+      console.log("✅ Initial navigation state loaded");
+
       setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
     }
   }, [apiNavSettings]);
@@ -553,7 +575,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   );
 
   // Handle manual toggle (button click) - only allow when vertically oriented
-  const handleToggleCollapse = useCallback(() => {
+  const handleToggleCollapse = useCallback(async () => {
     // Only allow manual collapse/expand when navigation is vertically oriented (docked left/right)
     if (navPanelOrientation !== "vertical") {
       console.log(
@@ -563,8 +585,28 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
 
     isManualToggleRef.current = true;
-    setIsDockCollapsed((prev) => !prev);
-  }, [navPanelOrientation]);
+    const newCollapsedState = !isDockCollapsed;
+    setIsDockCollapsed(newCollapsedState);
+
+    // Save collapse state to navigation settings
+    try {
+      const updatedSettings: UserNavigationSettings = {
+        ...navSettings,
+        isNavigationCollapsed: newCollapsedState,
+      };
+
+      await navigationService.updateNavigationSettings(
+        user.name,
+        updatedSettings
+      );
+      setNavSettings(updatedSettings);
+
+      console.log("💾 Saved navigation collapse state:", newCollapsedState);
+    } catch (error) {
+      console.error("Failed to save navigation collapse state:", error);
+      // Don't show error - non-critical operation
+    }
+  }, [navPanelOrientation, isDockCollapsed, navSettings, user.name]);
 
   // Handle layout mode toggle
   const handleToggleLayout = useCallback(() => {
@@ -750,6 +792,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return () => clearTimeout(timer);
   }, [navPanelOrientation]);
 
+  // Track if initial load is complete
+  const hasLoadedInitialStateRef = useRef(false);
+
   // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
     const setupResizeObserver = () => {
@@ -778,6 +823,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
           // Detect panel position and orientation
           detectNavigationPositionAndOrientation();
+
+          // Skip auto-collapse/expand until initial state is loaded
+          if (!hasLoadedInitialStateRef.current) {
+            console.log(
+              "⏸️ Skipping auto-collapse/expand - waiting for initial state to load"
+            );
+            return;
+          }
 
           // Force expand if width is above threshold (regardless of mode)
           if (
@@ -1405,11 +1458,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         <ManageModal
           user={user}
           onClose={() => setShowManageModal(false)}
-          onRefreshData={() => {
-            // Refresh views and viewgroups data after changes
-            refetchViews();
-            refetchViewGroups();
-            refetchNavSettings();
+          onRefreshData={async () => {
+            // Refresh all data after changes (reports, widgets, views, viewgroups)
+            console.log("🔄 Refreshing all data from ManageModal...");
+            await Promise.all([
+              refetchReports(),
+              refetchWidgets(),
+              refetchViews(),
+              refetchViewGroups(),
+              refetchNavSettings(),
+            ]);
+            console.log("✅ All data refreshed");
           }}
         />
       )}

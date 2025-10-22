@@ -1,10 +1,5 @@
 import React, { useState } from "react";
-import {
-  User,
-  View,
-  ViewGroup,
-  UserNavigationSettings,
-} from "../../types";
+import { User, View, ViewGroup, UserNavigationSettings } from "../../types";
 import ViewGroupHoverPopup from "./ViewGroupHoverPopup";
 import "./styles/GmailNavigation.css";
 
@@ -24,7 +19,7 @@ interface CollapsedNavigationPanelProps {
   reports?: any[];
   widgets?: any[];
   // Popup position based on dock side
-  popupPosition?: 'left' | 'right';
+  popupPosition?: "left" | "right";
 }
 
 const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
@@ -40,22 +35,30 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   onRefreshData,
   reports = [],
   widgets = [],
-  popupPosition = 'left',
+  popupPosition = "left",
 }) => {
   const [hoveredViewGroup, setHoveredViewGroup] = useState<string | null>(null);
-  const [hoverPosition, setHoverPosition] = useState<{ x: number; y: number } | null>(null);
+  const [hoverPosition, setHoverPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const [isPopupHovered, setIsPopupHovered] = useState(false);
   const [hoverTimeout, setHoverTimeout] = useState<NodeJS.Timeout | null>(null);
 
   // Get ordered and visible view groups
-  console.log('📊 CollapsedNavigationPanel - viewGroups:', viewGroups.length);
-  console.log('📊 CollapsedNavigationPanel - views:', views.length);
-  
+  console.log("📊 CollapsedNavigationPanel - viewGroups:", viewGroups.length);
+  console.log("📊 CollapsedNavigationPanel - views:", views.length);
+
   const orderedViewGroups = viewGroups
-    .filter((vg) => vg.isVisible && !userNavSettings.hiddenViewGroups.includes(vg.id))
+    .filter(
+      (vg) => vg.isVisible && !userNavSettings.hiddenViewGroups.includes(vg.id)
+    )
     .sort((a, b) => (a.order || 0) - (b.order || 0));
-  
-  console.log('🔍 CollapsedNavigationPanel - visible groups:', orderedViewGroups.length);
+
+  console.log(
+    "🔍 CollapsedNavigationPanel - visible groups:",
+    orderedViewGroups.length
+  );
 
   // Get views for a specific view group
   const getViewsForGroup = (viewGroupId: string) => {
@@ -65,7 +68,10 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
     return viewGroup.viewIds
       .map((viewId) => views.find((v) => v.id === viewId))
       .filter(Boolean)
-      .filter((view) => view!.isVisible && !userNavSettings.hiddenViews.includes(view!.id))
+      .filter(
+        (view) =>
+          view!.isVisible && !userNavSettings.hiddenViews.includes(view!.id)
+      )
       .sort((a, b) => (a!.order || 0) - (b!.order || 0)) as View[];
   };
 
@@ -73,10 +79,10 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   const getViewGroupAbbreviation = (name: string) => {
     // Remove common words and get meaningful parts
     const meaningfulWords = name
-      .replace(/\b(the|and|or|of|in|on|at|to|for|with|by)\b/gi, '')
+      .replace(/\b(the|and|or|of|in|on|at|to|for|with|by)\b/gi, "")
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 0);
+      .filter((word) => word.length > 0);
 
     if (meaningfulWords.length === 0) {
       return name.substring(0, 3).toUpperCase();
@@ -87,8 +93,12 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
     }
 
     // Take first letter of each meaningful word, up to 3 letters
-    let abbreviation = '';
-    for (let i = 0; i < meaningfulWords.length && abbreviation.length < 3; i++) {
+    let abbreviation = "";
+    for (
+      let i = 0;
+      i < meaningfulWords.length && abbreviation.length < 3;
+      i++
+    ) {
       abbreviation += meaningfulWords[i][0].toUpperCase();
     }
 
@@ -104,7 +114,10 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
   };
 
   // Handle view group hover with improved timing
-  const handleViewGroupHover = (viewGroup: ViewGroup, event: React.MouseEvent) => {
+  const handleViewGroupHover = (
+    viewGroup: ViewGroup,
+    event: React.MouseEvent
+  ) => {
     // Clear any existing timeout
     if (hoverTimeout) {
       clearTimeout(hoverTimeout);
@@ -112,13 +125,12 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const POPUP_WIDTH = 280; // Approximate popup width
-    
+
     let position;
-    if (popupPosition === 'right') {
+    if (popupPosition === "right") {
       // Panel on right side - show popup on left
       position = {
-        x: rect.left - POPUP_WIDTH - 10, // 10px gap
+        x: rect.left - 10, // 10px gap
         y: rect.top,
       };
     } else {
@@ -192,9 +204,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
               onMouseLeave={handleViewGroupLeave}
               title={viewGroup.name}
             >
-              <div className="collapsed-view-group-text">
-                {abbreviation}
-              </div>
+              <div className="collapsed-view-group-text">{abbreviation}</div>
             </div>
           );
         })}
@@ -203,7 +213,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
       {/* Hover Popup with improved positioning */}
       {hoveredViewGroup && hoverPosition && (
         <ViewGroupHoverPopup
-          viewGroup={viewGroups.find(vg => vg.id === hoveredViewGroup)!}
+          viewGroup={viewGroups.find((vg) => vg.id === hoveredViewGroup)!}
           views={getViewsForGroup(hoveredViewGroup)}
           position={hoverPosition}
           onViewSelect={onViewSelect}
@@ -216,11 +226,11 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
           userNavSettings={userNavSettings}
           reports={reports}
           widgets={widgets}
-            onUpdateViews={onUpdateViews}
-            onUpdateViewGroups={onUpdateViewGroups}
-            onUpdateNavSettings={onUpdateNavSettings}
-            onRefreshData={onRefreshData}
-            dockPosition={popupPosition}
+          onUpdateViews={onUpdateViews}
+          onUpdateViewGroups={onUpdateViewGroups}
+          onUpdateNavSettings={onUpdateNavSettings}
+          onRefreshData={onRefreshData}
+          dockPosition={popupPosition}
         />
       )}
     </div>
