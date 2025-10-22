@@ -96,9 +96,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Force re-render trigger for NavigationPanel
   const [navigationUpdateTrigger, setNavigationUpdateTrigger] = useState(0);
 
-  // Track layout structure to detect when we need full reload
-  const [layoutStructure, setLayoutStructure] = useState<string>("");
-
   // Track current layout signature for persistence
   const [currentSignature, setCurrentSignature] = useState<LayoutSignature>("");
   const previousSignatureRef = useRef<LayoutSignature>("");
@@ -145,11 +142,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     if (apiNavSettings) {
       console.log("📊 API NavSettings updated:", apiNavSettings);
       setNavSettings(apiNavSettings);
-      
+
       // Load saved navigation collapse state - respect backend value
       const savedCollapseState = apiNavSettings.isNavigationCollapsed;
       console.log("💾 Backend navigation collapse state:", savedCollapseState);
-      
+
       // Only set if we have a defined value from backend
       if (savedCollapseState !== undefined && savedCollapseState !== null) {
         console.log("✅ Applying saved collapse state:", savedCollapseState);
@@ -157,11 +154,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       } else {
         console.log("ℹ️ No saved collapse state - using default (false)");
       }
-      
+
       // Mark that initial state has been loaded
       hasLoadedInitialStateRef.current = true;
       console.log("✅ Initial navigation state loaded");
-      
+
       setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
     }
   }, [apiNavSettings]);
@@ -590,17 +587,20 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     isManualToggleRef.current = true;
     const newCollapsedState = !isDockCollapsed;
     setIsDockCollapsed(newCollapsedState);
-    
+
     // Save collapse state to navigation settings
     try {
       const updatedSettings: UserNavigationSettings = {
         ...navSettings,
         isNavigationCollapsed: newCollapsedState,
       };
-      
-      await navigationService.updateNavigationSettings(user.name, updatedSettings);
+
+      await navigationService.updateNavigationSettings(
+        user.name,
+        updatedSettings
+      );
       setNavSettings(updatedSettings);
-      
+
       console.log("💾 Saved navigation collapse state:", newCollapsedState);
     } catch (error) {
       console.error("Failed to save navigation collapse state:", error);
@@ -826,7 +826,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
           // Skip auto-collapse/expand until initial state is loaded
           if (!hasLoadedInitialStateRef.current) {
-            console.log('⏸️ Skipping auto-collapse/expand - waiting for initial state to load');
+            console.log(
+              "⏸️ Skipping auto-collapse/expand - waiting for initial state to load"
+            );
             return;
           }
 
@@ -1458,7 +1460,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onClose={() => setShowManageModal(false)}
           onRefreshData={async () => {
             // Refresh all data after changes (reports, widgets, views, viewgroups)
-            console.log('🔄 Refreshing all data from ManageModal...');
+            console.log("🔄 Refreshing all data from ManageModal...");
             await Promise.all([
               refetchReports(),
               refetchWidgets(),
@@ -1466,7 +1468,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               refetchViewGroups(),
               refetchNavSettings(),
             ]);
-            console.log('✅ All data refreshed');
+            console.log("✅ All data refreshed");
           }}
         />
       )}

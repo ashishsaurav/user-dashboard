@@ -125,7 +125,6 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const POPUP_WIDTH = 280; // Approximate popup width
 
     let position;
     if (popupPosition === "right") {
