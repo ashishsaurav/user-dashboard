@@ -28,12 +28,16 @@
   font-weight: 500;
 }
 
-/* Icon-only button variant */
-.nav-toolbar-btn-icon {
-  padding: 8px;
-  min-width: 36px;
-  height: 36px;
-  gap: 0;
+/* Compact button variant with short text */
+.nav-toolbar-btn-compact {
+  padding: 6px 10px;
+  gap: 4px;
+  font-size: 12px;
+  min-width: 70px;
+}
+
+.nav-toolbar-btn-compact span {
+  font-weight: 500;
 }
 
 .nav-toolbar-btn:hover {
