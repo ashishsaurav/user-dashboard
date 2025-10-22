@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
 import "./ActionPopup.css";
 
 interface ActionPopupProps {
@@ -8,9 +8,8 @@ interface ActionPopupProps {
   isVisible: boolean;
   showDelete?: boolean;
   position: { x: number; y: number };
-  sourceRect?: DOMRect; // ✅ NEW: The rect of the hovered element
-  onMouseEnter?: () => void;
-  onMouseLeave?: () => void;
+  onMouseEnter?: () => void; // ✅ NEW
+  onMouseLeave?: () => void; // ✅ NEW
 }
 
 const ActionPopup: React.FC<ActionPopupProps> = ({
@@ -20,74 +19,33 @@ const ActionPopup: React.FC<ActionPopupProps> = ({
   isVisible,
   showDelete = true,
   position,
-  sourceRect,
-  onMouseEnter,
-  onMouseLeave,
+  onMouseEnter, // ✅ NEW
+  onMouseLeave, // ✅ NEW
 }) => {
   const popupRef = useRef<HTMLDivElement>(null);
-  const [computedPosition, setComputedPosition] = useState({ x: position.x, y: position.y });
-  const [popupSide, setPopupSide] = useState<'left' | 'right'>('right');
 
   useEffect(() => {
-    if (popupRef.current && sourceRect) {
-      const popupRect = popupRef.current.getBoundingClientRect();
+    if (popupRef.current) {
+      const rect = popupRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      const MARGIN = 8; // Gap between element and popup
-      const EDGE_MARGIN = 16; // Margin from viewport edge
-      
-      let finalX = position.x;
-      let finalY = position.y;
-      let side: 'left' | 'right' = 'right';
-      
-      // Calculate available space on right and left
-      const spaceOnRight = viewportWidth - sourceRect.right;
-      const spaceOnLeft = sourceRect.left;
-      
-      // Prefer right side, but use left if not enough space on right
-      if (spaceOnRight >= popupRect.width + MARGIN + EDGE_MARGIN) {
-        // Position to the right
-        side = 'right';
-        finalX = sourceRect.right + MARGIN;
-      } else if (spaceOnLeft >= popupRect.width + MARGIN + EDGE_MARGIN) {
-        // Position to the left
-        side = 'left';
-        finalX = sourceRect.left - popupRect.width - MARGIN;
-      } else {
-        // Not enough space on either side, use the side with more space
-        if (spaceOnRight > spaceOnLeft) {
-          side = 'right';
-          finalX = sourceRect.right + MARGIN;
-        } else {
-          side = 'left';
-          finalX = sourceRect.left - popupRect.width - MARGIN;
-        }
+
+      // Adjust horizontal position if popup goes off-screen
+      if (position.x + rect.width > viewportWidth) {
+        popupRef.current.style.left = `${position.x - rect.width}px`;
       }
-      
-      // Vertical positioning - align with the element center
-      finalY = sourceRect.top + (sourceRect.height / 2) - (popupRect.height / 2);
-      
-      // Ensure popup doesn't go off-screen vertically
-      if (finalY < EDGE_MARGIN) {
-        finalY = EDGE_MARGIN;
-      } else if (finalY + popupRect.height > viewportHeight - EDGE_MARGIN) {
-        finalY = viewportHeight - popupRect.height - EDGE_MARGIN;
-      }
-      
-      setComputedPosition({ x: finalX, y: finalY });
-      setPopupSide(side);
+
+      // Position is already above, no need to adjust vertically
     }
-  }, [position, sourceRect]);
+  }, [position]);
 
   return (
     <div
       ref={popupRef}
-      className={`action-popup action-popup-${popupSide}`}
-      style={{ left: computedPosition.x, top: computedPosition.y }}
+      className="action-popup"
+      style={{ left: position.x, top: position.y }}
       onClick={(e) => e.stopPropagation()}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={onMouseEnter} // ✅ NEW
+      onMouseLeave={onMouseLeave} // ✅ NEW
     >
       <button
         className="action-popup-btn"

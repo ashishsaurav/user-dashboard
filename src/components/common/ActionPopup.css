@@ -9,37 +9,17 @@
   flex-direction: row;
   gap: 2px;
   z-index: 10000;
+  animation: popupSlideDown 0.15s ease-out;
 }
 
-/* Slide in from right */
-.action-popup-right {
-  animation: popupSlideRight 0.15s ease-out;
-}
-
-@keyframes popupSlideRight {
+@keyframes popupSlideDown {
   from {
     opacity: 0;
-    transform: translateX(-8px);
+    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-/* Slide in from left */
-.action-popup-left {
-  animation: popupSlideLeft 0.15s ease-out;
-}
-
-@keyframes popupSlideLeft {
-  from {
-    opacity: 0;
-    transform: translateX(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
   }
 }
 
