@@ -660,6 +660,7 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     type: string;
     id: string;
     position: { x: number; y: number };
+    sourceRect: DOMRect; // ✅ NEW: Store the source element's rect
   } | null>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -677,7 +678,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
 
     const rect = e.currentTarget.getBoundingClientRect();
-    const POPUP_HEIGHT = 40;
 
     hoverTimeoutRef.current = setTimeout(() => {
       setHoveredItem({
@@ -685,8 +685,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         id,
         position: {
           x: rect.left,
-          y: rect.top - POPUP_HEIGHT - 4,
+          y: rect.top,
         },
+        sourceRect: rect, // ✅ Pass the full rect for intelligent positioning
       });
     }, 300);
   };
@@ -1135,8 +1136,9 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
               : true
           }
           position={hoveredItem.position}
-          onMouseEnter={handlePopupMouseEnter} // ✅ NEW
-          onMouseLeave={handlePopupMouseLeave} // ✅ NEW
+          sourceRect={hoveredItem.sourceRect} // ✅ NEW: Pass source rect for intelligent positioning
+          onMouseEnter={handlePopupMouseEnter}
+          onMouseLeave={handlePopupMouseLeave}
         />
       )}
     </div>
