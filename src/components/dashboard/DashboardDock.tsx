@@ -249,60 +249,110 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   };
 
   // Content management handlers
-  const handleAddReportsToView = (reports: Report[]) => {
+  const handleAddReportsToView = async (reports: Report[]) => {
     if (!selectedView || reports.length === 0) return;
-    const newReportIds = reports.map((r) => r.id);
-    const updatedView = {
-      ...selectedView,
-      reportIds: [...selectedView.reportIds, ...newReportIds],
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
-    setShowAddReportModal(false);
+    
+    try {
+      const newReportIds = reports.map((r) => r.id);
+      
+      // Call backend API to add reports to view
+      await viewsService.addReportsToView(selectedView.id, user.name, newReportIds);
+      
+      console.log(`✅ Added ${newReportIds.length} reports to view "${selectedView.name}"`);
+      
+      // Show success notification
+      showSuccess(
+        "Reports Added",
+        `${reports.length} report(s) added to "${selectedView.name}"`
+      );
+      
+      // Refresh views data from backend
+      await refetchViews();
+      
+      setShowAddReportModal(false);
+    } catch (error: any) {
+      console.error("Failed to add reports to view:", error);
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError("Failed to add reports", errorMessage);
+    }
   };
 
-  const handleAddWidgetsToView = (widgets: Widget[]) => {
+  const handleAddWidgetsToView = async (widgets: Widget[]) => {
     if (!selectedView || widgets.length === 0) return;
-    const newWidgetIds = widgets.map((w) => w.id);
-    const updatedView = {
-      ...selectedView,
-      widgetIds: [...selectedView.widgetIds, ...newWidgetIds],
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
-    setShowAddWidgetModal(false);
+    
+    try {
+      const newWidgetIds = widgets.map((w) => w.id);
+      
+      // Call backend API to add widgets to view
+      await viewsService.addWidgetsToView(selectedView.id, user.name, newWidgetIds);
+      
+      console.log(`✅ Added ${newWidgetIds.length} widgets to view "${selectedView.name}"`);
+      
+      // Show success notification
+      showSuccess(
+        "Widgets Added",
+        `${widgets.length} widget(s) added to "${selectedView.name}"`
+      );
+      
+      // Refresh views data from backend
+      await refetchViews();
+      
+      setShowAddWidgetModal(false);
+    } catch (error: any) {
+      console.error("Failed to add widgets to view:", error);
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError("Failed to add widgets", errorMessage);
+    }
   };
 
-  const handleRemoveReportFromView = (reportId: string) => {
+  const handleRemoveReportFromView = async (reportId: string) => {
     if (!selectedView) return;
-    const updatedView = {
-      ...selectedView,
-      reportIds: selectedView.reportIds.filter((id) => id !== reportId),
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
+    
+    try {
+      // Call backend API to remove report from view
+      await viewsService.removeReportFromView(selectedView.id, reportId, user.name);
+      
+      console.log(`✅ Removed report ${reportId} from view "${selectedView.name}"`);
+      
+      // Show success notification
+      const report = reports.find(r => r.id === reportId);
+      showSuccess(
+        "Report Removed",
+        `"${report?.name || 'Report'}" removed from "${selectedView.name}"`
+      );
+      
+      // Refresh views data from backend
+      await refetchViews();
+    } catch (error: any) {
+      console.error("Failed to remove report from view:", error);
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError("Failed to remove report", errorMessage);
+    }
   };
 
-  const handleRemoveWidgetFromView = (widgetId: string) => {
+  const handleRemoveWidgetFromView = async (widgetId: string) => {
     if (!selectedView) return;
-    const updatedView = {
-      ...selectedView,
-      widgetIds: selectedView.widgetIds.filter((id) => id !== widgetId),
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
+    
+    try {
+      // Call backend API to remove widget from view
+      await viewsService.removeWidgetFromView(selectedView.id, widgetId, user.name);
+      
+      console.log(`✅ Removed widget ${widgetId} from view "${selectedView.name}"`);
+      
+      // Show success notification
+      const widget = widgets.find(w => w.id === widgetId);
+      showSuccess(
+        "Widget Removed",
+        `"${widget?.name || 'Widget'}" removed from "${selectedView.name}"`
+      );
+      
+      // Refresh views data from backend
+      await refetchViews();
+    } catch (error: any) {
+      console.error("Failed to remove widget from view:", error);
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError("Failed to remove widget", errorMessage);
+    }
   };
 
   const handleReorderReports = (newReportOrder: string[]) => {
