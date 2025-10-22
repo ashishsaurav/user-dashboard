@@ -73,7 +73,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     type: string;
     id: string;
     position: { x: number; y: number };
-    sourceRect: DOMRect; // ✅ NEW: Store the source element's rect for smart positioning
   } | null>(null);
 
   useEffect(() => {
@@ -91,52 +90,35 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
 
   if (groupViews.length === 0) return null;
 
-  const popupRef = useRef<HTMLDivElement>(null);
-  const [popupStyle, setPopupStyle] = useState<React.CSSProperties>({
+  // Calculate popup style with dynamic positioning left/right based on available space
+  // Assume popup width approx 300px, can be replaced with ref measurement for precision
+  const popupWidth = 240;
+  const screenWidth = window.innerWidth;
+
+  let popupLeft: number | undefined = position.x;
+  let popupRight: number | undefined = undefined;
+
+  if (dockPosition === "right") {
+    const spaceRight = screenWidth - position.x;
+    if (spaceRight < popupWidth) {
+      // Not enough space on right, switch popup to left side
+      popupRight = screenWidth - position.x;
+      popupLeft = undefined;
+    }
+  } else {
+    // dockPosition left, normal placement left
+    popupLeft = position.x;
+    popupRight = undefined;
+  }
+
+  const popupStyle: React.CSSProperties = {
     position: "fixed",
     top: position.y,
-    left: position.x,
-    width: 240,
+    left: popupLeft,
+    right: popupRight,
+    width: popupWidth,
     zIndex: 1000,
-  });
-
-  // Smart positioning based on available space
-  useEffect(() => {
-    if (popupRef.current) {
-      const popupRect = popupRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      
-      const EDGE_MARGIN = 16;
-      
-      let finalX = position.x;
-      let finalY = position.y;
-      
-      // Ensure popup doesn't go off-screen horizontally
-      if (finalX + popupRect.width > viewportWidth - EDGE_MARGIN) {
-        finalX = viewportWidth - popupRect.width - EDGE_MARGIN;
-      }
-      if (finalX < EDGE_MARGIN) {
-        finalX = EDGE_MARGIN;
-      }
-      
-      // Ensure popup doesn't go off-screen vertically
-      if (finalY + popupRect.height > viewportHeight - EDGE_MARGIN) {
-        finalY = viewportHeight - popupRect.height - EDGE_MARGIN;
-      }
-      if (finalY < EDGE_MARGIN) {
-        finalY = EDGE_MARGIN;
-      }
-      
-      setPopupStyle({
-        position: "fixed",
-        top: finalY,
-        left: finalX,
-        width: 240,
-        zIndex: 1000,
-      });
-    }
-  }, [position]);
+  };
 
   const handleItemMouseEnter = (
     e: React.MouseEvent,
@@ -155,6 +137,7 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
     }
 
     const rect = e.currentTarget.getBoundingClientRect();
+    const POPUP_HEIGHT = 40;
 
     hoverTimeoutRef.current = setTimeout(() => {
       setHoveredItem({
@@ -162,9 +145,8 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
         id,
         position: {
           x: rect.left,
-          y: rect.top,
+          y: rect.top - POPUP_HEIGHT - 4,
         },
-        sourceRect: rect, // ✅ Pass the full rect for intelligent positioning
       });
     }, 300);
   };
@@ -344,7 +326,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
   return (
     <>
       <div
-        ref={popupRef}
         className="view-group-hover-popup"
         style={popupStyle}
         onMouseEnter={onMouseEnter}
@@ -565,7 +546,6 @@ const ViewGroupHoverPopup: React.FC<ViewGroupHoverPopupProps> = ({
             hoveredItem.type === "viewgroup" ? !viewGroup.isDefault : true
           }
           position={hoveredItem.position}
-          sourceRect={hoveredItem.sourceRect} // ✅ Pass sourceRect for smart positioning
           onMouseEnter={handleActionPopupMouseEnter}
           onMouseLeave={handleActionPopupMouseLeave}
         />

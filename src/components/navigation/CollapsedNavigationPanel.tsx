@@ -103,7 +103,7 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
     return abbreviation.substring(0, 3);
   };
 
-  // Handle view group hover with improved timing and smart positioning
+  // Handle view group hover with improved timing
   const handleViewGroupHover = (viewGroup: ViewGroup, event: React.MouseEvent) => {
     // Clear any existing timeout
     if (hoverTimeout) {
@@ -112,42 +112,21 @@ const CollapsedNavigationPanel: React.FC<CollapsedNavigationPanelProps> = ({
     }
 
     const rect = event.currentTarget.getBoundingClientRect();
-    const POPUP_WIDTH = 240; // Approximate popup width (matching ViewGroupHoverPopup)
-    const MARGIN = 8; // Gap between nav and popup
-    const viewportWidth = window.innerWidth;
+    const POPUP_WIDTH = 280; // Approximate popup width
     
     let position;
-    
-    // Calculate available space on both sides
-    const spaceOnRight = viewportWidth - rect.right;
-    const spaceOnLeft = rect.left;
-    
-    // Smart positioning: choose side with more space
-    if (spaceOnRight >= POPUP_WIDTH + MARGIN) {
-      // Enough space on right - position to the right
+    if (popupPosition === 'right') {
+      // Panel on right side - show popup on left
       position = {
-        x: rect.right + MARGIN,
-        y: rect.top,
-      };
-    } else if (spaceOnLeft >= POPUP_WIDTH + MARGIN) {
-      // Not enough space on right but enough on left - position to the left
-      position = {
-        x: rect.left - POPUP_WIDTH - MARGIN,
+        x: rect.left - POPUP_WIDTH - 10, // 10px gap
         y: rect.top,
       };
     } else {
-      // Not enough space on either side - use side with more space
-      if (spaceOnRight > spaceOnLeft) {
-        position = {
-          x: rect.right + MARGIN,
-          y: rect.top,
-        };
-      } else {
-        position = {
-          x: rect.left - POPUP_WIDTH - MARGIN,
-          y: rect.top,
-        };
-      }
+      // Panel on left side - show popup on right (default)
+      position = {
+        x: rect.right + 10, // 10px gap
+        y: rect.top,
+      };
     }
 
     setHoveredViewGroup(viewGroup.id);
