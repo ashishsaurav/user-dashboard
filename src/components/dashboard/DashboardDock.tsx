@@ -273,6 +273,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         newReportIds
       );
 
+      // Update local state immediately
+      setSelectedView((prevView) => {
+        if (!prevView) return null;
+        return {
+          ...prevView,
+          reportIds: [...prevView.reportIds, ...newReportIds],
+        };
+      });
+
       console.log(
         `✅ Added ${newReportIds.length} reports to view "${selectedView.name}"`
       );
@@ -283,8 +292,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         `${reports.length} report(s) added to "${selectedView.name}"`
       );
 
-      // Refresh views data from backend
-      await refetchViews();
+      // Refresh views data from backend in background
+      refetchViews();
 
       setShowAddReportModal(false);
     } catch (error: any) {
@@ -308,6 +317,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         newWidgetIds
       );
 
+      // Update local state immediately
+      setSelectedView((prevView) => {
+        if (!prevView) return null;
+        return {
+          ...prevView,
+          widgetIds: [...prevView.widgetIds, ...newWidgetIds],
+        };
+      });
+
       console.log(
         `✅ Added ${newWidgetIds.length} widgets to view "${selectedView.name}"`
       );
@@ -318,8 +336,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         `${widgets.length} widget(s) added to "${selectedView.name}"`
       );
 
-      // Refresh views data from backend
-      await refetchViews();
+      // Refresh views data from backend in background
+      refetchViews();
 
       setShowAddWidgetModal(false);
     } catch (error: any) {
@@ -341,6 +359,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         user.name
       );
 
+      // Update local state immediately
+      setSelectedView((prevView) => {
+        if (!prevView) return null;
+        return {
+          ...prevView,
+          reportIds: prevView.reportIds.filter((id) => id !== reportId),
+        };
+      });
+
       console.log(
         `✅ Removed report ${reportId} from view "${selectedView.name}"`
       );
@@ -352,8 +379,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         `"${report?.name || "Report"}" removed from "${selectedView.name}"`
       );
 
-      // Refresh views data from backend
-      await refetchViews();
+      // Refresh views data from backend in background
+      refetchViews();
     } catch (error: any) {
       console.error("Failed to remove report from view:", error);
       const errorMessage =
@@ -373,6 +400,15 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         user.name
       );
 
+      // Update local state immediately
+      setSelectedView((prevView) => {
+        if (!prevView) return null;
+        return {
+          ...prevView,
+          widgetIds: prevView.widgetIds.filter((id) => id !== widgetId),
+        };
+      });
+
       console.log(
         `✅ Removed widget ${widgetId} from view "${selectedView.name}"`
       );
@@ -384,8 +420,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         `"${widget?.name || "Widget"}" removed from "${selectedView.name}"`
       );
 
-      // Refresh views data from backend
-      await refetchViews();
+      // Refresh views data from backend in background
+      refetchViews();
     } catch (error: any) {
       console.error("Failed to remove widget from view:", error);
       const errorMessage =
