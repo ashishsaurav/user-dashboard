@@ -74,58 +74,70 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
         if (cachedVisual && cachedVisual.setAccessToken) {
           // Try to reuse cached embed
           visualRef.current = cachedVisual;
-          
+
           try {
             await visualRef.current.setAccessToken(embedInfo.embedToken);
             console.log("♻️  Reused cached visual, refreshed token:", embedKey);
             if (isMounted) {
               setLoading(false);
             }
-            
+
             // Successfully reused - set timeout and return
             if (isMounted) {
               timeoutId = setTimeout(() => {
                 if (isMounted) {
-                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  console.log(
+                    "⏰ Token expiring soon, refreshing...",
+                    embedKey
+                  );
                   setupTokenRefreshTimer();
                 }
               }, timeUntilRefresh);
             }
             return; // Exit early - successfully reused cache
           } catch (tokenErr) {
-            console.warn('⚠️  Cached visual embed is stale (DOM element gone), will re-embed:', tokenErr);
+            console.warn(
+              "⚠️  Cached visual embed is stale (DOM element gone), will re-embed:",
+              tokenErr
+            );
             // Remove stale cache and fall through to re-embed
             powerBIEmbedRegistry.remove(embedKey);
             visualRef.current = null;
           }
         }
-        
+
         // If we have visualRef but not from cache (this component's own ref)
         if (visualRef.current && visualRef.current.setAccessToken) {
           if (!isMounted) return;
-          
+
           try {
             // Visual already embedded in this instance, just refresh token
             await visualRef.current.setAccessToken(embedInfo.embedToken);
             console.log("🔄 PowerBI visual token refreshed for", embedKey);
-            
+
             // Successfully refreshed - set timeout and return
             if (isMounted) {
               timeoutId = setTimeout(() => {
                 if (isMounted) {
-                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  console.log(
+                    "⏰ Token expiring soon, refreshing...",
+                    embedKey
+                  );
                   setupTokenRefreshTimer();
                 }
               }, timeUntilRefresh);
             }
             return; // Exit early - successfully refreshed
           } catch (tokenErr) {
-            console.warn('⚠️  Local visual embed is stale, will re-embed:', tokenErr);
+            console.warn(
+              "⚠️  Local visual embed is stale, will re-embed:",
+              tokenErr
+            );
             visualRef.current = null;
             // Fall through to re-embed
           }
         }
-        
+
         // Initial embed - only if we don't have a valid visualRef
         if (visualContainerRef.current) {
           // Initial embed - only happens once per unique visual
@@ -175,9 +187,9 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
 
           visual.on("error", (event: any) => {
             console.error("❌ PowerBI visual error:", event.detail);
-            
+
             if (!isMounted) return;
-            
+
             const errorMsg = event.detail?.message || "Error loading visual";
 
             // Better error messages
@@ -188,12 +200,12 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
             } else {
               setError(errorMsg);
             }
-            
+
             if (isMounted) {
               setLoading(false);
             }
           });
-          
+
           // Set timeout for new embed
           if (isMounted) {
             timeoutId = setTimeout(() => {
@@ -216,7 +228,7 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
           errorKeys: err ? Object.keys(err) : [],
           fullError: err,
         });
-        
+
         if (!isMounted) {
           console.log("⏹️  Component unmounted, ignoring error:", embedKey);
           return;
@@ -231,7 +243,7 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
         } else if (err?.toString && err.toString() !== "[object Object]") {
           errorMessage = err.toString();
         }
-        
+
         console.error("❌ PowerBI Visual embed failed:", {
           embedKey,
           workspaceId,
@@ -281,9 +293,17 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
       const height = visualContainerRef.current.clientHeight;
 
       try {
-        // Visual embeds handle their own responsive sizing
-        // The PowerBI client automatically manages visual resize
-        // We just need to ensure the container has the right size
+        visualRef.current?.powerBiEmbed?.resizeActivePage(
+          powerbi.models.PageSizeType.Custom,
+          width,
+          height
+        );
+        visualRef.current?.powerBiEmbed?.resizeVisual(
+          pageName,
+          visualName,
+          width,
+          height
+        );
         console.log("📐 Visual container resized to", width, "x", height);
       } catch (e) {
         // Resize may fail if visual not fully loaded yet - this is normal

@@ -56,58 +56,67 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
         if (cachedReport && cachedReport.setAccessToken) {
           // Try to reuse cached embed
           reportRef.current = cachedReport;
-          
+
           try {
-            await reportRef.current.setAccessToken(embedInfo.embedToken);
+            await reportRef.current?.setAccessToken(embedInfo.embedToken);
             console.log("♻️  Reused cached report, refreshed token:", embedKey);
             if (isMounted) {
               setLoading(false);
             }
-            
+
             // Successfully reused - set timeout and return
             if (isMounted) {
               timeoutId = setTimeout(() => {
                 if (isMounted) {
-                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  console.log(
+                    "⏰ Token expiring soon, refreshing...",
+                    embedKey
+                  );
                   setupTokenRefreshTimer();
                 }
               }, timeUntilRefresh);
             }
             return; // Exit early - successfully reused cache
           } catch (tokenErr) {
-            console.warn('⚠️  Cached embed is stale (DOM element gone), will re-embed:', tokenErr);
+            console.warn(
+              "⚠️  Cached embed is stale (DOM element gone), will re-embed:",
+              tokenErr
+            );
             // Remove stale cache and fall through to re-embed
             powerBIEmbedRegistry.remove(embedKey);
             reportRef.current = null;
           }
         }
-        
+
         // If we have reportRef but not from cache (this component's own ref)
         if (reportRef.current && reportRef.current.setAccessToken) {
           if (!isMounted) return;
-          
+
           try {
             // Report already embedded in this instance, just refresh token
             await reportRef.current.setAccessToken(embedInfo.embedToken);
             console.log("🔄 PowerBI report token refreshed for", embedKey);
-            
+
             // Successfully refreshed - set timeout and return
             if (isMounted) {
               timeoutId = setTimeout(() => {
                 if (isMounted) {
-                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  console.log(
+                    "⏰ Token expiring soon, refreshing...",
+                    embedKey
+                  );
                   setupTokenRefreshTimer();
                 }
               }, timeUntilRefresh);
             }
             return; // Exit early - successfully refreshed
           } catch (tokenErr) {
-            console.warn('⚠️  Local embed is stale, will re-embed:', tokenErr);
+            console.warn("⚠️  Local embed is stale, will re-embed:", tokenErr);
             reportRef.current = null;
             // Fall through to re-embed
           }
         }
-        
+
         // Initial embed - only if we don't have a valid reportRef
         if (reportContainerRef.current) {
           // Initial embed - only happens once per unique report+page combination
@@ -172,7 +181,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
               setLoading(false);
             }
           });
-          
+
           // Set timeout for new embed
           if (isMounted) {
             timeoutId = setTimeout(() => {
@@ -195,7 +204,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
           errorKeys: err ? Object.keys(err) : [],
           fullError: err,
         });
-        
+
         if (!isMounted) {
           console.log("⏹️  Component unmounted, ignoring error:", embedKey);
           return;
@@ -210,7 +219,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
         } else if (err?.toString && err.toString() !== "[object Object]") {
           errorMessage = err.toString();
         }
-        
+
         console.error("❌ PowerBI Report embed failed:", {
           embedKey,
           workspaceId,
@@ -260,19 +269,19 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 
       try {
         // Resize the active page
-        if (pageName && typeof reportRef.current.resizePage === 'function') {
-          await reportRef.current.resizePage(
-            models.PageSizeType.Custom,
-            width,
-            height
-          );
-        } else if (typeof reportRef.current.resizeActivePage === 'function') {
-          await reportRef.current.resizeActivePage(
-            models.PageSizeType.Custom,
-            width,
-            height
-          );
-        }
+        // if (pageName && typeof reportRef.current.resizePage === "function") {
+        //   await reportRef.current.resizePage(
+        //     models.PageSizeType.Custom,
+        //     width,
+        //     height
+        //   );
+        // } else if (typeof reportRef.current.resizeActivePage === "function") {
+        //   await reportRef.current.resizeActivePage(
+        //     models.PageSizeType.Custom,
+        //     width,
+        //     height
+        //   );
+        // }
         console.log("📐 Resized PowerBI report to", width, "x", height);
       } catch (e) {
         // Resize may fail if report not fully loaded yet - this is normal
