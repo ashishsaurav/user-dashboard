@@ -1,15 +1,14 @@
 /* Navigation Panel Toolbar */
 .nav-toolbar {
-  padding: 8px 12px;
+  padding: 6px 12px;
   border-bottom: 1px solid var(--border-color, #e0e0e0);
   background: var(--bg-primary, #ffffff);
   display: flex;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: center;
   gap: 8px;
   flex-shrink: 0;
-  min-height: 48px;
-  flex-wrap: wrap;
+  min-height: 40px;
 }
 
 .nav-toolbar-btn {
@@ -26,9 +25,15 @@
   color: var(--text-primary, #333);
   transition: all 0.2s ease;
   white-space: nowrap;
-  flex: 1;
-  min-width: 0;
   font-weight: 500;
+}
+
+/* Icon-only button variant */
+.nav-toolbar-btn-icon {
+  padding: 8px;
+  min-width: 36px;
+  height: 36px;
+  gap: 0;
 }
 
 .nav-toolbar-btn:hover {
@@ -44,9 +49,10 @@
 }
 
 .nav-toolbar-btn:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
+  background: var(--bg-disabled, #f0f0f0);
 }
 
 .nav-toolbar-btn svg {

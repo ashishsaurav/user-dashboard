@@ -876,26 +876,24 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         isHorizontalLayout ? "horizontal-layout" : "vertical-layout"
       }`}
     >
-      {/* Collapse/Expand All Buttons - Always show both in vertical layout */}
+      {/* Collapse/Expand All Buttons - Icon only for compact design */}
       {!isHorizontalLayout && (
         <div className="nav-toolbar">
           <button
-            className="nav-toolbar-btn"
+            className="nav-toolbar-btn nav-toolbar-btn-icon"
             onClick={handleExpandAll}
-            title="Expand All View Groups"
+            title="Expand All"
             disabled={visibleViewGroups.length === 0 || areAllExpanded}
           >
             <ExpandAllIcon />
-            <span className="nav-toolbar-text">Expand All</span>
           </button>
           <button
-            className="nav-toolbar-btn"
+            className="nav-toolbar-btn nav-toolbar-btn-icon"
             onClick={handleCollapseAll}
-            title="Collapse All View Groups"
+            title="Collapse All"
             disabled={visibleViewGroups.length === 0 || areAllCollapsed}
           >
             <CollapseAllIcon />
-            <span className="nav-toolbar-text">Collapse All</span>
           </button>
         </div>
       )}
