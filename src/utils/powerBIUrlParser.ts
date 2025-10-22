@@ -1,8 +1,13 @@
 /**
  * Parse PowerBI workspace ID and report ID from URL
- * Supports various PowerBI URL formats:
- * - https://app.powerbi.com/groups/{workspaceId}/reports/{reportId}
- * - https://app.powerbi.com/reportEmbed?reportId={reportId}&groupId={workspaceId}
+ * 
+ * URL Structure:
+ * https://app.powerbi.com/groups/{groupId}/reports/{reportId}/ReportSection{pageId}?visual={visualId}
+ * 
+ * - groupId = workspaceId (first GUID after /groups/)
+ * - reportId = second GUID after /reports/
+ * - pageId = ReportSection{id} (the page identifier)
+ * - visualId = query parameter 'visual' (if present, it's a visual URL)
  */
 export interface PowerBIReportConfig {
   workspaceId: string;
@@ -11,36 +16,28 @@ export interface PowerBIReportConfig {
 
 /**
  * Parse PowerBI visual configuration from URL
- * Supports format: https://app.powerbi.com/groups/{workspaceId}/reports/{reportId}/ReportSection{pageName}?visual={visualName}
+ * URL: https://app.powerbi.com/groups/{groupId}/reports/{reportId}/ReportSection{pageId}?visual={visualId}
  */
 export interface PowerBIVisualConfig extends PowerBIReportConfig {
-  pageName: string;
-  visualName: string;
+  pageName: string; // This is actually pageId (e.g., "2b4d7fbedf856b2b08bf")
+  visualName: string; // This is actually visualId (e.g., "5be3c870890700486d85")
 }
 
 export function parsePowerBIReportUrl(url: string): PowerBIReportConfig | null {
   try {
-    // Pattern 1: /groups/{workspaceId}/reports/{reportId}
-    const pattern1 = /\/groups\/([^\/]+)\/reports\/([^\/\?#]+)/;
-    const match1 = url.match(pattern1);
-    if (match1) {
+    // Pattern: /groups/{groupId}/reports/{reportId}
+    // groupId is the workspaceId
+    const pattern = /\/groups\/([a-f0-9-]+)\/reports\/([a-f0-9-]+)/i;
+    const match = url.match(pattern);
+    
+    if (match) {
       return {
-        workspaceId: match1[1],
-        reportId: match1[2],
+        workspaceId: match[1], // First GUID = groupId = workspaceId
+        reportId: match[2],     // Second GUID = reportId
       };
     }
 
-    // Pattern 2: reportEmbed?reportId={reportId}&groupId={workspaceId}
-    const pattern2 = /reportEmbed.*[?&]reportId=([^&]+).*[?&]groupId=([^&]+)/;
-    const match2 = url.match(pattern2);
-    if (match2) {
-      return {
-        reportId: match2[1],
-        workspaceId: match2[2],
-      };
-    }
-
-    // Pattern 3: Check URL params
+    // Fallback: reportEmbed?reportId={reportId}&groupId={workspaceId}
     const urlObj = new URL(url);
     const reportId = urlObj.searchParams.get('reportId');
     const workspaceId = urlObj.searchParams.get('groupId') || urlObj.searchParams.get('workspaceId');
@@ -61,56 +58,44 @@ export function parsePowerBIReportUrl(url: string): PowerBIReportConfig | null {
 
 export function parsePowerBIVisualUrl(url: string): PowerBIVisualConfig | null {
   try {
-    // First get the base report config
+    // First get the base report config (workspaceId and reportId)
     const reportConfig = parsePowerBIReportUrl(url);
-    if (!reportConfig) return null;
+    if (!reportConfig) {
+      console.warn('Could not extract workspaceId/reportId from URL:', url);
+      return null;
+    }
 
-    // Pattern: /ReportSection{pageName}?visual={visualName}
-    // or: /ReportSection{pageName}#{visualName}
-    // Also handle: ReportSection without the slash
-    const pagePattern = /ReportSection([^\/\?#&]+)/;
+    // Extract pageId from ReportSection{pageId}
+    // Example: ReportSection2b4d7fbedf856b2b08bf
+    const pagePattern = /ReportSection([a-f0-9]+)/i;
     const pageMatch = url.match(pagePattern);
     
+    // Extract visualId from query parameter 'visual'
     const urlObj = new URL(url);
-    const visualFromParam = urlObj.searchParams.get('visual') || urlObj.searchParams.get('visualName');
-    
-    // Also check in hash for visual name (format: #visualId or #ReportSection/visualId)
-    let visualFromHash = '';
-    if (url.includes('#')) {
-      const hashPart = url.split('#')[1];
-      // Remove any ReportSection prefix from hash
-      visualFromHash = hashPart.replace(/^ReportSection[^\/]*\//, '');
-    }
+    const visualId = urlObj.searchParams.get('visual');
 
-    // Extract page name
-    let pageName = '';
-    if (pageMatch) {
-      // Clean up page name - remove 'ReportSection' prefix if present
-      pageName = pageMatch[1].replace(/^ReportSection/, '');
-    } else {
-      // Try to get from URL params
-      pageName = urlObj.searchParams.get('pageName') || '';
-    }
-
-    // Extract visual name
-    const visualName = visualFromParam || visualFromHash || urlObj.searchParams.get('visualId') || '';
-
-    if (!pageName || !visualName) {
-      console.warn('PowerBI Visual URL missing pageName or visualName:', {
+    if (!pageMatch || !pageMatch[1]) {
+      console.warn('PowerBI Visual URL missing pageId (ReportSection):', {
         url,
-        pageName,
-        visualName,
-        pageMatch: pageMatch?.[0],
-        visualFromParam,
-        visualFromHash
+        pageMatch: pageMatch?.[0]
       });
       return null;
     }
 
+    if (!visualId) {
+      console.warn('PowerBI Visual URL missing visualId (visual query param):', {
+        url,
+        hasVisualParam: urlObj.searchParams.has('visual')
+      });
+      return null;
+    }
+
+    const pageId = pageMatch[1]; // e.g., "2b4d7fbedf856b2b08bf"
+
     return {
       ...reportConfig,
-      pageName,
-      visualName,
+      pageName: pageId,    // This is the pageId (used as pageName in PowerBI API)
+      visualName: visualId, // This is the visualId (used as visualName in PowerBI API)
     };
   } catch (error) {
     console.error('Error parsing PowerBI visual URL:', error);
