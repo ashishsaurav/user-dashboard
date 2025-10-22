@@ -250,30 +250,33 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     };
 
     const handleResize = async () => {
-      if (reportContainerRef.current && reportRef.current) {
-        const width = reportContainerRef.current.clientWidth;
-        const height = reportContainerRef.current.clientHeight;
+      // Only resize if report is loaded and ref exists
+      if (!reportContainerRef.current || !reportRef.current) {
+        return;
+      }
 
-        try {
-          // Resize the active page
-          if (pageName) {
-            await reportRef.current.resizePage(
-              models.PageSizeType.Custom,
-              width,
-              height
-            );
-          } else {
-            await reportRef.current.resizeActivePage(
-              models.PageSizeType.Custom,
-              width,
-              height
-            );
-          }
-          console.log("📐 Resized PowerBI report to", width, "x", height);
-        } catch (e) {
-          // Resize may fail if report not fully loaded yet
-          console.debug("Resize not ready yet:", e);
+      const width = reportContainerRef.current.clientWidth;
+      const height = reportContainerRef.current.clientHeight;
+
+      try {
+        // Resize the active page
+        if (pageName && typeof reportRef.current.resizePage === 'function') {
+          await reportRef.current.resizePage(
+            models.PageSizeType.Custom,
+            width,
+            height
+          );
+        } else if (typeof reportRef.current.resizeActivePage === 'function') {
+          await reportRef.current.resizeActivePage(
+            models.PageSizeType.Custom,
+            width,
+            height
+          );
         }
+        console.log("📐 Resized PowerBI report to", width, "x", height);
+      } catch (e) {
+        // Resize may fail if report not fully loaded yet - this is normal
+        console.debug("Report resize not ready yet:", e);
       }
     };
 
