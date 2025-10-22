@@ -72,8 +72,11 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const [reportsVisible, setReportsVisible] = useState(true);
   const [widgetsVisible, setWidgetsVisible] = useState(true);
 
-  // Navigation state - dock level collapse
-  const [isDockCollapsed, setIsDockCollapsed] = useState(false);
+  // Navigation state - dock level collapse - Initialize from saved state
+  const [isDockCollapsed, setIsDockCollapsed] = useState(() => {
+    // Try to load from API nav settings first
+    return apiNavSettings?.isNavigationCollapsed ?? false;
+  });
 
   // Layout mode state - horizontal or vertical
   const [layoutMode, setLayoutMode] = useState<"horizontal" | "vertical">(
@@ -140,14 +143,24 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   useEffect(() => {
     if (apiNavSettings) {
-      console.log("📊 API NavSettings updated");
+      console.log("📊 API NavSettings updated:", apiNavSettings);
       setNavSettings(apiNavSettings);
       
-      // Load saved navigation collapse state
-      if (apiNavSettings.isNavigationCollapsed !== undefined) {
-        setIsDockCollapsed(apiNavSettings.isNavigationCollapsed);
-        console.log("💾 Loaded navigation collapse state:", apiNavSettings.isNavigationCollapsed);
+      // Load saved navigation collapse state - respect backend value
+      const savedCollapseState = apiNavSettings.isNavigationCollapsed;
+      console.log("💾 Backend navigation collapse state:", savedCollapseState);
+      
+      // Only set if we have a defined value from backend
+      if (savedCollapseState !== undefined && savedCollapseState !== null) {
+        console.log("✅ Applying saved collapse state:", savedCollapseState);
+        setIsDockCollapsed(savedCollapseState);
+      } else {
+        console.log("ℹ️ No saved collapse state - using default (false)");
       }
+      
+      // Mark that initial state has been loaded
+      hasLoadedInitialStateRef.current = true;
+      console.log("✅ Initial navigation state loaded");
       
       setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
     }
@@ -779,6 +792,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     return () => clearTimeout(timer);
   }, [navPanelOrientation]);
 
+  // Track if initial load is complete
+  const hasLoadedInitialStateRef = useRef(false);
+
   // Setup ResizeObserver for auto expand/collapse based on width
   useEffect(() => {
     const setupResizeObserver = () => {
@@ -807,6 +823,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
           // Detect panel position and orientation
           detectNavigationPositionAndOrientation();
+
+          // Skip auto-collapse/expand until initial state is loaded
+          if (!hasLoadedInitialStateRef.current) {
+            console.log('⏸️ Skipping auto-collapse/expand - waiting for initial state to load');
+            return;
+          }
 
           // Force expand if width is above threshold (regardless of mode)
           if (

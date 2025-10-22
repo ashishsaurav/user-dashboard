@@ -5,8 +5,10 @@
   background: var(--bg-primary, #ffffff);
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
   flex-shrink: 0;
+  min-height: 48px;
 }
 
 .nav-toolbar-btn {
@@ -36,8 +38,19 @@
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
+.nav-toolbar-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 .nav-toolbar-btn svg {
   flex-shrink: 0;
+  transition: transform 0.2s ease;
+}
+
+.nav-toolbar-btn:hover svg {
+  transform: scale(1.1);
 }
 
 .nav-toolbar-text {

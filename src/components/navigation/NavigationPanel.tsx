@@ -266,6 +266,10 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     try {
       const expandedIds = Object.keys(expandedState).filter(id => expandedState[id]);
       
+      console.log('💾 Saving view group expand/collapse state:', expandedIds);
+      console.log('  Total groups:', Object.keys(expandedState).length);
+      console.log('  Expanded count:', expandedIds.length);
+      
       const updatedSettings: UserNavigationSettings = {
         ...userNavSettings,
         expandedViewGroups: expandedIds,
@@ -274,16 +278,26 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
       await navigationService.updateNavigationSettings(user.name, updatedSettings);
       onUpdateNavSettings(updatedSettings);
       
-      console.log('💾 Saved view group expand/collapse state:', expandedIds);
+      console.log('✅ Saved to backend successfully');
     } catch (error) {
-      console.error('Failed to save expand/collapse state:', error);
+      console.error('❌ Failed to save expand/collapse state:', error);
       // Don't show error to user - this is a non-critical operation
     }
   };
 
   // Check if all view groups are expanded or collapsed
-  const areAllExpanded = Object.values(expandedViewGroups).every(val => val === true);
-  const areAllCollapsed = Object.values(expandedViewGroups).every(val => val === false);
+  const visibleViewGroups = getVisibleOrderedViewGroups();
+  const areAllExpanded = visibleViewGroups.every(vg => expandedViewGroups[vg.id] === true);
+  const areAllCollapsed = visibleViewGroups.every(vg => expandedViewGroups[vg.id] === false);
+  
+  // Debug logging
+  useEffect(() => {
+    if (Object.keys(expandedViewGroups).length > 0) {
+      const expandedCount = Object.values(expandedViewGroups).filter(v => v === true).length;
+      const totalCount = Object.keys(expandedViewGroups).length;
+      console.log(`📊 View groups: ${expandedCount}/${totalCount} expanded`);
+    }
+  }, [expandedViewGroups]);
 
   // Drag handlers
   const handleDragStart = (
@@ -848,13 +862,14 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         isHorizontalLayout ? "horizontal-layout" : "vertical-layout"
       }`}
     >
-      {/* Collapse/Expand All Button - Only show in vertical layout */}
-      {!isHorizontalLayout && viewGroups.length > 0 && (
+      {/* Collapse/Expand All Button - Always show in vertical layout */}
+      {!isHorizontalLayout && (
         <div className="nav-toolbar">
           <button
             className="nav-toolbar-btn"
             onClick={areAllExpanded ? handleCollapseAll : handleExpandAll}
             title={areAllExpanded ? "Collapse All View Groups" : "Expand All View Groups"}
+            disabled={visibleViewGroups.length === 0}
           >
             {areAllExpanded ? <CollapseAllIcon /> : <ExpandAllIcon />}
             <span className="nav-toolbar-text">
