@@ -11,30 +11,6 @@
   z-index: 10000;
 }
 
-/* Pointer/Arrow pointing to the element */
-.action-popup::before,
-.action-popup::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 0;
-  height: 0;
-  border-style: solid;
-}
-
-/* Pointer border (darker) */
-.action-popup::before {
-  border-width: 6px;
-  z-index: 1;
-}
-
-/* Pointer fill (matches background) */
-.action-popup::after {
-  border-width: 5px;
-  z-index: 2;
-}
-
 /* Slide in from right */
 .action-popup-right {
   animation: popupSlideRight 0.15s ease-out;
@@ -51,17 +27,6 @@
   }
 }
 
-/* Pointer pointing LEFT (when popup is on RIGHT side) */
-.action-popup-right::before {
-  left: -6px;
-  border-color: transparent var(--border-color, #e5e7eb) transparent transparent;
-}
-
-.action-popup-right::after {
-  left: -5px;
-  border-color: transparent var(--bg-primary, #ffffff) transparent transparent;
-}
-
 /* Slide in from left */
 .action-popup-left {
   animation: popupSlideLeft 0.15s ease-out;
@@ -76,17 +41,6 @@
     opacity: 1;
     transform: translateX(0);
   }
-}
-
-/* Pointer pointing RIGHT (when popup is on LEFT side) */
-.action-popup-left::before {
-  right: -6px;
-  border-color: transparent transparent transparent var(--border-color, #e5e7eb);
-}
-
-.action-popup-left::after {
-  right: -5px;
-  border-color: transparent transparent transparent var(--bg-primary, #ffffff);
 }
 
 .action-popup-btn {
@@ -120,27 +74,4 @@
 
 .action-popup-btn.delete-btn:hover svg {
   stroke: #dc2626;
-}
-
-/* Dark mode support */
-[data-theme="dark"] .action-popup {
-  background: var(--bg-primary, #2a2a2a);
-  border-color: var(--border-color, #3a3a3a);
-}
-
-/* Dark mode pointer */
-[data-theme="dark"] .action-popup-right::before {
-  border-right-color: var(--border-color, #3a3a3a);
-}
-
-[data-theme="dark"] .action-popup-right::after {
-  border-right-color: var(--bg-primary, #2a2a2a);
-}
-
-[data-theme="dark"] .action-popup-left::before {
-  border-left-color: var(--border-color, #3a3a3a);
-}
-
-[data-theme="dark"] .action-popup-left::after {
-  border-left-color: var(--bg-primary, #2a2a2a);
 }
