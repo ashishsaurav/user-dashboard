@@ -138,10 +138,13 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
           return;
         }
         
-        const errorMessage = err?.message || err?.toString() || 'Failed to load visual';
-        console.error('Failed to fetch PowerBI token:', errorMessage, err);
-        setError(errorMessage);
-        setLoading(false);
+        const errorMessage = err?.message || (typeof err === 'string' ? err : 'Failed to load visual');
+        console.error('❌ Failed to fetch PowerBI token:', errorMessage);
+        
+        if (isMounted) {
+          setError(errorMessage);
+          setLoading(false);
+        }
       }
     };
 

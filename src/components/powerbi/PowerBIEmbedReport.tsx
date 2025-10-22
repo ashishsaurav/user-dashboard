@@ -129,10 +129,13 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
           return;
         }
         
-        const errorMessage = err?.message || err?.toString() || 'Failed to load report';
-        console.error('Failed to fetch PowerBI token:', errorMessage, err);
-        setError(errorMessage);
-        setLoading(false);
+        const errorMessage = err?.message || (typeof err === 'string' ? err : 'Failed to load report');
+        console.error('❌ Failed to fetch PowerBI token:', errorMessage);
+        
+        if (isMounted) {
+          setError(errorMessage);
+          setLoading(false);
+        }
       }
     };
 
