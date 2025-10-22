@@ -68,7 +68,7 @@ const ManageModal: React.FC<ManageModalProps> = ({
         </div>
 
         <div className="modal-content">
-          {activeTab === "all" && user && (
+          {activeTab === "all" && (
             <AllReportsWidgetsApi onRefreshData={handleDataRefresh} />
           )}
           {activeTab === "permissions" && user && (
@@ -77,7 +77,7 @@ const ManageModal: React.FC<ManageModalProps> = ({
               onRefreshData={handleDataRefresh}
             />
           )}
-          {activeTab === "add" && user && (
+          {activeTab === "add" && (
             <AddReportWidgetApi onItemAdded={handleDataRefresh} />
           )}
           {activeTab === "layout" && user && (

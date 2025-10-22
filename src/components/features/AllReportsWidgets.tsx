@@ -90,9 +90,10 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
       if (onRefreshData) {
         onRefreshData();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to delete:", error);
-      showError(`Failed to delete ${deleteConfirm.type}`, "Please try again");
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError(`Failed to delete ${deleteConfirm.type}`, errorMessage);
     } finally {
       setLoading(false);
     }
@@ -125,9 +126,10 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
       if (onRefreshData) {
         onRefreshData();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update report:", error);
-      showError("Failed to update report", "Please try again");
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError("Failed to update report", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -152,9 +154,10 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
       if (onRefreshData) {
         onRefreshData();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update widget:", error);
-      showError("Failed to update widget", "Please try again");
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError("Failed to update widget", errorMessage);
     } finally {
       setLoading(false);
     }

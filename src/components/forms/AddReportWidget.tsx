@@ -56,12 +56,10 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
       if (onItemAdded) {
         onItemAdded();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to create ${formType}:`, error);
-      showError(
-        `Failed to create ${formType}`,
-        "Please check your input and try again"
-      );
+      const errorMessage = error?.data?.message || error?.message || "Please check your input and try again";
+      showError(`Failed to create ${formType}`, errorMessage);
     } finally {
       setLoading(false);
     }

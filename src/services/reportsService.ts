@@ -81,16 +81,25 @@ export class ReportsService {
   }
 
   /**
-   * Assign report to role
+   * Assign report to role (single)
    */
   async assignReportToRole(
     roleId: string,
-    reportId: string,
-    orderIndex?: number
+    reportId: string
   ): Promise<void> {
+    await this.assignReportsToRole(roleId, [reportId]);
+  }
+
+  /**
+   * Assign multiple reports to role (batch)
+   */
+  async assignReportsToRole(
+    roleId: string,
+    reportIds: string[]
+  ): Promise<void> {
+    if (reportIds.length === 0) return;
     await apiClient.post(API_ENDPOINTS.REPORTS.ASSIGN_TO_ROLE(roleId), {
-      reportId,
-      orderIndex: orderIndex ?? 0,
+      reportIds,
     });
   }
 

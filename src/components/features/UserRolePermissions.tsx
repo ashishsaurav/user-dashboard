@@ -131,25 +131,31 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
         (id) => !selectedWidgetIds.includes(id)
       );
 
-      // Assign reports
-      for (const reportId of reportsToAssign) {
-        await reportsService.assignReportToRole(role, reportId);
+      // Batch operations for better performance
+      const operations = [];
+
+      // Assign reports (batch)
+      if (reportsToAssign.length > 0) {
+        operations.push(reportsService.assignReportsToRole(role, reportsToAssign));
       }
 
-      // Unassign reports
+      // Unassign reports (one by one - API doesn't support batch delete)
       for (const reportId of reportsToUnassign) {
-        await reportsService.unassignReportFromRole(role, reportId);
+        operations.push(reportsService.unassignReportFromRole(role, reportId));
       }
 
-      // Assign widgets
-      for (const widgetId of widgetsToAssign) {
-        await widgetsService.assignWidgetToRole(role, widgetId);
+      // Assign widgets (batch)
+      if (widgetsToAssign.length > 0) {
+        operations.push(widgetsService.assignWidgetsToRole(role, widgetsToAssign));
       }
 
-      // Unassign widgets
+      // Unassign widgets (one by one - API doesn't support batch delete)
       for (const widgetId of widgetsToUnassign) {
-        await widgetsService.unassignWidgetFromRole(role, widgetId);
+        operations.push(widgetsService.unassignWidgetFromRole(role, widgetId));
       }
+
+      // Execute all operations in parallel
+      await Promise.all(operations);
 
       // Update local state
       setRoleAssignments({
@@ -172,9 +178,10 @@ const UserRolePermissions: React.FC<UserRolePermissionsProps> = ({
       if (onRefreshData) {
         onRefreshData();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to update role permissions:", error);
-      showError("Failed to update permissions", "Please try again");
+      const errorMessage = error?.data?.message || error?.message || "Please try again";
+      showError("Failed to update permissions", errorMessage);
     } finally {
       setLoading(false);
     }
