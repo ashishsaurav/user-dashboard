@@ -350,13 +350,14 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               // Try to get PowerBI config from URL or direct fields
               let workspaceId = report.workspaceId;
               let reportId = report.reportId;
+              let reportConfig = null;
               
               // If not in fields, try parsing from URL
               if ((!workspaceId || !reportId) && report.url) {
-                const config = parsePowerBIReportUrl(report.url);
-                if (config) {
-                  workspaceId = config.workspaceId;
-                  reportId = config.reportId;
+                reportConfig = parsePowerBIReportUrl(report.url);
+                if (reportConfig) {
+                  workspaceId = reportConfig.workspaceId;
+                  reportId = reportConfig.reportId;
                 }
               }
               
@@ -375,6 +376,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                         workspaceId={workspaceId!}
                         reportId={reportId!}
                         reportName={report.name}
+                        pageName={reportConfig?.pageName} // Include specific page if in URL
                       />
                     </div>
                   ) : (

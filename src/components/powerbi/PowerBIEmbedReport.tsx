@@ -8,12 +8,14 @@ interface PowerBIEmbedReportProps {
   workspaceId: string;
   reportId: string;
   reportName: string;
+  pageName?: string; // Optional specific page to show
 }
 
 const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
   workspaceId,
   reportId,
   reportName,
+  pageName,
 }) => {
   const reportContainerRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
           console.log('🔄 PowerBI report token refreshed for', embedKey);
         } else if (reportContainerRef.current) {
           // Initial embed - only happens once
-          console.log('🎯 Embedding PowerBI report:', embedKey);
+          console.log('🎯 Embedding PowerBI report:', embedKey, pageName ? `(page: ${pageName})` : '');
           
           const config: powerbi.IReportEmbedConfiguration = {
             type: 'report',
@@ -56,6 +58,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
             embedUrl: embedInfo.embedUrl,
             accessToken: embedInfo.embedToken,
             tokenType: models.TokenType.Embed,
+            pageName: pageName, // Specific page if provided
             settings: {
               filterPaneEnabled: false,
               navContentPaneEnabled: false,
@@ -70,8 +73,19 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
           const report = powerbiService.current.embed(reportContainerRef.current, config);
           reportRef.current = report as powerbi.Report;
 
-          report.on('loaded', () => {
+          report.on('loaded', async () => {
             console.log('✅ PowerBI report loaded:', embedKey);
+            
+            // If specific page provided, set it as active
+            if (pageName && reportRef.current) {
+              try {
+                await reportRef.current.setPage(pageName);
+                console.log('📄 Set active page to:', pageName);
+              } catch (e) {
+                console.warn('Could not set page:', e);
+              }
+            }
+            
             setLoading(false);
           });
 
@@ -108,17 +122,39 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     };
   }, [workspaceId, reportId]);
 
-  // Handle responsive resize
+  // Handle responsive resize with debouncing
   useEffect(() => {
-    const handleResize = () => {
+    const debounce = (func: () => void, delay: number) => {
+      let timer: ReturnType<typeof setTimeout>;
+      return () => {
+        clearTimeout(timer);
+        timer = setTimeout(func, delay);
+      };
+    };
+
+    const handleResize = async () => {
       if (reportContainerRef.current && reportRef.current) {
         const width = reportContainerRef.current.clientWidth;
         const height = reportContainerRef.current.clientHeight;
-        // PowerBI handles responsiveness automatically with FitToPage
+        
+        try {
+          // Resize the active page
+          if (pageName) {
+            await reportRef.current.resizePage(models.PageSizeType.Custom, width, height);
+          } else {
+            await reportRef.current.resizeActivePage(models.PageSizeType.Custom, width, height);
+          }
+          console.log('📐 Resized PowerBI report to', width, 'x', height);
+        } catch (e) {
+          // Resize may fail if report not fully loaded yet
+          console.debug('Resize not ready yet:', e);
+        }
       }
     };
 
-    const resizeObserver = new ResizeObserver(handleResize);
+    const debouncedResize = debounce(handleResize, 150);
+    const resizeObserver = new ResizeObserver(debouncedResize);
+    
     if (reportContainerRef.current) {
       resizeObserver.observe(reportContainerRef.current);
     }
@@ -126,7 +162,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, []);
+  }, [pageName]);
 
   if (error) {
     return (
