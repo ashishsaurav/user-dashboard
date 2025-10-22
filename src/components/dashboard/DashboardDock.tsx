@@ -118,57 +118,68 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   );
 
+  const { showSuccess, showError } = useNotification();
+
   // Update local state when API data changes (FIXED: removed length check)
   useEffect(() => {
-    console.log('📊 API Views updated:', apiViews.length);
+    console.log("📊 API Views updated:", apiViews.length);
     setViews(apiViews);
     setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
   }, [apiViews]);
 
   useEffect(() => {
-    console.log('📊 API ViewGroups updated:', apiViewGroups.length);
+    console.log("📊 API ViewGroups updated:", apiViewGroups.length);
     setViewGroups(apiViewGroups);
     setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
   }, [apiViewGroups]);
 
   useEffect(() => {
     if (apiNavSettings) {
-      console.log('📊 API NavSettings updated');
+      console.log("📊 API NavSettings updated");
       setNavSettings(apiNavSettings);
       setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
     }
   }, [apiNavSettings]);
 
   // Enhanced state handlers
-  const handleUpdateViews = useCallback((updatedViews: View[]) => {
-    const sortedViews = [...updatedViews].sort(
-      (a, b) => (a.order || 0) - (b.order || 0)
-    );
-    setViews(sortedViews);
-    setNavigationUpdateTrigger((prev) => prev + 1);
-
-    if (selectedView) {
-      const updatedSelectedView = sortedViews.find(
-        (v) => v.id === selectedView.id
+  const handleUpdateViews = useCallback(
+    (updatedViews: View[]) => {
+      const sortedViews = [...updatedViews].sort(
+        (a, b) => (a.order || 0) - (b.order || 0)
       );
-      if (updatedSelectedView) {
-        setSelectedView(updatedSelectedView);
+      setViews(sortedViews);
+      setNavigationUpdateTrigger((prev) => prev + 1);
+
+      if (selectedView) {
+        const updatedSelectedView = sortedViews.find(
+          (v) => v.id === selectedView.id
+        );
+        if (updatedSelectedView) {
+          setSelectedView(updatedSelectedView);
+        }
       }
-    }
-  }, [selectedView]);
+    },
+    [selectedView]
+  );
 
-  const handleUpdateViewGroups = useCallback((updatedViewGroups: ViewGroup[]) => {
-    const sortedGroups = [...updatedViewGroups].sort(
-      (a, b) => (a.order || 0) - (b.order || 0)
-    );
-    setViewGroups(sortedGroups);
-    setNavigationUpdateTrigger((prev) => prev + 1);
-  }, []);
+  const handleUpdateViewGroups = useCallback(
+    (updatedViewGroups: ViewGroup[]) => {
+      const sortedGroups = [...updatedViewGroups].sort(
+        (a, b) => (a.order || 0) - (b.order || 0)
+      );
+      setViewGroups(sortedGroups);
+      setNavigationUpdateTrigger((prev) => prev + 1);
+    },
+    []
+  );
 
-  const handleUpdateNavSettings = useCallback((settings: UserNavigationSettings) => {
-    setNavSettings(settings);
-    setNavigationUpdateTrigger((prev) => prev + 1);
-  }, []);
+  const handleUpdateNavSettings = useCallback(
+    (settings: UserNavigationSettings) => {
+      setNavSettings(settings);
+      setNavigationUpdateTrigger((prev) => prev + 1);
+    },
+    []
+  );
 
   // Compute current layout signature based on state
   const computeCurrentSignature = useCallback((): LayoutSignature => {
@@ -249,60 +260,138 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   };
 
   // Content management handlers
-  const handleAddReportsToView = (reports: Report[]) => {
+  const handleAddReportsToView = async (reports: Report[]) => {
     if (!selectedView || reports.length === 0) return;
-    const newReportIds = reports.map((r) => r.id);
-    const updatedView = {
-      ...selectedView,
-      reportIds: [...selectedView.reportIds, ...newReportIds],
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
-    setShowAddReportModal(false);
+
+    try {
+      const newReportIds = reports.map((r) => r.id);
+
+      // Call backend API to add reports to view
+      await viewsService.addReportsToView(
+        selectedView.id,
+        user.name,
+        newReportIds
+      );
+
+      console.log(
+        `✅ Added ${newReportIds.length} reports to view "${selectedView.name}"`
+      );
+
+      // Show success notification
+      showSuccess(
+        "Reports Added",
+        `${reports.length} report(s) added to "${selectedView.name}"`
+      );
+
+      // Refresh views data from backend
+      await refetchViews();
+
+      setShowAddReportModal(false);
+    } catch (error: any) {
+      console.error("Failed to add reports to view:", error);
+      const errorMessage =
+        error?.data?.message || error?.message || "Please try again";
+      showError("Failed to add reports", errorMessage);
+    }
   };
 
-  const handleAddWidgetsToView = (widgets: Widget[]) => {
+  const handleAddWidgetsToView = async (widgets: Widget[]) => {
     if (!selectedView || widgets.length === 0) return;
-    const newWidgetIds = widgets.map((w) => w.id);
-    const updatedView = {
-      ...selectedView,
-      widgetIds: [...selectedView.widgetIds, ...newWidgetIds],
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
-    setShowAddWidgetModal(false);
+
+    try {
+      const newWidgetIds = widgets.map((w) => w.id);
+
+      // Call backend API to add widgets to view
+      await viewsService.addWidgetsToView(
+        selectedView.id,
+        user.name,
+        newWidgetIds
+      );
+
+      console.log(
+        `✅ Added ${newWidgetIds.length} widgets to view "${selectedView.name}"`
+      );
+
+      // Show success notification
+      showSuccess(
+        "Widgets Added",
+        `${widgets.length} widget(s) added to "${selectedView.name}"`
+      );
+
+      // Refresh views data from backend
+      await refetchViews();
+
+      setShowAddWidgetModal(false);
+    } catch (error: any) {
+      console.error("Failed to add widgets to view:", error);
+      const errorMessage =
+        error?.data?.message || error?.message || "Please try again";
+      showError("Failed to add widgets", errorMessage);
+    }
   };
 
-  const handleRemoveReportFromView = (reportId: string) => {
+  const handleRemoveReportFromView = async (reportId: string) => {
     if (!selectedView) return;
-    const updatedView = {
-      ...selectedView,
-      reportIds: selectedView.reportIds.filter((id) => id !== reportId),
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
+
+    try {
+      // Call backend API to remove report from view
+      await viewsService.removeReportFromView(
+        selectedView.id,
+        reportId,
+        user.name
+      );
+
+      console.log(
+        `✅ Removed report ${reportId} from view "${selectedView.name}"`
+      );
+
+      // Show success notification
+      const report = reports.find((r) => r.id === reportId);
+      showSuccess(
+        "Report Removed",
+        `"${report?.name || "Report"}" removed from "${selectedView.name}"`
+      );
+
+      // Refresh views data from backend
+      await refetchViews();
+    } catch (error: any) {
+      console.error("Failed to remove report from view:", error);
+      const errorMessage =
+        error?.data?.message || error?.message || "Please try again";
+      showError("Failed to remove report", errorMessage);
+    }
   };
 
-  const handleRemoveWidgetFromView = (widgetId: string) => {
+  const handleRemoveWidgetFromView = async (widgetId: string) => {
     if (!selectedView) return;
-    const updatedView = {
-      ...selectedView,
-      widgetIds: selectedView.widgetIds.filter((id) => id !== widgetId),
-    };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
+
+    try {
+      // Call backend API to remove widget from view
+      await viewsService.removeWidgetFromView(
+        selectedView.id,
+        widgetId,
+        user.name
+      );
+
+      console.log(
+        `✅ Removed widget ${widgetId} from view "${selectedView.name}"`
+      );
+
+      // Show success notification
+      const widget = widgets.find((w) => w.id === widgetId);
+      showSuccess(
+        "Widget Removed",
+        `"${widget?.name || "Widget"}" removed from "${selectedView.name}"`
+      );
+
+      // Refresh views data from backend
+      await refetchViews();
+    } catch (error: any) {
+      console.error("Failed to remove widget from view:", error);
+      const errorMessage =
+        error?.data?.message || error?.message || "Please try again";
+      showError("Failed to remove widget", errorMessage);
+    }
   };
 
   const handleReorderReports = (newReportOrder: string[]) => {
@@ -336,7 +425,6 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Content creators - NOT memoized so it always returns fresh content
   const createNavigationContent = () => {
-    
     if (isDockCollapsed) {
       return (
         <CollapsedNavigationPanel
@@ -353,13 +441,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           widgets={getUserAccessibleWidgets()}
           popupPosition={navPanelPosition}
           onRefreshData={async () => {
-            console.log('🔄 Refreshing navigation data...');
+            console.log("🔄 Refreshing navigation data...");
             await Promise.all([
               refetchViews(),
               refetchViewGroups(),
               refetchNavSettings(),
             ]);
-            console.log('✅ Navigation data refreshed');
+            console.log("✅ Navigation data refreshed");
           }}
         />
       );
@@ -380,13 +468,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         onViewSelect={handleViewSelect}
         selectedView={selectedView}
         onRefreshData={async () => {
-          console.log('🔄 Refreshing navigation data...');
+          console.log("🔄 Refreshing navigation data...");
           await Promise.all([
             refetchViews(),
             refetchViewGroups(),
             refetchNavSettings(),
           ]);
-          console.log('✅ Navigation data refreshed');
+          console.log("✅ Navigation data refreshed");
         }}
       />
     );
@@ -806,7 +894,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       // Mark user interaction timestamp
       lastUserInteractionRef.current = Date.now();
       userInteractingRef.current = true;
-      
+
       // Detect navigation position and orientation on layout change
       setTimeout(() => {
         detectNavigationPositionAndOrientation();
@@ -835,7 +923,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current);
         }
-        
+
         // Debounced save to avoid saving during rapid changes
         saveTimeoutRef.current = setTimeout(() => {
           console.log("💾 Saving layout after user interaction (debounced)");
@@ -849,7 +937,12 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }, 1000);
       }
     },
-    [isDockCollapsed, detectNavigationPositionAndOrientation, currentSignature, user.name]
+    [
+      isDockCollapsed,
+      detectNavigationPositionAndOrientation,
+      currentSignature,
+      user.name,
+    ]
   );
 
   // Helper function to find navigation panel in layout data
@@ -929,7 +1022,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       // Extract current navigation state before changing layout
       const currentLayout = dockLayoutRef.current.getLayout();
-      const navState = layoutPersistenceService.extractNavigationState(currentLayout);
+      const navState =
+        layoutPersistenceService.extractNavigationState(currentLayout);
       console.log("📍 Extracted navigation state:", navState);
 
       // Try to load saved layout for this signature
@@ -978,7 +1072,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           `🆕 No saved layout found, generating default for signature: "${newSignature}"`
         );
         layoutToLoad = generateDynamicLayout();
-        
+
         // Apply previous navigation state to new layout
         if (navState) {
           console.log("🔧 Applying previous navigation state to new layout");
@@ -987,22 +1081,28 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             navState
           );
         }
-        
+
         // Save this new layout after a brief delay to avoid interfering with layout loading
         // Use autoSaveTimeoutRef so it can be canceled if user interacts
         if (autoSaveTimeoutRef.current) {
           clearTimeout(autoSaveTimeoutRef.current);
         }
         autoSaveTimeoutRef.current = setTimeout(() => {
-          console.log("💾 Auto-saving new layout with preserved navigation state");
-          layoutPersistenceService.saveLayout(user.name, newSignature, layoutToLoad);
+          console.log(
+            "💾 Auto-saving new layout with preserved navigation state"
+          );
+          layoutPersistenceService.saveLayout(
+            user.name,
+            newSignature,
+            layoutToLoad
+          );
           autoSaveTimeoutRef.current = null;
         }, 500);
       }
 
       // Set loading flag to prevent structure updates during load
       isLoadingLayoutRef.current = true;
-      
+
       // Load the layout
       dockLayoutRef.current.loadLayout(layoutToLoad);
 
@@ -1020,7 +1120,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
             navigationPanel.removeAttribute("data-collapsed");
           }
         }
-        
+
         // Reset loading flag after layout has settled
         setTimeout(() => {
           isLoadingLayoutRef.current = false;
@@ -1030,7 +1130,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     } else {
       // Signature hasn't changed - check if we need to update layout structure for panel visibility
       const currentLayout = dockLayoutRef.current.getLayout();
-      
+
       // Helper to recursively search for panels in layout
       const findPanelInLayout = (children: any[], panelId: string): boolean => {
         if (!children) return false;
@@ -1044,8 +1144,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           return false;
         });
       };
-      
-      const hasReportsPanel = currentLayout?.dockbox?.children 
+
+      const hasReportsPanel = currentLayout?.dockbox?.children
         ? findPanelInLayout(currentLayout.dockbox.children, "reports")
         : false;
       const hasWidgetsPanel = currentLayout?.dockbox?.children
@@ -1061,33 +1161,42 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       // Check if user has interacted recently (within 2 seconds)
       const timeSinceInteraction = Date.now() - lastUserInteractionRef.current;
       const recentlyInteracted = timeSinceInteraction < 2000;
-      
+
       // Don't trigger structure updates if:
       // 1. Currently loading a layout
       // 2. User is actively interacting
       // 3. User interacted within last 2 seconds (drag/dock operations)
-      const shouldSkipUpdate = isLoadingLayoutRef.current || userInteractingRef.current || recentlyInteracted;
-      
+      const shouldSkipUpdate =
+        isLoadingLayoutRef.current ||
+        userInteractingRef.current ||
+        recentlyInteracted;
+
       if (needsStructureUpdate && !shouldSkipUpdate) {
-        console.log("🔧 Panel visibility changed - updating layout structure while preserving navigation");
-        
+        console.log(
+          "🔧 Panel visibility changed - updating layout structure while preserving navigation"
+        );
+
         // Set loading flag
         isLoadingLayoutRef.current = true;
-        
+
         // Extract current navigation state
-        const navState = layoutPersistenceService.extractNavigationState(currentLayout);
-        
+        const navState =
+          layoutPersistenceService.extractNavigationState(currentLayout);
+
         // Generate new layout with correct panel visibility
         let newLayout = generateDynamicLayout();
-        
+
         // Apply navigation state to preserve customizations
         if (navState) {
-          newLayout = layoutPersistenceService.applyNavigationState(newLayout, navState);
+          newLayout = layoutPersistenceService.applyNavigationState(
+            newLayout,
+            navState
+          );
         }
-        
+
         // Load the updated layout
         dockLayoutRef.current.loadLayout(newLayout);
-        
+
         // Save the updated layout after a delay to avoid interfering with user interaction
         // Use autoSaveTimeoutRef so it can be canceled if user interacts
         if (autoSaveTimeoutRef.current) {
@@ -1095,10 +1204,14 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }
         autoSaveTimeoutRef.current = setTimeout(() => {
           console.log("💾 Auto-saving layout after panel visibility change");
-          layoutPersistenceService.saveLayout(user.name, currentSignature, newLayout);
+          layoutPersistenceService.saveLayout(
+            user.name,
+            currentSignature,
+            newLayout
+          );
           autoSaveTimeoutRef.current = null;
         }, 500);
-        
+
         // Apply collapsed state and reset loading flag
         setTimeout(() => {
           const navigationPanel = findNavigationPanel();
@@ -1109,7 +1222,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
               navigationPanel.removeAttribute("data-collapsed");
             }
           }
-          
+
           // Reset loading flag after layout has settled
           setTimeout(() => {
             isLoadingLayoutRef.current = false;
@@ -1120,9 +1233,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         if (isLoadingLayoutRef.current) {
           console.log("⏸️ Skipping structure update - layout is loading");
         } else if (userInteractingRef.current) {
-          console.log("⏸️ Skipping structure update - user is actively interacting");
+          console.log(
+            "⏸️ Skipping structure update - user is actively interacting"
+          );
         } else if (recentlyInteracted) {
-          console.log(`⏸️ Skipping structure update - user interacted ${timeSinceInteraction}ms ago`);
+          console.log(
+            `⏸️ Skipping structure update - user interacted ${timeSinceInteraction}ms ago`
+          );
         }
       } else {
         // Only content changed, no structure update needed
@@ -1150,31 +1267,43 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
   // Force update navigation content when data changes
   useEffect(() => {
-    console.log('🔄 Data changed - updating navigation content');
-    console.log('  Views:', views.length);
-    console.log('  View Groups:', viewGroups.length);
-    console.log('  Navigation trigger:', navigationUpdateTrigger);
-    
+    console.log("🔄 Data changed - updating navigation content");
+    console.log("  Views:", views.length);
+    console.log("  View Groups:", viewGroups.length);
+    console.log("  Navigation trigger:", navigationUpdateTrigger);
+
     // Force update the layout content
     if (dockLayoutRef.current) {
       updateLayoutContent();
     }
-  }, [views, viewGroups, navSettings, navigationUpdateTrigger, updateLayoutContent]);
+  }, [
+    views,
+    viewGroups,
+    navSettings,
+    navigationUpdateTrigger,
+    updateLayoutContent,
+  ]);
 
   // Show loading state
   if (apiLoading) {
     return (
       <div className="dashboard-dock modern" data-theme={theme}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          height: '100vh',
-          flexDirection: 'column',
-          gap: '20px'
-        }}>
-          <div style={{ fontSize: '18px', color: '#666' }}>Loading dashboard...</div>
-          <div style={{ fontSize: '14px', color: '#999' }}>Fetching your data from server</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+            flexDirection: "column",
+            gap: "20px",
+          }}
+        >
+          <div style={{ fontSize: "18px", color: "#666" }}>
+            Loading dashboard...
+          </div>
+          <div style={{ fontSize: "14px", color: "#999" }}>
+            Fetching your data from server
+          </div>
         </div>
       </div>
     );
@@ -1184,24 +1313,31 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   if (apiError) {
     return (
       <div className="dashboard-dock modern" data-theme={theme}>
-        <div style={{ 
-          display: 'flex', 
-          alignItems: 'center', 
-          justifyContent: 'center', 
-          height: '100vh',
-          flexDirection: 'column',
-          gap: '20px'
-        }}>
-          <div style={{ fontSize: '18px', color: '#f44336' }}>Error loading dashboard</div>
-          <div style={{ fontSize: '14px', color: '#999' }}>{apiError}</div>
-          <button onClick={() => window.location.reload()} style={{
-            padding: '10px 20px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            borderRadius: '4px',
-            border: '1px solid #ccc',
-            background: '#fff'
-          }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            height: "100vh",
+            flexDirection: "column",
+            gap: "20px",
+          }}
+        >
+          <div style={{ fontSize: "18px", color: "#f44336" }}>
+            Error loading dashboard
+          </div>
+          <div style={{ fontSize: "14px", color: "#999" }}>{apiError}</div>
+          <button
+            onClick={() => window.location.reload()}
+            style={{
+              padding: "10px 20px",
+              fontSize: "14px",
+              cursor: "pointer",
+              borderRadius: "4px",
+              border: "1px solid #ccc",
+              background: "#fff",
+            }}
+          >
             Reload
           </button>
         </div>
@@ -1230,9 +1366,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
 
       {/* Modals */}
       {showManageModal && (
-        <ManageModal 
-          user={user} 
-          onClose={() => setShowManageModal(false)} 
+        <ManageModal
+          user={user}
+          onClose={() => setShowManageModal(false)}
           onRefreshData={() => {
             // Refresh views and viewgroups data after changes
             refetchViews();
@@ -1250,16 +1386,25 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           onUpdateViewGroups={handleUpdateViewGroups}
           onUpdateNavSettings={handleUpdateNavSettings}
           onRefreshData={async () => {
-            await Promise.all([refetchViews(), refetchViewGroups(), refetchNavSettings()]);
+            await Promise.all([
+              refetchViews(),
+              refetchViewGroups(),
+              refetchNavSettings(),
+            ]);
           }}
           onAddView={async (newView, viewGroupIds) => {
             try {
-              console.log('🆕 Creating new view:', newView.name, 'for groups:', viewGroupIds);
-              
+              console.log(
+                "🆕 Creating new view:",
+                newView.name,
+                "for groups:",
+                viewGroupIds
+              );
+
               // ✅ Step 1: Create the view via API (backend returns view with real ID)
               // Use a reasonable orderIndex (current count) instead of Date.now()
               const orderIndex = views.length;
-              
+
               const createdView = await viewsService.createView(user.name, {
                 name: newView.name,
                 reportIds: newView.reportIds,
@@ -1267,65 +1412,86 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
                 isVisible: true,
                 orderIndex: orderIndex,
               });
-              console.log('  ✅ View created in database with ID:', createdView.id);
-              
+              console.log(
+                "  ✅ View created in database with ID:",
+                createdView.id
+              );
+
               // Step 2: Add view to selected groups via API (use backend-generated ID)
               if (viewGroupIds && viewGroupIds.length > 0) {
                 for (const groupId of viewGroupIds) {
-                  console.log('  Adding view to group:', groupId);
-                  await viewGroupsService.addViewsToGroup(groupId, user.name, [createdView.id]);
+                  console.log("  Adding view to group:", groupId);
+                  await viewGroupsService.addViewsToGroup(groupId, user.name, [
+                    createdView.id,
+                  ]);
                 }
-                console.log('  ✅ View added to', viewGroupIds.length, 'groups');
+                console.log(
+                  "  ✅ View added to",
+                  viewGroupIds.length,
+                  "groups"
+                );
               }
-              
+
               // Step 3: Refresh all data
-              console.log('  🔄 Refreshing data...');
+              console.log("  🔄 Refreshing data...");
               await Promise.all([refetchViews(), refetchViewGroups()]);
-              console.log('✅ View created and data refreshed');
+              console.log("✅ View created and data refreshed");
             } catch (error: any) {
-              console.error('❌ Failed to create view:', error);
-              const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+              console.error("❌ Failed to create view:", error);
+              const errorMessage =
+                error?.message || error?.data?.message || "Unknown error";
               // Show error notification
               alert(`Failed to create view: ${errorMessage}`);
             }
           }}
           onAddViewGroup={async (newViewGroup) => {
             try {
-              console.log('🆕 Creating new view group:', newViewGroup.name);
-              console.log('  With views:', newViewGroup.viewIds);
-              
-    // ✅ Step 1: Create the view group via API (WITHOUT viewIds)
-    // Use a reasonable orderIndex (current count) instead of Date.now() which is too large for Int32
-    const orderIndex = viewGroups.length;
-    
-    const createdViewGroup = await viewGroupsService.createViewGroup(user.name, {
-      name: newViewGroup.name,
-      isVisible: newViewGroup.isVisible ?? true,
-      isDefault: newViewGroup.isDefault ?? false,
-      orderIndex: orderIndex,
-    });
-              console.log('  ✅ View group created in database with ID:', createdViewGroup.id);
-              
+              console.log("🆕 Creating new view group:", newViewGroup.name);
+              console.log("  With views:", newViewGroup.viewIds);
+
+              // ✅ Step 1: Create the view group via API (WITHOUT viewIds)
+              // Use a reasonable orderIndex (current count) instead of Date.now() which is too large for Int32
+              const orderIndex = viewGroups.length;
+
+              const createdViewGroup = await viewGroupsService.createViewGroup(
+                user.name,
+                {
+                  name: newViewGroup.name,
+                  isVisible: newViewGroup.isVisible ?? true,
+                  isDefault: newViewGroup.isDefault ?? false,
+                  orderIndex: orderIndex,
+                }
+              );
+              console.log(
+                "  ✅ View group created in database with ID:",
+                createdViewGroup.id
+              );
+
               // ✅ Step 2: Add views to the group (if any selected)
               if (newViewGroup.viewIds && newViewGroup.viewIds.length > 0) {
-                console.log('  Adding', newViewGroup.viewIds.length, 'views to group');
+                console.log(
+                  "  Adding",
+                  newViewGroup.viewIds.length,
+                  "views to group"
+                );
                 await viewGroupsService.addViewsToGroup(
                   createdViewGroup.id,
                   user.name,
                   newViewGroup.viewIds
                 );
-                console.log('  ✅ Views added to group');
+                console.log("  ✅ Views added to group");
               } else {
-                console.log('  No views to add (empty group)');
+                console.log("  No views to add (empty group)");
               }
-              
+
               // ✅ Step 3: Refresh all data
-              console.log('  🔄 Refreshing data...');
+              console.log("  🔄 Refreshing data...");
               await Promise.all([refetchViewGroups(), refetchNavSettings()]);
-              console.log('✅ View group created and data refreshed');
+              console.log("✅ View group created and data refreshed");
             } catch (error: any) {
-              console.error('❌ Failed to create view group:', error);
-              const errorMessage = error?.message || error?.data?.message || 'Unknown error';
+              console.error("❌ Failed to create view group:", error);
+              const errorMessage =
+                error?.message || error?.data?.message || "Unknown error";
               // Show error notification
               alert(`Failed to create view group: ${errorMessage}`);
             }
@@ -1333,8 +1499,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
           views={views}
           viewGroups={viewGroups}
           userNavSettings={navSettings ? [navSettings] : []}
-          reports={getUserAccessibleReports()}  
-          widgets={getUserAccessibleWidgets()}  
+          reports={getUserAccessibleReports()}
+          widgets={getUserAccessibleWidgets()}
         />
       )}
 

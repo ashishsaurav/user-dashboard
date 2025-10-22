@@ -49,7 +49,6 @@ export class WidgetsService {
   async createWidget(data: {
     widgetName: string;
     widgetUrl?: string;
-    widgetType?: string;
   }): Promise<Widget> {
     const widget = await apiClient.post<WidgetDto>(
       API_ENDPOINTS.WIDGETS.CREATE,
@@ -66,7 +65,6 @@ export class WidgetsService {
     data: {
       widgetName: string;
       widgetUrl?: string;
-      widgetType?: string;
     }
   ): Promise<Widget> {
     const widget = await apiClient.put<WidgetDto>(
@@ -84,16 +82,25 @@ export class WidgetsService {
   }
 
   /**
-   * Assign widget to role
+   * Assign widget to role (single)
    */
   async assignWidgetToRole(
     roleId: string,
-    widgetId: string,
-    orderIndex?: number
+    widgetId: string
   ): Promise<void> {
+    await this.assignWidgetsToRole(roleId, [widgetId]);
+  }
+
+  /**
+   * Assign multiple widgets to role (batch)
+   */
+  async assignWidgetsToRole(
+    roleId: string,
+    widgetIds: string[]
+  ): Promise<void> {
+    if (widgetIds.length === 0) return;
     await apiClient.post(API_ENDPOINTS.WIDGETS.ASSIGN_TO_ROLE(roleId), {
-      widgetId,
-      orderIndex: orderIndex ?? 0,
+      widgetIds,
     });
   }
 
@@ -125,3 +132,4 @@ export class WidgetsService {
 
 export const widgetsService = new WidgetsService();
 export default widgetsService;
+;
