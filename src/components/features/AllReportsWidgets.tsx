@@ -11,33 +11,69 @@ interface AllReportsWidgetsProps {
   onRefreshData?: () => void;
 }
 
+interface ReportWithRoles extends Report {
+  assignedRoles: string[];
+}
+
+interface WidgetWithRoles extends Widget {
+  assignedRoles: string[];
+}
+
 const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
   onRefreshData,
 }) => {
-  const [editingReport, setEditingReport] = useState<Report | null>(null);
-  const [editingWidget, setEditingWidget] = useState<Widget | null>(null);
+  const [editingReport, setEditingReport] = useState<ReportWithRoles | null>(null);
+  const [editingWidget, setEditingWidget] = useState<WidgetWithRoles | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<{
     type: "report" | "widget";
     id: string;
     name: string;
   } | null>(null);
   const [loading, setLoading] = useState(false);
-  const [reports, setReports] = useState<Report[]>([]);
-  const [widgets, setWidgets] = useState<Widget[]>([]);
+  const [reports, setReports] = useState<ReportWithRoles[]>([]);
+  const [widgets, setWidgets] = useState<WidgetWithRoles[]>([]);
 
   const { showSuccess, showError } = useNotification();
+  const allRoles = ["admin", "user", "viewer"];
 
-  // Fetch all reports and widgets (admin only)
+  // Fetch all reports and widgets with their role assignments
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
+        // Fetch all reports and widgets
         const [allReports, allWidgets] = await Promise.all([
           reportsService.getAllReports(),
           widgetsService.getAllWidgets(),
         ]);
-        setReports(allReports);
-        setWidgets(allWidgets);
+
+        // Fetch role assignments for each role
+        const roleAssignments = await Promise.all(
+          allRoles.map(async (role) => ({
+            role,
+            reports: await reportsService.getReportsByRole(role),
+            widgets: await widgetsService.getWidgetsByRole(role),
+          }))
+        );
+
+        // Map reports with their assigned roles
+        const reportsWithRoles: ReportWithRoles[] = allReports.map((report) => ({
+          ...report,
+          assignedRoles: roleAssignments
+            .filter((ra) => ra.reports.some((r) => r.id === report.id))
+            .map((ra) => ra.role),
+        }));
+
+        // Map widgets with their assigned roles
+        const widgetsWithRoles: WidgetWithRoles[] = allWidgets.map((widget) => ({
+          ...widget,
+          assignedRoles: roleAssignments
+            .filter((ra) => ra.widgets.some((w) => w.id === widget.id))
+            .map((ra) => ra.role),
+        }));
+
+        setReports(reportsWithRoles);
+        setWidgets(widgetsWithRoles);
       } catch (error) {
         console.error("Failed to fetch reports/widgets:", error);
         showError("Failed to load data", "Please refresh the page");
@@ -48,6 +84,42 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
 
     fetchData();
   }, []);
+
+  // Helper function to reload all data with role assignments
+  const reloadData = async () => {
+    const [allReports, allWidgets] = await Promise.all([
+      reportsService.getAllReports(),
+      widgetsService.getAllWidgets(),
+    ]);
+
+    // Fetch role assignments for each role
+    const roleAssignments = await Promise.all(
+      allRoles.map(async (role) => ({
+        role,
+        reports: await reportsService.getReportsByRole(role),
+        widgets: await widgetsService.getWidgetsByRole(role),
+      }))
+    );
+
+    // Map reports with their assigned roles
+    const reportsWithRoles: ReportWithRoles[] = allReports.map((report) => ({
+      ...report,
+      assignedRoles: roleAssignments
+        .filter((ra) => ra.reports.some((r) => r.id === report.id))
+        .map((ra) => ra.role),
+    }));
+
+    // Map widgets with their assigned roles
+    const widgetsWithRoles: WidgetWithRoles[] = allWidgets.map((widget) => ({
+      ...widget,
+      assignedRoles: roleAssignments
+        .filter((ra) => ra.widgets.some((w) => w.id === widget.id))
+        .map((ra) => ra.role),
+    }));
+
+    setReports(reportsWithRoles);
+    setWidgets(widgetsWithRoles);
+  };
 
   const handleDeleteConfirm = (
     type: "report" | "widget",
@@ -62,13 +134,42 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
 
     setLoading(true);
     try {
+      // First, unassign from all roles to avoid foreign key constraint errors
       if (deleteConfirm.type === "report") {
+        const report = reports.find(r => r.id === deleteConfirm.id);
+        if (report) {
+          // Unassign from all roles first
+          for (const role of report.assignedRoles) {
+            try {
+              await reportsService.unassignReportFromRole(role, deleteConfirm.id);
+            } catch (err) {
+              console.warn(`Failed to unassign report from ${role}:`, err);
+              // Continue anyway, backend might have cascade delete
+            }
+          }
+        }
+        
+        // Now delete the report
         await reportsService.deleteReport(deleteConfirm.id);
         showSuccess(
           "Report deleted",
           `"${deleteConfirm.name}" has been removed`
         );
       } else {
+        const widget = widgets.find(w => w.id === deleteConfirm.id);
+        if (widget) {
+          // Unassign from all roles first
+          for (const role of widget.assignedRoles) {
+            try {
+              await widgetsService.unassignWidgetFromRole(role, deleteConfirm.id);
+            } catch (err) {
+              console.warn(`Failed to unassign widget from ${role}:`, err);
+              // Continue anyway, backend might have cascade delete
+            }
+          }
+        }
+        
+        // Now delete the widget
         await widgetsService.deleteWidget(deleteConfirm.id);
         showSuccess(
           "Widget deleted",
@@ -78,13 +179,8 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
 
       setDeleteConfirm(null);
 
-      // Reload data
-      const [allReports, allWidgets] = await Promise.all([
-        reportsService.getAllReports(),
-        widgetsService.getAllWidgets(),
-      ]);
-      setReports(allReports);
-      setWidgets(allWidgets);
+      // Reload data with role assignments
+      await reloadData();
 
       // Also refresh parent if needed
       if (onRefreshData) {
@@ -99,28 +195,62 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
     }
   };
 
-  const handleEditReport = (report: Report) => {
-    setEditingReport(report);
+  const handleEditReport = (report: ReportWithRoles) => {
+    // Convert assignedRoles to userRoles format for the modal
+    const reportWithUserRoles = {
+      ...report,
+      userRoles: report.assignedRoles,
+    };
+    setEditingReport(reportWithUserRoles as ReportWithRoles);
   };
 
-  const handleEditWidget = (widget: Widget) => {
-    setEditingWidget(widget);
+  const handleEditWidget = (widget: WidgetWithRoles) => {
+    // Convert assignedRoles to userRoles format for the modal
+    const widgetWithUserRoles = {
+      ...widget,
+      userRoles: widget.assignedRoles,
+    };
+    setEditingWidget(widgetWithUserRoles as WidgetWithRoles);
   };
 
-  const handleSaveReport = async (updatedReport: Report) => {
+  const handleSaveReport = async (updatedReport: Report & { userRoles?: string[] }) => {
     setLoading(true);
     try {
+      // Update report details
       await reportsService.updateReport(updatedReport.id, {
         reportName: updatedReport.name,
         reportUrl: updatedReport.url,
       });
 
+      // Handle role assignments if userRoles is provided
+      if (updatedReport.userRoles && editingReport) {
+        const currentRoles = editingReport.assignedRoles;
+        const newRoles = updatedReport.userRoles;
+
+        // Determine roles to assign and unassign
+        const rolesToAssign = newRoles.filter(r => !currentRoles.includes(r));
+        const rolesToUnassign = currentRoles.filter(r => !newRoles.includes(r));
+
+        // Batch assign new roles
+        if (rolesToAssign.length > 0) {
+          for (const role of rolesToAssign) {
+            await reportsService.assignReportToRole(role, updatedReport.id);
+          }
+        }
+
+        // Unassign removed roles
+        if (rolesToUnassign.length > 0) {
+          for (const role of rolesToUnassign) {
+            await reportsService.unassignReportFromRole(role, updatedReport.id);
+          }
+        }
+      }
+
       showSuccess("Report updated", `"${updatedReport.name}" has been saved`);
       setEditingReport(null);
 
-      // Reload data
-      const allReports = await reportsService.getAllReports();
-      setReports(allReports);
+      // Reload data with role assignments
+      await reloadData();
 
       // Also refresh parent if needed
       if (onRefreshData) {
@@ -135,20 +265,44 @@ const AllReportsWidgets: React.FC<AllReportsWidgetsProps> = ({
     }
   };
 
-  const handleSaveWidget = async (updatedWidget: Widget) => {
+  const handleSaveWidget = async (updatedWidget: Widget & { userRoles?: string[] }) => {
     setLoading(true);
     try {
+      // Update widget details
       await widgetsService.updateWidget(updatedWidget.id, {
         widgetName: updatedWidget.name,
         widgetUrl: updatedWidget.url,
       });
 
+      // Handle role assignments if userRoles is provided
+      if (updatedWidget.userRoles && editingWidget) {
+        const currentRoles = editingWidget.assignedRoles;
+        const newRoles = updatedWidget.userRoles;
+
+        // Determine roles to assign and unassign
+        const rolesToAssign = newRoles.filter(r => !currentRoles.includes(r));
+        const rolesToUnassign = currentRoles.filter(r => !newRoles.includes(r));
+
+        // Batch assign new roles
+        if (rolesToAssign.length > 0) {
+          for (const role of rolesToAssign) {
+            await widgetsService.assignWidgetToRole(role, updatedWidget.id);
+          }
+        }
+
+        // Unassign removed roles
+        if (rolesToUnassign.length > 0) {
+          for (const role of rolesToUnassign) {
+            await widgetsService.unassignWidgetFromRole(role, updatedWidget.id);
+          }
+        }
+      }
+
       showSuccess("Widget updated", `"${updatedWidget.name}" has been saved`);
       setEditingWidget(null);
 
-      // Reload data
-      const allWidgets = await widgetsService.getAllWidgets();
-      setWidgets(allWidgets);
+      // Reload data with role assignments
+      await reloadData();
 
       // Also refresh parent if needed
       if (onRefreshData) {

@@ -49,7 +49,6 @@ export class WidgetsService {
   async createWidget(data: {
     widgetName: string;
     widgetUrl?: string;
-    widgetType?: string;
   }): Promise<Widget> {
     const widget = await apiClient.post<WidgetDto>(
       API_ENDPOINTS.WIDGETS.CREATE,
@@ -66,7 +65,6 @@ export class WidgetsService {
     data: {
       widgetName: string;
       widgetUrl?: string;
-      widgetType?: string;
     }
   ): Promise<Widget> {
     const widget = await apiClient.put<WidgetDto>(
@@ -134,3 +132,4 @@ export class WidgetsService {
 
 export const widgetsService = new WidgetsService();
 export default widgetsService;
+;

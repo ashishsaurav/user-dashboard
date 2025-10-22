@@ -12,6 +12,7 @@ type FormType = "report" | "widget";
 interface FormData {
   name: string;
   url: string;
+  selectedRoles: string[];
 }
 
 const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
@@ -19,38 +20,66 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
   const [formData, setFormData] = useState<FormData>({
     name: "",
     url: "",
+    selectedRoles: ["admin"], // Admin is always selected by default
   });
   const [loading, setLoading] = useState(false);
 
   const { showSuccess, showError } = useNotification();
+  const availableRoles = ["admin", "user", "viewer"];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     setLoading(true);
     try {
+      let createdId: string;
+
       if (formType === "report") {
-        await reportsService.createReport({
+        // Create the report
+        const createdReport = await reportsService.createReport({
           reportName: formData.name,
           reportUrl: formData.url,
         });
+        createdId = createdReport.id;
+
+        // Assign to selected roles
+        if (formData.selectedRoles.length > 0) {
+          for (const role of formData.selectedRoles) {
+            await reportsService.assignReportToRole(role, createdId);
+          }
+        }
+
         showSuccess(
           "Report Created Successfully!",
-          `"${formData.name}" has been added and is now available.`
+          `"${formData.name}" has been added and assigned to ${formData.selectedRoles.join(", ")}.`
         );
       } else {
-        await widgetsService.createWidget({
+        // Create the widget
+        const createdWidget = await widgetsService.createWidget({
           widgetName: formData.name,
           widgetUrl: formData.url,
         });
+        createdId = createdWidget.id;
+
+        // Assign to selected roles
+        if (formData.selectedRoles.length > 0) {
+          for (const role of formData.selectedRoles) {
+            await widgetsService.assignWidgetToRole(role, createdId);
+          }
+        }
+
         showSuccess(
           "Widget Created Successfully!",
-          `"${formData.name}" has been added and is now available.`
+          `"${formData.name}" has been added and assigned to ${formData.selectedRoles.join(", ")}.`
         );
       }
 
       // Reset form
-      setFormData({ name: "", url: "" });
+      setFormData({ 
+        name: "", 
+        url: "",
+        selectedRoles: ["admin"] // Reset to admin only
+      });
 
       // Notify parent to refresh
       if (onItemAdded) {
@@ -63,6 +92,17 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleRoleChange = (role: string, checked: boolean) => {
+    if (role === "admin") return; // Admin cannot be unchecked
+
+    setFormData({
+      ...formData,
+      selectedRoles: checked
+        ? [...formData.selectedRoles, role]
+        : formData.selectedRoles.filter((r) => r !== role),
+    });
   };
 
   const ReportIcon = () => (
@@ -119,7 +159,11 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
       <div className="form-type-tabs">
         <button
           className={`tab-btn ${formType === "report" ? "active" : ""}`}
-          onClick={() => setFormType("report")}
+          onClick={() => {
+            setFormType("report");
+            // Reset form when switching types
+            setFormData({ name: "", url: "", selectedRoles: ["admin"] });
+          }}
           disabled={loading}
         >
           <ReportIcon />
@@ -127,7 +171,11 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
         </button>
         <button
           className={`tab-btn ${formType === "widget" ? "active" : ""}`}
-          onClick={() => setFormType("widget")}
+          onClick={() => {
+            setFormType("widget");
+            // Reset form when switching types
+            setFormData({ name: "", url: "", selectedRoles: ["admin"] });
+          }}
           disabled={loading}
         >
           <WidgetIcon />
@@ -182,35 +230,39 @@ const AddReportWidget: React.FC<AddReportWidgetProps> = ({ onItemAdded }) => {
           </div>
 
           <div className="form-section">
-            <div
-              style={{
-                padding: "16px",
-                backgroundColor: "var(--bg-secondary)",
-                borderRadius: "8px",
-                border: "1px solid var(--border-color)",
-              }}
-            >
-              <h4
-                style={{
-                  marginBottom: "8px",
-                  color: "var(--text-primary)",
-                  fontSize: "14px",
-                }}
-              >
-                📝 Note about Permissions
-              </h4>
-              <p
-                style={{
-                  margin: 0,
-                  color: "var(--text-secondary)",
-                  fontSize: "13px",
-                  lineHeight: "1.6",
-                }}
-              >
-                After creating the {formType}, use the "User Role Permissions"
-                tab to assign it to specific roles (admin, user, viewer). By
-                default, new items are not assigned to any role.
+            <h3 className="section-title">Access Permissions</h3>
+
+            <div className="permission-section">
+              <label className="modern-label">Assign to User Roles</label>
+              <p className="admin-notice">
+                Admin role is automatically selected and cannot be changed
               </p>
+              <div className="checkbox-grid">
+                {availableRoles.map((role) => (
+                  <label
+                    key={role}
+                    className={`modern-checkbox ${
+                      role === "admin" ? "admin-locked disabled" : ""
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={formData.selectedRoles.includes(role)}
+                      onChange={(e) =>
+                        handleRoleChange(role, e.target.checked)
+                      }
+                      disabled={role === "admin" || loading}
+                    />
+                    <span className="checkmark"></span>
+                    <span className="checkbox-label">
+                      {role.charAt(0).toUpperCase() + role.slice(1)}
+                      {role === "admin" && (
+                        <span className="locked-indicator">🔒</span>
+                      )}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </form>
