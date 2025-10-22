@@ -298,10 +298,30 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               const dragOverClass = isDragOver
                 ? `drag-over-${dragOverPosition}`
                 : "";
+              
+              // Generate stable key for tab (same logic as content)
+              let workspaceId = report.workspaceId;
+              let reportId = report.reportId;
+              let pageName = undefined;
+              
+              if (report.url) {
+                const reportConfig = parsePowerBIReportUrl(report.url);
+                if (reportConfig) {
+                  workspaceId = workspaceId || reportConfig.workspaceId;
+                  reportId = reportId || reportConfig.reportId;
+                  pageName = reportConfig.pageName;
+                }
+              }
+              
+              const tabStableKey = workspaceId && reportId && pageName
+                ? `tab-${workspaceId}-${reportId}-${pageName}`
+                : workspaceId && reportId
+                ? `tab-${workspaceId}-${reportId}`
+                : `tab-${report.id}`;
 
               return (
                 <div
-                  key={report.id}
+                  key={tabStableKey}
                   className={`tab-item orderable-tab ${
                     activeReportTab === report.id ? "active" : ""
                   } ${
@@ -454,13 +474,13 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
           const hasPowerBIConfig = workspaceId && reportId && pageName && visualName;
 
           // Generate stable key based on PowerBI config to prevent re-renders on reorder
-          const stableKey = workspaceId && reportId && pageName && visualName
+          const widgetStableKey = workspaceId && reportId && pageName && visualName
             ? `widget-${workspaceId}-${reportId}-${pageName}-${visualName}`
             : `widget-${widget.id}`;
           
           return (
             <div
-              key={stableKey}
+              key={widgetStableKey}
               className={`widget-card orderable-widget ${
                 isDragging ? "dragging" : ""
               } ${isDragOver ? "drag-over" : ""}`}

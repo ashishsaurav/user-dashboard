@@ -72,16 +72,62 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
         // Check if already embedded in global registry
         const cachedVisual = powerBIEmbedRegistry.get(embedKey);
         if (cachedVisual && cachedVisual.setAccessToken) {
-          // Reuse cached embed
+          // Try to reuse cached embed
           visualRef.current = cachedVisual;
-          await visualRef.current.setAccessToken(embedInfo.embedToken);
-          console.log("♻️  Reused cached visual, refreshed token:", embedKey);
-          setLoading(false);
-        } else if (visualRef.current && visualRef.current.setAccessToken) {
-          // Visual already embedded in this instance, just refresh token
-          await visualRef.current.setAccessToken(embedInfo.embedToken);
-          console.log("🔄 PowerBI visual token refreshed for", embedKey);
-        } else if (visualContainerRef.current) {
+          
+          try {
+            await visualRef.current.setAccessToken(embedInfo.embedToken);
+            console.log("♻️  Reused cached visual, refreshed token:", embedKey);
+            if (isMounted) {
+              setLoading(false);
+            }
+            
+            // Successfully reused - set timeout and return
+            if (isMounted) {
+              timeoutId = setTimeout(() => {
+                if (isMounted) {
+                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  setupTokenRefreshTimer();
+                }
+              }, timeUntilRefresh);
+            }
+            return; // Exit early - successfully reused cache
+          } catch (tokenErr) {
+            console.warn('⚠️  Cached visual embed is stale (DOM element gone), will re-embed:', tokenErr);
+            // Remove stale cache and fall through to re-embed
+            powerBIEmbedRegistry.remove(embedKey);
+            visualRef.current = null;
+          }
+        }
+        
+        // If we have visualRef but not from cache (this component's own ref)
+        if (visualRef.current && visualRef.current.setAccessToken) {
+          if (!isMounted) return;
+          
+          try {
+            // Visual already embedded in this instance, just refresh token
+            await visualRef.current.setAccessToken(embedInfo.embedToken);
+            console.log("🔄 PowerBI visual token refreshed for", embedKey);
+            
+            // Successfully refreshed - set timeout and return
+            if (isMounted) {
+              timeoutId = setTimeout(() => {
+                if (isMounted) {
+                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  setupTokenRefreshTimer();
+                }
+              }, timeUntilRefresh);
+            }
+            return; // Exit early - successfully refreshed
+          } catch (tokenErr) {
+            console.warn('⚠️  Local visual embed is stale, will re-embed:', tokenErr);
+            visualRef.current = null;
+            // Fall through to re-embed
+          }
+        }
+        
+        // Initial embed - only if we don't have a valid visualRef
+        if (visualContainerRef.current) {
           // Initial embed - only happens once per unique visual
           console.log("🎯 Embedding PowerBI visual (first time):", embedKey);
 
