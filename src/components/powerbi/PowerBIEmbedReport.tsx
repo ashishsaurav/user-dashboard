@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as powerbi from 'powerbi-client';
 import { models } from 'powerbi-client';
 import { powerBIService } from '../../services/powerBIService';
+import { powerBIEmbedRegistry } from '../../services/powerBIEmbedRegistry';
 import './PowerBIEmbed.css';
 
 interface PowerBIEmbedReportProps {
@@ -32,7 +33,11 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     let isMounted = true;
-    const embedKey = `${workspaceId}-${reportId}`;
+    const embedKey = powerBIEmbedRegistry.generateKey('report', {
+      workspaceId,
+      reportId,
+      pageName,
+    });
 
     const setupTokenRefreshTimer = async () => {
       try {
@@ -43,14 +48,21 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 
         if (!isMounted) return;
 
-        // Only embed if not already embedded
-        if (reportRef.current && reportRef.current.setAccessToken) {
-          // Report already embedded, just refresh token
+        // Check if already embedded in global registry
+        const cachedReport = powerBIEmbedRegistry.get(embedKey);
+        if (cachedReport && cachedReport.setAccessToken) {
+          // Reuse cached embed
+          reportRef.current = cachedReport;
+          await reportRef.current.setAccessToken(embedInfo.embedToken);
+          console.log('♻️  Reused cached report, refreshed token:', embedKey);
+          setLoading(false);
+        } else if (reportRef.current && reportRef.current.setAccessToken) {
+          // Report already embedded in this instance, just refresh token
           await reportRef.current.setAccessToken(embedInfo.embedToken);
           console.log('🔄 PowerBI report token refreshed for', embedKey);
         } else if (reportContainerRef.current) {
-          // Initial embed - only happens once
-          console.log('🎯 Embedding PowerBI report:', embedKey, pageName ? `(page: ${pageName})` : '');
+          // Initial embed - only happens once per unique report+page combination
+          console.log('🎯 Embedding PowerBI report (first time):', embedKey);
           
           const config: powerbi.IReportEmbedConfiguration = {
             type: 'report',
@@ -72,6 +84,9 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 
           const report = powerbiService.current.embed(reportContainerRef.current, config);
           reportRef.current = report as powerbi.Report;
+
+          // Store in global registry
+          powerBIEmbedRegistry.set(embedKey, report, reportContainerRef.current, 'report');
 
           report.on('loaded', async () => {
             console.log('✅ PowerBI report loaded:', embedKey);
@@ -118,9 +133,9 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
-      // Don't destroy the embed - keep it for reuse
+      // Keep embed in registry for reuse
     };
-  }, [workspaceId, reportId]);
+  }, [workspaceId, reportId, pageName]);
 
   // Handle responsive resize with debouncing
   useEffect(() => {

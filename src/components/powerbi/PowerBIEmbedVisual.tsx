@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import * as powerbi from 'powerbi-client';
 import { models } from 'powerbi-client';
 import { powerBIService } from '../../services/powerBIService';
+import { powerBIEmbedRegistry } from '../../services/powerBIEmbedRegistry';
 import './PowerBIEmbed.css';
 
 interface PowerBIEmbedVisualProps {
@@ -34,7 +35,12 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     let isMounted = true;
-    const embedKey = `${workspaceId}-${reportId}-${pageName}-${visualName}`;
+    const embedKey = powerBIEmbedRegistry.generateKey('visual', {
+      workspaceId,
+      reportId,
+      pageName,
+      visualName,
+    });
 
     const setupTokenRefreshTimer = async () => {
       try {
@@ -45,14 +51,21 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
 
         if (!isMounted) return;
 
-        // Only embed if not already embedded
-        if (visualRef.current && visualRef.current.setAccessToken) {
-          // Visual already embedded, just refresh token
+        // Check if already embedded in global registry
+        const cachedVisual = powerBIEmbedRegistry.get(embedKey);
+        if (cachedVisual && cachedVisual.setAccessToken) {
+          // Reuse cached embed
+          visualRef.current = cachedVisual;
+          await visualRef.current.setAccessToken(embedInfo.embedToken);
+          console.log('♻️  Reused cached visual, refreshed token:', embedKey);
+          setLoading(false);
+        } else if (visualRef.current && visualRef.current.setAccessToken) {
+          // Visual already embedded in this instance, just refresh token
           await visualRef.current.setAccessToken(embedInfo.embedToken);
           console.log('🔄 PowerBI visual token refreshed for', embedKey);
         } else if (visualContainerRef.current) {
-          // Initial embed - only happens once
-          console.log('🎯 Embedding PowerBI visual:', embedKey);
+          // Initial embed - only happens once per unique visual
+          console.log('🎯 Embedding PowerBI visual (first time):', embedKey);
           
           const config: powerbi.IVisualEmbedConfiguration = {
             type: 'visual',
@@ -75,6 +88,9 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
 
           const visual = powerbiService.current.embed(visualContainerRef.current, config);
           visualRef.current = visual;
+
+          // Store in global registry
+          powerBIEmbedRegistry.set(embedKey, visual, visualContainerRef.current, 'visual');
 
           visual.on('loaded', () => {
             console.log('✅ PowerBI visual loaded:', embedKey);
@@ -117,7 +133,7 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
-      // Don't destroy the embed - keep it for reuse
+      // Keep embed in registry for reuse
     };
   }, [workspaceId, reportId, pageName, visualName]);
 
