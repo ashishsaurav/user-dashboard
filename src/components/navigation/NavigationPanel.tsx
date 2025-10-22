@@ -15,6 +15,7 @@ import ActionPopup from "../common/ActionPopup";
 import { viewsService } from "../../services/viewsService";
 import { viewGroupsService } from "../../services/viewGroupsService";
 import { navigationService } from "../../services/navigationService";
+import "./styles/NavigationPanel.css";
 
 interface NavigationPanelProps {
   user: User;
@@ -54,20 +55,26 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [deletingViewGroup, setDeletingViewGroup] = useState<any>(null);
   const [deletingView, setDeletingView] = useState<any>(null);
 
-  // Auto-expand all view groups on initial load
+  // Load expanded state from navigation settings
   useEffect(() => {
     if (viewGroups.length > 0) {
       const initialExpanded: { [key: string]: boolean } = {};
-      viewGroups.forEach((vg) => {
-        if (!(vg.id in expandedViewGroups)) {
+      
+      // If we have saved expanded state, use it
+      if (userNavSettings.expandedViewGroups && userNavSettings.expandedViewGroups.length > 0) {
+        viewGroups.forEach((vg) => {
+          initialExpanded[vg.id] = userNavSettings.expandedViewGroups!.includes(vg.id);
+        });
+      } else {
+        // Default: expand all
+        viewGroups.forEach((vg) => {
           initialExpanded[vg.id] = true;
-        }
-      });
-      if (Object.keys(initialExpanded).length > 0) {
-        setExpandedViewGroups((prev) => ({ ...prev, ...initialExpanded }));
+        });
       }
+      
+      setExpandedViewGroups(initialExpanded);
     }
-  }, [viewGroups]);
+  }, [viewGroups, userNavSettings.expandedViewGroups]);
 
   // NEW: Responsive layout state
   const [isHorizontalLayout, setIsHorizontalLayout] = useState(false);
@@ -218,13 +225,65 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     }
   };
 
-  // Toggle expansion
-  const toggleViewGroupExpansion = (viewGroupId: string) => {
-    setExpandedViewGroups((prev) => ({
-      ...prev,
-      [viewGroupId]: !prev[viewGroupId],
-    }));
+  // Toggle expansion with persistence
+  const toggleViewGroupExpansion = async (viewGroupId: string) => {
+    const newExpanded = {
+      ...expandedViewGroups,
+      [viewGroupId]: !expandedViewGroups[viewGroupId],
+    };
+    setExpandedViewGroups(newExpanded);
+    
+    // Save to backend
+    await saveExpandedState(newExpanded);
   };
+
+  // Collapse all view groups
+  const handleCollapseAll = async () => {
+    const allCollapsed: { [key: string]: boolean } = {};
+    viewGroups.forEach((vg) => {
+      allCollapsed[vg.id] = false;
+    });
+    setExpandedViewGroups(allCollapsed);
+    
+    // Save to backend
+    await saveExpandedState(allCollapsed);
+  };
+
+  // Expand all view groups
+  const handleExpandAll = async () => {
+    const allExpanded: { [key: string]: boolean } = {};
+    viewGroups.forEach((vg) => {
+      allExpanded[vg.id] = true;
+    });
+    setExpandedViewGroups(allExpanded);
+    
+    // Save to backend
+    await saveExpandedState(allExpanded);
+  };
+
+  // Save expanded state to navigation settings
+  const saveExpandedState = async (expandedState: { [key: string]: boolean }) => {
+    try {
+      const expandedIds = Object.keys(expandedState).filter(id => expandedState[id]);
+      
+      const updatedSettings: UserNavigationSettings = {
+        ...userNavSettings,
+        expandedViewGroups: expandedIds,
+      };
+      
+      await navigationService.updateNavigationSettings(user.name, updatedSettings);
+      onUpdateNavSettings(updatedSettings);
+      
+      console.log('💾 Saved view group expand/collapse state:', expandedIds);
+    } catch (error) {
+      console.error('Failed to save expand/collapse state:', error);
+      // Don't show error to user - this is a non-critical operation
+    }
+  };
+
+  // Check if all view groups are expanded or collapsed
+  const areAllExpanded = Object.values(expandedViewGroups).every(val => val === true);
+  const areAllCollapsed = Object.values(expandedViewGroups).every(val => val === false);
 
   // Drag handlers
   const handleDragStart = (
@@ -756,6 +815,32 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
     </svg>
   );
 
+  const CollapseAllIcon = () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  );
+
+  const ExpandAllIcon = () => (
+    <svg
+      width="14"
+      height="14"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+    >
+      <polyline points="18 15 12 9 6 15" />
+    </svg>
+  );
+
   return (
     <div
       ref={containerRef}
@@ -763,6 +848,22 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         isHorizontalLayout ? "horizontal-layout" : "vertical-layout"
       }`}
     >
+      {/* Collapse/Expand All Button - Only show in vertical layout */}
+      {!isHorizontalLayout && viewGroups.length > 0 && (
+        <div className="nav-toolbar">
+          <button
+            className="nav-toolbar-btn"
+            onClick={areAllExpanded ? handleCollapseAll : handleExpandAll}
+            title={areAllExpanded ? "Collapse All View Groups" : "Expand All View Groups"}
+          >
+            {areAllExpanded ? <CollapseAllIcon /> : <ExpandAllIcon />}
+            <span className="nav-toolbar-text">
+              {areAllExpanded ? "Collapse All" : "Expand All"}
+            </span>
+          </button>
+        </div>
+      )}
+
       <div
         className={`nav-menu ${
           isHorizontalLayout ? "nav-menu-horizontal" : "nav-menu-vertical"

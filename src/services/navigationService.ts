@@ -14,6 +14,8 @@ interface NavigationSettingDto {
   viewOrders: Record<string, string[]>;
   hiddenViewGroups: string[];
   hiddenViews: string[];
+  expandedViewGroups?: string[]; // NEW: Track expanded view groups
+  isNavigationCollapsed?: boolean; // NEW: Track navigation panel collapse state
 }
 
 export class NavigationService {
@@ -59,6 +61,8 @@ export class NavigationService {
       viewOrders: dto.viewOrders || {},
       hiddenViewGroups: dto.hiddenViewGroups || [],
       hiddenViews: dto.hiddenViews || [],
+      expandedViewGroups: dto.expandedViewGroups || [], // Default to empty (all collapsed)
+      isNavigationCollapsed: dto.isNavigationCollapsed || false, // Default to expanded
     };
   }
 
@@ -71,6 +75,8 @@ export class NavigationService {
       viewOrders: settings.viewOrders,
       hiddenViewGroups: settings.hiddenViewGroups,
       hiddenViews: settings.hiddenViews,
+      expandedViewGroups: settings.expandedViewGroups || [],
+      isNavigationCollapsed: settings.isNavigationCollapsed || false,
     };
   }
 }

@@ -12,6 +12,7 @@ import {
 } from "../../types";
 import { viewsService } from "../../services/viewsService";
 import { viewGroupsService } from "../../services/viewGroupsService";
+import { navigationService } from "../../services/navigationService";
 import { useNotification } from "../common/NotificationProvider";
 import { useApiData } from "../../hooks/useApiData";
 import { useTheme } from "../../contexts/ThemeContext";
@@ -117,6 +118,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       viewOrders: {},
       hiddenViewGroups: [],
       hiddenViews: [],
+      expandedViewGroups: [],
+      isNavigationCollapsed: false,
     }
   );
 
@@ -139,6 +142,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     if (apiNavSettings) {
       console.log("📊 API NavSettings updated");
       setNavSettings(apiNavSettings);
+      
+      // Load saved navigation collapse state
+      if (apiNavSettings.isNavigationCollapsed !== undefined) {
+        setIsDockCollapsed(apiNavSettings.isNavigationCollapsed);
+        console.log("💾 Loaded navigation collapse state:", apiNavSettings.isNavigationCollapsed);
+      }
+      
       setNavigationUpdateTrigger((prev) => prev + 1); // Force navigation re-render
     }
   }, [apiNavSettings]);
@@ -555,7 +565,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   );
 
   // Handle manual toggle (button click) - only allow when vertically oriented
-  const handleToggleCollapse = useCallback(() => {
+  const handleToggleCollapse = useCallback(async () => {
     // Only allow manual collapse/expand when navigation is vertically oriented (docked left/right)
     if (navPanelOrientation !== "vertical") {
       console.log(
@@ -565,8 +575,25 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
 
     isManualToggleRef.current = true;
-    setIsDockCollapsed((prev) => !prev);
-  }, [navPanelOrientation]);
+    const newCollapsedState = !isDockCollapsed;
+    setIsDockCollapsed(newCollapsedState);
+    
+    // Save collapse state to navigation settings
+    try {
+      const updatedSettings: UserNavigationSettings = {
+        ...navSettings,
+        isNavigationCollapsed: newCollapsedState,
+      };
+      
+      await navigationService.updateNavigationSettings(user.name, updatedSettings);
+      setNavSettings(updatedSettings);
+      
+      console.log("💾 Saved navigation collapse state:", newCollapsedState);
+    } catch (error) {
+      console.error("Failed to save navigation collapse state:", error);
+      // Don't show error - non-critical operation
+    }
+  }, [navPanelOrientation, isDockCollapsed, navSettings, user.name]);
 
   // Handle layout mode toggle
   const handleToggleLayout = useCallback(() => {

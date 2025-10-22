@@ -68,6 +68,8 @@ export interface UserNavigationSettings {
   viewOrders: { [viewGroupId: string]: string[] };
   hiddenViewGroups: string[];
   hiddenViews: string[];
+  expandedViewGroups?: string[]; // NEW: Track which view groups are expanded
+  isNavigationCollapsed?: boolean; // NEW: Track if navigation panel itself is collapsed
 }
 
 // User-specific Navigation Data

@@ -1,0 +1,84 @@
+/* Navigation Panel Toolbar */
+.nav-toolbar {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-color, #e0e0e0);
+  background: var(--bg-primary, #ffffff);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.nav-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--border-color, #e0e0e0);
+  background: var(--bg-secondary, #f5f5f5);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-primary, #333);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.nav-toolbar-btn:hover {
+  background: var(--bg-hover, #e8e8e8);
+  border-color: var(--border-hover, #d0d0d0);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.nav-toolbar-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.nav-toolbar-btn svg {
+  flex-shrink: 0;
+}
+
+.nav-toolbar-text {
+  font-weight: 500;
+}
+
+/* Dark mode support */
+[data-theme="dark"] .nav-toolbar {
+  background: var(--bg-primary, #1e1e1e);
+  border-bottom-color: var(--border-color, #3a3a3a);
+}
+
+[data-theme="dark"] .nav-toolbar-btn {
+  background: var(--bg-secondary, #2a2a2a);
+  border-color: var(--border-color, #3a3a3a);
+  color: var(--text-primary, #e0e0e0);
+}
+
+[data-theme="dark"] .nav-toolbar-btn:hover {
+  background: var(--bg-hover, #333);
+  border-color: var(--border-hover, #4a4a4a);
+}
+
+/* Animation for expand/collapse icons */
+.nav-toolbar-btn svg {
+  animation: pulse 0.3s ease;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Horizontal layout - hide toolbar */
+.navigation-panel.horizontal-layout .nav-toolbar {
+  display: none;
+}
