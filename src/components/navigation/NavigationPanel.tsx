@@ -904,32 +904,6 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
                       .map((id) => widgets.find((w) => w.id === id))
                       .filter((w): w is Widget => w !== undefined);
 
-                    // Debug: Log count mismatch
-                    if (
-                      view.reportIds.length !== viewReports.length ||
-                      view.widgetIds.length !== viewWidgets.length
-                    ) {
-                      console.warn(`⚠️ NavigationPanel - "${view.name}":`);
-                      console.warn(
-                        `  Reports: ${viewReports.length}/${view.reportIds.length} accessible`
-                      );
-                      console.warn(
-                        `  Widgets: ${viewWidgets.length}/${view.widgetIds.length} accessible`
-                      );
-                      console.warn(
-                        `  Missing Reports:`,
-                        view.reportIds.filter(
-                          (id) => !reports.find((r) => r.id === id)
-                        )
-                      );
-                      console.warn(
-                        `  Missing Widgets:`,
-                        view.widgetIds.filter(
-                          (id) => !widgets.find((w) => w.id === id)
-                        )
-                      );
-                    }
-
                     const isViewDragOver = dragOverItem?.id === view.id;
                     const dragPosition = dragOverItem?.position;
                     const isSelected = selectedView?.id === view.id;

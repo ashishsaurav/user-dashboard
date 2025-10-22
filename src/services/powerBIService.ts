@@ -1,4 +1,4 @@
-import { apiConfig } from '../config/api.config';
+import { API_CONFIG } from "../config/api.config";
 
 export interface PowerBIEmbedInfo {
   reportId: string;
@@ -8,13 +8,16 @@ export interface PowerBIEmbedInfo {
 }
 
 class PowerBIService {
-  async getEmbedToken(workspaceId: string, reportId: string): Promise<PowerBIEmbedInfo> {
+  async getEmbedToken(
+    workspaceId: string,
+    reportId: string
+  ): Promise<PowerBIEmbedInfo> {
     const response = await fetch(
-      `${apiConfig.baseURL}/powerbi/${workspaceId}?reportId=${reportId}`,
+      `${API_CONFIG.BASE_URL}/powerbi/${workspaceId}?reportId=${reportId}`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );

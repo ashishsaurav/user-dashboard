@@ -1,4 +1,4 @@
-declare module 'powerbi-client' {
+declare module "powerbi-client" {
   export namespace models {
     export enum TokenType {
       Aad = 0,
@@ -56,14 +56,14 @@ declare module 'powerbi-client' {
   }
 
   export interface IReportEmbedConfiguration extends IEmbedConfiguration {
-    type: 'report';
+    type: "report";
     id: string;
     embedUrl: string;
     accessToken: string;
   }
 
   export interface IVisualEmbedConfiguration extends IEmbedConfiguration {
-    type: 'visual';
+    type: "visual";
     id: string;
     embedUrl: string;
     accessToken: string;
@@ -76,7 +76,7 @@ declare module 'powerbi-client' {
     off(event: string): void;
     setAccessToken(accessToken: string): Promise<void>;
     refresh(): Promise<void>;
-    reload(): Promise<void;
+    reload(): Promise<void>;
     getPages(): Promise<any[]>;
     setFilters(filters: any[]): Promise<void>;
     powerBiEmbed?: any;
