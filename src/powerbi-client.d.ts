@@ -78,7 +78,10 @@ declare module "powerbi-client" {
     refresh(): Promise<void>;
     reload(): Promise<void>;
     getPages(): Promise<any[]>;
+    setPage(pageName: string): Promise<void>;
     setFilters(filters: any[]): Promise<void>;
+    resizeActivePage(pageSize: models.PageSizeType, width: number, height: number): Promise<void>;
+    resizePage(pageSize: models.PageSizeType, width: number, height: number): Promise<void>;
     powerBiEmbed?: any;
   }
 
