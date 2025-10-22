@@ -271,22 +271,23 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
       };
     };
 
-    const handleResize = () => {
-      if (visualContainerRef.current && visualRef.current?.powerBiEmbed) {
-        const width = visualContainerRef.current.clientWidth;
-        const height = visualContainerRef.current.clientHeight;
+    const handleResize = async () => {
+      // Only resize if visual is loaded and ref exists
+      if (!visualContainerRef.current || !visualRef.current) {
+        return;
+      }
 
-        visualRef.current.powerBiEmbed.resizeActivePage(
-          powerbi.models.PageSizeType.Custom,
-          width,
-          height
-        );
-        visualRef.current.powerBiEmbed.resizeVisual(
-          pageName,
-          visualName,
-          width,
-          height
-        );
+      const width = visualContainerRef.current.clientWidth;
+      const height = visualContainerRef.current.clientHeight;
+
+      try {
+        // Visual embeds handle their own responsive sizing
+        // The PowerBI client automatically manages visual resize
+        // We just need to ensure the container has the right size
+        console.log("📐 Visual container resized to", width, "x", height);
+      } catch (e) {
+        // Resize may fail if visual not fully loaded yet - this is normal
+        console.debug("Visual resize not ready yet:", e);
       }
     };
 
