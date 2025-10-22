@@ -18,6 +18,8 @@ export interface Report {
   url: string;
   type: 'Report';
   userRoles: string[];
+  workspaceId?: string; // PowerBI workspace ID
+  reportId?: string; // PowerBI report ID
 }
 
 export interface Widget {
@@ -26,6 +28,10 @@ export interface Widget {
   url: string;
   type: 'Widget';
   userRoles: string[];
+  workspaceId?: string; // PowerBI workspace ID
+  reportId?: string; // PowerBI report ID
+  pageName?: string; // PowerBI page name
+  visualName?: string; // PowerBI visual name
 }
 
 // Form Data Types
@@ -33,12 +39,18 @@ export interface ReportFormData {
   name: string;
   url: string;
   userRoles: string[];
+  workspaceId?: string;
+  reportId?: string;
 }
 
 export interface WidgetFormData {
   name: string;
   url: string;
   userRoles: string[];
+  workspaceId?: string;
+  reportId?: string;
+  pageName?: string;
+  visualName?: string;
 }
 
 // Navigation Types - Updated for user-specific navigation

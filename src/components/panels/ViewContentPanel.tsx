@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { View, Report, Widget } from "../../types";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
+import PowerBIEmbedReport from "../powerbi/PowerBIEmbedReport";
+import PowerBIEmbedVisual from "../powerbi/PowerBIEmbedVisual";
 import "./styles/ViewContentPanel.css";
 
 interface ViewContentPanelProps {
@@ -342,90 +344,35 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
           </div>
 
           <div className="tab-content">
-            {activeReportTab && (
-              <div className="reports-table-container">
-                <table className="reports-table">
-                  <thead>
-                    <tr>
-                      <th>Report Item</th>
-                      <th>Type</th>
-                      <th>Status</th>
-                      <th>Last Updated</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: 8 }, (_, i) => {
-                      const activeReport = viewReports.find(
-                        (r) => r.id === activeReportTab
-                      );
-                      return (
-                        <tr key={i}>
-                          <td>
-                            <div className="report-cell">
-                              <ReportsIcon />
-                              <div className="report-cell-content">
-                                <div className="report-title">
-                                  {activeReport?.name} - Item {i + 1}
-                                </div>
-                                <div className="report-description">
-                                  Sample report data for visualization
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>
-                            <span className="type-badge">
-                              {activeReport?.type || "Report"}
-                            </span>
-                          </td>
-                          <td>
-                            <span
-                              className={`status-badge ${
-                                i % 3 === 0
-                                  ? "success"
-                                  : i % 3 === 1
-                                  ? "warning"
-                                  : "info"
-                              }`}
-                            >
-                              {i % 3 === 0
-                                ? "Active"
-                                : i % 3 === 1
-                                ? "Pending"
-                                : "Draft"}
-                            </span>
-                          </td>
-                          <td>
-                            <span className="date-text">
-                              {new Date(
-                                Date.now() - i * 86400000
-                              ).toLocaleDateString()}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="action-buttons">
-                              <button
-                                className="action-btn view-btn"
-                                title="View Report"
-                              >
-                                <ViewIcon />
-                              </button>
-                              <button
-                                className="action-btn edit-btn"
-                                title="Edit Report"
-                              >
-                                <EditIcon />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            {activeReportTab && (() => {
+              const activeReport = viewReports.find(r => r.id === activeReportTab);
+              if (!activeReport) return null;
+              
+              // Check if report has PowerBI configuration
+              if (activeReport.workspaceId && activeReport.reportId) {
+                return (
+                  <div className="powerbi-report-container">
+                    <PowerBIEmbedReport
+                      workspaceId={activeReport.workspaceId}
+                      reportId={activeReport.reportId}
+                      reportName={activeReport.name}
+                    />
+                  </div>
+                );
+              }
+              
+              // Fallback for reports without PowerBI config
+              return (
+                <div className="report-no-config">
+                  <div className="no-config-message">
+                    <ReportsIcon />
+                    <h3>Report Not Configured</h3>
+                    <p>This report doesn't have PowerBI configuration yet.</p>
+                    <small>WorkspaceId and ReportId are required.</small>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
         {removeConfirmation && (
@@ -459,6 +406,9 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
         {viewWidgets.map((widget, index) => {
           const isDragOver = dragOverWidget === widget.id;
           const isDragging = draggedWidget === widget.id;
+          
+          // Check if widget has PowerBI configuration
+          const hasPowerBIConfig = widget.workspaceId && widget.reportId && widget.pageName && widget.visualName;
 
           return (
             <div
@@ -493,25 +443,22 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                 </button>
               </div>
               <div className="widget-content">
-                <div className="widget-placeholder">
-                  <WidgetsIcon />
-                  <h4>Widget Content</h4>
-                  <p>Dummy widget data - {widget.type}</p>
-                  <div className="widget-metrics">
-                    <div className="metric">
-                      <span className="metric-value">
-                        {Math.floor(Math.random() * 1000)}
-                      </span>
-                      <span className="metric-label">Value A</span>
-                    </div>
-                    <div className="metric">
-                      <span className="metric-value">
-                        {Math.floor(Math.random() * 100)}%
-                      </span>
-                      <span className="metric-label">Value B</span>
-                    </div>
+                {hasPowerBIConfig ? (
+                  <PowerBIEmbedVisual
+                    workspaceId={widget.workspaceId!}
+                    reportId={widget.reportId!}
+                    pageName={widget.pageName!}
+                    visualName={widget.visualName!}
+                    widgetName={widget.name}
+                  />
+                ) : (
+                  <div className="widget-no-config">
+                    <WidgetsIcon />
+                    <h4>Widget Not Configured</h4>
+                    <p>PowerBI configuration required</p>
+                    <small>WorkspaceId, ReportId, PageName, and VisualName needed</small>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           );
