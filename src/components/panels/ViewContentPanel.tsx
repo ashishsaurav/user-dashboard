@@ -365,9 +365,16 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               const isActive = activeReportTab === report.id;
               const hasPowerBIConfig = workspaceId && reportId;
               
+              // Generate stable key based on PowerBI config to prevent re-renders on reorder
+              const stableKey = workspaceId && reportId && pageName
+                ? `report-${workspaceId}-${reportId}-${pageName}`
+                : workspaceId && reportId
+                ? `report-${workspaceId}-${reportId}`
+                : `report-${report.id}`;
+              
               return (
                 <div 
-                  key={report.id}
+                  key={stableKey}
                   className="tab-content"
                   style={{ display: isActive ? 'block' : 'none' }}
                 >
@@ -423,7 +430,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
   return (
     <div className="content-panel widgets-panel">
       <div className="widgets-grid orderable-widgets">
-        {viewWidgets.map((widget, index) => {
+        {viewWidgets.map((widget) => {
           const isDragOver = dragOverWidget === widget.id;
           const isDragging = draggedWidget === widget.id;
           
@@ -446,9 +453,14 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
           
           const hasPowerBIConfig = workspaceId && reportId && pageName && visualName;
 
+          // Generate stable key based on PowerBI config to prevent re-renders on reorder
+          const stableKey = workspaceId && reportId && pageName && visualName
+            ? `widget-${workspaceId}-${reportId}-${pageName}-${visualName}`
+            : `widget-${widget.id}`;
+          
           return (
             <div
-              key={widget.id}
+              key={stableKey}
               className={`widget-card orderable-widget ${
                 isDragging ? "dragging" : ""
               } ${isDragOver ? "drag-over" : ""}`}
