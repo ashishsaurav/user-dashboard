@@ -115,13 +115,23 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
           });
         }
 
-        timeoutId = setTimeout(() => {
-          console.log('⏰ Token expiring soon, refreshing...', embedKey);
-          setupTokenRefreshTimer();
-        }, timeUntilRefresh);
+        if (isMounted) {
+          timeoutId = setTimeout(() => {
+            if (isMounted) {
+              console.log('⏰ Token expiring soon, refreshing...', embedKey);
+              setupTokenRefreshTimer();
+            }
+          }, timeUntilRefresh);
+        }
       } catch (err: any) {
-        console.error('Failed to fetch PowerBI token:', err);
-        setError(err.message || 'Failed to load report');
+        if (!isMounted) {
+          console.log('⏹️  Component unmounted, ignoring error:', embedKey);
+          return;
+        }
+        
+        const errorMessage = err?.message || err?.toString() || 'Failed to load report';
+        console.error('Failed to fetch PowerBI token:', errorMessage, err);
+        setError(errorMessage);
         setLoading(false);
       }
     };
@@ -133,6 +143,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
+      console.log('🧹 Cleaning up PowerBIEmbedReport:', embedKey);
       // Keep embed in registry for reuse
     };
   }, [workspaceId, reportId, pageName]);

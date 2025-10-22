@@ -44,12 +44,21 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
 
     const setupTokenRefreshTimer = async () => {
       try {
+        if (!isMounted) {
+          console.log('⏹️  Component unmounted, skipping token fetch:', embedKey);
+          return;
+        }
+
         const embedInfo = await powerBIService.getEmbedToken(workspaceId, reportId);
+        
+        if (!isMounted) {
+          console.log('⏹️  Component unmounted during fetch, aborting:', embedKey);
+          return;
+        }
+
         const refreshBuffer = 5 * 60 * 1000; // 5 minutes
         const tokenExpiration = parseInt(embedInfo.tokenExpiration);
         const timeUntilRefresh = Math.max(0, tokenExpiration - refreshBuffer);
-
-        if (!isMounted) return;
 
         // Check if already embedded in global registry
         const cachedVisual = powerBIEmbedRegistry.get(embedKey);
@@ -115,13 +124,23 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
           });
         }
 
-        timeoutId = setTimeout(() => {
-          console.log('⏰ Token expiring soon, refreshing...', embedKey);
-          setupTokenRefreshTimer();
-        }, timeUntilRefresh);
+        if (isMounted) {
+          timeoutId = setTimeout(() => {
+            if (isMounted) {
+              console.log('⏰ Token expiring soon, refreshing...', embedKey);
+              setupTokenRefreshTimer();
+            }
+          }, timeUntilRefresh);
+        }
       } catch (err: any) {
-        console.error('Failed to fetch PowerBI token:', err);
-        setError(err.message || 'Failed to load visual');
+        if (!isMounted) {
+          console.log('⏹️  Component unmounted, ignoring error:', embedKey);
+          return;
+        }
+        
+        const errorMessage = err?.message || err?.toString() || 'Failed to load visual';
+        console.error('Failed to fetch PowerBI token:', errorMessage, err);
+        setError(errorMessage);
         setLoading(false);
       }
     };
@@ -133,6 +152,7 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
+      console.log('🧹 Cleaning up PowerBIEmbedVisual:', embedKey);
       // Keep embed in registry for reuse
     };
   }, [workspaceId, reportId, pageName, visualName]);
