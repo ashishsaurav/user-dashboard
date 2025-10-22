@@ -67,26 +67,43 @@ export function parsePowerBIVisualUrl(url: string): PowerBIVisualConfig | null {
 
     // Pattern: /ReportSection{pageName}?visual={visualName}
     // or: /ReportSection{pageName}#{visualName}
-    const pagePattern = /\/ReportSection([^\/\?#]+)/;
+    // Also handle: ReportSection without the slash
+    const pagePattern = /ReportSection([^\/\?#&]+)/;
     const pageMatch = url.match(pagePattern);
     
     const urlObj = new URL(url);
     const visualFromParam = urlObj.searchParams.get('visual') || urlObj.searchParams.get('visualName');
-    const visualFromHash = url.includes('#') ? url.split('#')[1] : null;
+    
+    // Also check in hash for visual name (format: #visualId or #ReportSection/visualId)
+    let visualFromHash = '';
+    if (url.includes('#')) {
+      const hashPart = url.split('#')[1];
+      // Remove any ReportSection prefix from hash
+      visualFromHash = hashPart.replace(/^ReportSection[^\/]*\//, '');
+    }
 
     // Extract page name
     let pageName = '';
     if (pageMatch) {
-      pageName = pageMatch[1];
+      // Clean up page name - remove 'ReportSection' prefix if present
+      pageName = pageMatch[1].replace(/^ReportSection/, '');
     } else {
       // Try to get from URL params
       pageName = urlObj.searchParams.get('pageName') || '';
     }
 
     // Extract visual name
-    const visualName = visualFromParam || visualFromHash || '';
+    const visualName = visualFromParam || visualFromHash || urlObj.searchParams.get('visualId') || '';
 
     if (!pageName || !visualName) {
+      console.warn('PowerBI Visual URL missing pageName or visualName:', {
+        url,
+        pageName,
+        visualName,
+        pageMatch: pageMatch?.[0],
+        visualFromParam,
+        visualFromHash
+      });
       return null;
     }
 

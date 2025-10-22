@@ -30,6 +30,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     let isMounted = true;
+    const embedKey = `${workspaceId}-${reportId}`;
 
     const setupTokenRefreshTimer = async () => {
       try {
@@ -40,11 +41,15 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 
         if (!isMounted) return;
 
+        // Only embed if not already embedded
         if (reportRef.current && reportRef.current.setAccessToken) {
+          // Report already embedded, just refresh token
           await reportRef.current.setAccessToken(embedInfo.embedToken);
-          console.log('PowerBI report token refreshed');
+          console.log('🔄 PowerBI report token refreshed for', embedKey);
         } else if (reportContainerRef.current) {
-          // Initial embed
+          // Initial embed - only happens once
+          console.log('🎯 Embedding PowerBI report:', embedKey);
+          
           const config: powerbi.IReportEmbedConfiguration = {
             type: 'report',
             id: reportId,
@@ -66,23 +71,23 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
           reportRef.current = report as powerbi.Report;
 
           report.on('loaded', () => {
-            console.log('PowerBI report loaded');
+            console.log('✅ PowerBI report loaded:', embedKey);
             setLoading(false);
           });
 
           report.on('rendered', () => {
-            console.log('PowerBI report rendered');
+            console.log('✅ PowerBI report rendered:', embedKey);
           });
 
           report.on('error', (event: any) => {
-            console.error('PowerBI report error:', event.detail);
+            console.error('❌ PowerBI report error:', event.detail);
             setError(event.detail?.message || 'Error loading report');
             setLoading(false);
           });
         }
 
         timeoutId = setTimeout(() => {
-          console.log('Token expiring soon, refreshing...');
+          console.log('⏰ Token expiring soon, refreshing...', embedKey);
           setupTokenRefreshTimer();
         }, timeUntilRefresh);
       } catch (err: any) {
@@ -99,13 +104,7 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
-      if (reportRef.current) {
-        try {
-          powerbiService.current.reset(reportContainerRef.current!);
-        } catch (e) {
-          console.error('Error cleaning up PowerBI report:', e);
-        }
-      }
+      // Don't destroy the embed - keep it for reuse
     };
   }, [workspaceId, reportId]);
 

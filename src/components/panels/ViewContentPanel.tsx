@@ -344,49 +344,52 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
             })}
           </div>
 
-          <div className="tab-content">
-            {activeReportTab && (() => {
-              const activeReport = viewReports.find(r => r.id === activeReportTab);
-              if (!activeReport) return null;
-              
+          {/* Render ALL report tabs but only show the active one */}
+          <div className="tab-content-container">
+            {viewReports.map((report) => {
               // Try to get PowerBI config from URL or direct fields
-              let workspaceId = activeReport.workspaceId;
-              let reportId = activeReport.reportId;
+              let workspaceId = report.workspaceId;
+              let reportId = report.reportId;
               
               // If not in fields, try parsing from URL
-              if ((!workspaceId || !reportId) && activeReport.url) {
-                const config = parsePowerBIReportUrl(activeReport.url);
+              if ((!workspaceId || !reportId) && report.url) {
+                const config = parsePowerBIReportUrl(report.url);
                 if (config) {
                   workspaceId = config.workspaceId;
                   reportId = config.reportId;
                 }
               }
               
-              // Check if we have valid PowerBI configuration
-              if (workspaceId && reportId) {
-                return (
-                  <div className="powerbi-report-container">
-                    <PowerBIEmbedReport
-                      workspaceId={workspaceId}
-                      reportId={reportId}
-                      reportName={activeReport.name}
-                    />
-                  </div>
-                );
-              }
+              const isActive = activeReportTab === report.id;
+              const hasPowerBIConfig = workspaceId && reportId;
               
-              // Fallback for reports without PowerBI config
               return (
-                <div className="report-no-config">
-                  <div className="no-config-message">
-                    <ReportsIcon />
-                    <h3>Report Not Configured</h3>
-                    <p>This report doesn't have PowerBI configuration yet.</p>
-                    <small>Provide a valid PowerBI URL or WorkspaceId/ReportId.</small>
-                  </div>
+                <div 
+                  key={report.id}
+                  className="tab-content"
+                  style={{ display: isActive ? 'block' : 'none' }}
+                >
+                  {hasPowerBIConfig ? (
+                    <div className="powerbi-report-container">
+                      <PowerBIEmbedReport
+                        workspaceId={workspaceId!}
+                        reportId={reportId!}
+                        reportName={report.name}
+                      />
+                    </div>
+                  ) : (
+                    <div className="report-no-config">
+                      <div className="no-config-message">
+                        <ReportsIcon />
+                        <h3>Report Not Configured</h3>
+                        <p>This report doesn't have PowerBI configuration yet.</p>
+                        <small>Provide a valid PowerBI URL or WorkspaceId/ReportId.</small>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
-            })()}
+            })}
           </div>
         </div>
         {removeConfirmation && (

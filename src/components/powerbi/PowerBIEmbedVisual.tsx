@@ -34,6 +34,7 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
     let isMounted = true;
+    const embedKey = `${workspaceId}-${reportId}-${pageName}-${visualName}`;
 
     const setupTokenRefreshTimer = async () => {
       try {
@@ -44,11 +45,15 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
 
         if (!isMounted) return;
 
+        // Only embed if not already embedded
         if (visualRef.current && visualRef.current.setAccessToken) {
+          // Visual already embedded, just refresh token
           await visualRef.current.setAccessToken(embedInfo.embedToken);
-          console.log('PowerBI visual token refreshed');
+          console.log('🔄 PowerBI visual token refreshed for', embedKey);
         } else if (visualContainerRef.current) {
-          // Initial embed
+          // Initial embed - only happens once
+          console.log('🎯 Embedding PowerBI visual:', embedKey);
+          
           const config: powerbi.IVisualEmbedConfiguration = {
             type: 'visual',
             id: reportId,
@@ -72,23 +77,30 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
           visualRef.current = visual;
 
           visual.on('loaded', () => {
-            console.log('PowerBI visual loaded');
+            console.log('✅ PowerBI visual loaded:', embedKey);
             setLoading(false);
           });
 
           visual.on('rendered', () => {
-            console.log('PowerBI visual rendered');
+            console.log('✅ PowerBI visual rendered:', embedKey);
           });
 
           visual.on('error', (event: any) => {
-            console.error('PowerBI visual error:', event.detail);
-            setError(event.detail?.message || 'Error loading visual');
+            console.error('❌ PowerBI visual error:', event.detail);
+            const errorMsg = event.detail?.message || 'Error loading visual';
+            
+            // Better error messages
+            if (errorMsg.includes('PowerBIEntityNotFound')) {
+              setError(`Visual not found. Please verify page name "${pageName}" and visual name "${visualName}" are correct.`);
+            } else {
+              setError(errorMsg);
+            }
             setLoading(false);
           });
         }
 
         timeoutId = setTimeout(() => {
-          console.log('Token expiring soon, refreshing...');
+          console.log('⏰ Token expiring soon, refreshing...', embedKey);
           setupTokenRefreshTimer();
         }, timeUntilRefresh);
       } catch (err: any) {
@@ -105,13 +117,7 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
     return () => {
       isMounted = false;
       clearTimeout(timeoutId);
-      if (visualRef.current) {
-        try {
-          powerbiService.current.reset(visualContainerRef.current!);
-        } catch (e) {
-          console.error('Error cleaning up PowerBI visual:', e);
-        }
-      }
+      // Don't destroy the embed - keep it for reuse
     };
   }, [workspaceId, reportId, pageName, visualName]);
 
