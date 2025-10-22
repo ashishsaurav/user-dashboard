@@ -55,26 +55,40 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
   const [deletingViewGroup, setDeletingViewGroup] = useState<any>(null);
   const [deletingView, setDeletingView] = useState<any>(null);
 
-  // Load expanded state from navigation settings
+  // Track if we've initialized the expanded state - USE REF to prevent re-initialization
+  const hasInitializedRef = useRef(false);
+
+  // Load expanded state from navigation settings - ONLY ONCE
   useEffect(() => {
-    if (viewGroups.length > 0) {
+    if (viewGroups.length > 0 && !hasInitializedRef.current) {
       const initialExpanded: { [key: string]: boolean } = {};
       
-      // If we have saved expanded state, use it
-      if (userNavSettings.expandedViewGroups && userNavSettings.expandedViewGroups.length > 0) {
+      console.log('🔄 Initializing view group expand state');
+      console.log('  Saved expandedViewGroups:', userNavSettings.expandedViewGroups);
+      console.log('  ViewGroups count:', viewGroups.length);
+      
+      // CRITICAL: If expandedViewGroups exists (even as empty array), use it
+      // Empty array [] means ALL COLLAPSED (user clicked "Collapse All")
+      if (userNavSettings.expandedViewGroups !== undefined && userNavSettings.expandedViewGroups !== null) {
+        console.log('  ✅ Using saved state from backend');
         viewGroups.forEach((vg) => {
-          initialExpanded[vg.id] = userNavSettings.expandedViewGroups!.includes(vg.id);
+          const isExpanded = userNavSettings.expandedViewGroups!.includes(vg.id);
+          initialExpanded[vg.id] = isExpanded;
+          console.log(`    ${vg.name}: ${isExpanded ? 'EXPANDED' : 'COLLAPSED'}`);
         });
       } else {
-        // Default: expand all
+        console.log('  ⚠️ No saved state - defaulting to all expanded');
+        // Default: expand all (only if no saved state exists at all)
         viewGroups.forEach((vg) => {
           initialExpanded[vg.id] = true;
         });
       }
       
+      console.log('  ✅ Final expanded state:', initialExpanded);
       setExpandedViewGroups(initialExpanded);
+      hasInitializedRef.current = true;
     }
-  }, [viewGroups, userNavSettings.expandedViewGroups]);
+  }, [viewGroups, userNavSettings]);
 
   // NEW: Responsive layout state
   const [isHorizontalLayout, setIsHorizontalLayout] = useState(false);
@@ -862,19 +876,26 @@ const NavigationPanel: React.FC<NavigationPanelProps> = ({
         isHorizontalLayout ? "horizontal-layout" : "vertical-layout"
       }`}
     >
-      {/* Collapse/Expand All Button - Always show in vertical layout */}
+      {/* Collapse/Expand All Buttons - Always show both in vertical layout */}
       {!isHorizontalLayout && (
         <div className="nav-toolbar">
           <button
             className="nav-toolbar-btn"
-            onClick={areAllExpanded ? handleCollapseAll : handleExpandAll}
-            title={areAllExpanded ? "Collapse All View Groups" : "Expand All View Groups"}
-            disabled={visibleViewGroups.length === 0}
+            onClick={handleExpandAll}
+            title="Expand All View Groups"
+            disabled={visibleViewGroups.length === 0 || areAllExpanded}
           >
-            {areAllExpanded ? <CollapseAllIcon /> : <ExpandAllIcon />}
-            <span className="nav-toolbar-text">
-              {areAllExpanded ? "Collapse All" : "Expand All"}
-            </span>
+            <ExpandAllIcon />
+            <span className="nav-toolbar-text">Expand All</span>
+          </button>
+          <button
+            className="nav-toolbar-btn"
+            onClick={handleCollapseAll}
+            title="Collapse All View Groups"
+            disabled={visibleViewGroups.length === 0 || areAllCollapsed}
+          >
+            <CollapseAllIcon />
+            <span className="nav-toolbar-text">Collapse All</span>
           </button>
         </div>
       )}
