@@ -129,6 +129,9 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
 
           visual.on("error", (event: any) => {
             console.error("❌ PowerBI visual error:", event.detail);
+            
+            if (!isMounted) return;
+            
             const errorMsg = event.detail?.message || "Error loading visual";
 
             // Better error messages
@@ -139,17 +142,21 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
             } else {
               setError(errorMsg);
             }
-            setLoading(false);
-          });
-        }
-
-        if (isMounted) {
-          timeoutId = setTimeout(() => {
+            
             if (isMounted) {
-              console.log("⏰ Token expiring soon, refreshing...", embedKey);
-              setupTokenRefreshTimer();
+              setLoading(false);
             }
-          }, timeUntilRefresh);
+          });
+          
+          // Set timeout for new embed
+          if (isMounted) {
+            timeoutId = setTimeout(() => {
+              if (isMounted) {
+                console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                setupTokenRefreshTimer();
+              }
+            }, timeUntilRefresh);
+          }
         }
       } catch (err: any) {
         console.error("🚨 CAUGHT ERROR in setupTokenRefreshTimer:", {

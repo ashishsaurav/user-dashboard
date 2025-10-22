@@ -54,16 +54,62 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
         // Check if already embedded in global registry
         const cachedReport = powerBIEmbedRegistry.get(embedKey);
         if (cachedReport && cachedReport.setAccessToken) {
-          // Reuse cached embed
+          // Try to reuse cached embed
           reportRef.current = cachedReport;
-          await reportRef.current?.setAccessToken(embedInfo.embedToken);
-          console.log("♻️  Reused cached report, refreshed token:", embedKey);
-          setLoading(false);
-        } else if (reportRef.current && reportRef.current.setAccessToken) {
-          // Report already embedded in this instance, just refresh token
-          await reportRef.current.setAccessToken(embedInfo.embedToken);
-          console.log("🔄 PowerBI report token refreshed for", embedKey);
-        } else if (reportContainerRef.current) {
+          
+          try {
+            await reportRef.current.setAccessToken(embedInfo.embedToken);
+            console.log("♻️  Reused cached report, refreshed token:", embedKey);
+            if (isMounted) {
+              setLoading(false);
+            }
+            
+            // Successfully reused - set timeout and return
+            if (isMounted) {
+              timeoutId = setTimeout(() => {
+                if (isMounted) {
+                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  setupTokenRefreshTimer();
+                }
+              }, timeUntilRefresh);
+            }
+            return; // Exit early - successfully reused cache
+          } catch (tokenErr) {
+            console.warn('⚠️  Cached embed is stale (DOM element gone), will re-embed:', tokenErr);
+            // Remove stale cache and fall through to re-embed
+            powerBIEmbedRegistry.remove(embedKey);
+            reportRef.current = null;
+          }
+        }
+        
+        // If we have reportRef but not from cache (this component's own ref)
+        if (reportRef.current && reportRef.current.setAccessToken) {
+          if (!isMounted) return;
+          
+          try {
+            // Report already embedded in this instance, just refresh token
+            await reportRef.current.setAccessToken(embedInfo.embedToken);
+            console.log("🔄 PowerBI report token refreshed for", embedKey);
+            
+            // Successfully refreshed - set timeout and return
+            if (isMounted) {
+              timeoutId = setTimeout(() => {
+                if (isMounted) {
+                  console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                  setupTokenRefreshTimer();
+                }
+              }, timeUntilRefresh);
+            }
+            return; // Exit early - successfully refreshed
+          } catch (tokenErr) {
+            console.warn('⚠️  Local embed is stale, will re-embed:', tokenErr);
+            reportRef.current = null;
+            // Fall through to re-embed
+          }
+        }
+        
+        // Initial embed - only if we don't have a valid reportRef
+        if (reportContainerRef.current) {
           // Initial embed - only happens once per unique report+page combination
           console.log("🎯 Embedding PowerBI report (first time):", embedKey);
 
@@ -121,18 +167,21 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 
           report.on("error", (event: any) => {
             console.error("❌ PowerBI report error:", event.detail);
-            setError(event.detail?.message || "Error loading report");
-            setLoading(false);
-          });
-        }
-
-        if (isMounted) {
-          timeoutId = setTimeout(() => {
             if (isMounted) {
-              console.log("⏰ Token expiring soon, refreshing...", embedKey);
-              setupTokenRefreshTimer();
+              setError(event.detail?.message || "Error loading report");
+              setLoading(false);
             }
-          }, timeUntilRefresh);
+          });
+          
+          // Set timeout for new embed
+          if (isMounted) {
+            timeoutId = setTimeout(() => {
+              if (isMounted) {
+                console.log("⏰ Token expiring soon, refreshing...", embedKey);
+                setupTokenRefreshTimer();
+              }
+            }, timeUntilRefresh);
+          }
         }
       } catch (err: any) {
         console.error("🚨 CAUGHT ERROR in setupTokenRefreshTimer:", {
