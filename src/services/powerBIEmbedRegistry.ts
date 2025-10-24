@@ -7,7 +7,6 @@
 interface EmbedInstance {
   embed: any; // powerbi.Report or powerbi.Visual
   containerElement: HTMLElement;
-  iframeElement: HTMLIFrameElement | null; // Direct reference to iframe
   embedKey: string;
   type: "report" | "visual";
   lastUsed: number;
@@ -19,83 +18,18 @@ class PowerBIEmbedRegistry {
 
   /**
    * Transfer embed instance to new container
-   * Optimized for instant transfer without reload
    */
   transfer(embedKey: string, newContainer: HTMLElement): any | null {
     const instance = this.embeds.get(embedKey);
     if (!instance) return null;
 
-    try {
-      // Clean up new container completely
-      while (newContainer.firstChild) {
-        newContainer.firstChild.remove();
-      }
-
-      // Try to get iframe from stored reference first
-      let currentIframe = instance.iframeElement;
-      
-      // Verify iframe is still in DOM
-      if (currentIframe && !document.body.contains(currentIframe)) {
-        console.log("⚠️ Stored iframe no longer in DOM for", embedKey);
-        currentIframe = null;
-      }
-      
-      // If no stored iframe or it's gone, try to find it in current container
-      if (!currentIframe) {
-        currentIframe = instance.containerElement.getElementsByTagName("iframe")[0];
-      }
-      
-      // If still not found, search document for it
-      if (!currentIframe) {
-        const allIframes = Array.from(document.getElementsByTagName("iframe"));
-        // Look for iframe with matching src that contains our reportId
-        const reportId = embedKey.split(':')[2]; // Extract reportId from key
-        currentIframe = allIframes.find(iframe => 
-          iframe.src && iframe.src.includes(reportId)
-        ) || null;
-        
-        if (currentIframe) {
-          console.log("🔍 Found orphaned iframe in document for", embedKey);
-        }
-      }
-      
-      if (currentIframe) {
-        // OPTIMIZED: Move iframe directly instead of recreating
-        // This prevents reload and is instant
-        newContainer.appendChild(currentIframe);
-        
-        // Update container and iframe references
-        instance.containerElement = newContainer;
-        instance.iframeElement = currentIframe;
-        instance.lastUsed = Date.now();
-        
-        // Ensure iframe is visible and properly sized
-        currentIframe.style.width = "100%";
-        currentIframe.style.height = "100%";
-        currentIframe.style.border = "none";
-        currentIframe.style.display = "block";
-        
-        // No need for reactivation - iframe is already live
-        console.log("⚡ Instantly transferred PowerBI embed (no reload):", embedKey);
-        return instance.embed;
-      } else {
-        // Fallback: If no iframe exists, mark for complete reload
-        const embedContainer = document.createElement("div");
-        embedContainer.style.width = "100%";
-        embedContainer.style.height = "100%";
-        newContainer.appendChild(embedContainer);
-        
-        instance.containerElement = embedContainer;
-        instance.embed._needsReload = true;
-        
-        console.log("⚠️ No iframe found anywhere, will reload:", embedKey);
-        return instance.embed;
-      }
-    } catch (err) {
-      console.warn("⚠️ Transfer error, will force reload:", embedKey, err);
-      instance.embed._needsReload = true;
-      return instance.embed;
-    }
+    // Just update the container reference
+    // Since we're keeping all tabs rendered, no actual DOM transfer needed
+    instance.containerElement = newContainer;
+    instance.lastUsed = Date.now();
+    
+    console.log("✅ Updated container reference:", embedKey);
+    return instance.embed;
   }
 
   /**
@@ -146,13 +80,9 @@ class PowerBIEmbedRegistry {
       this.cleanupOldest();
     }
 
-    // Get iframe element immediately for storage
-    const iframeElement = containerElement.getElementsByTagName("iframe")[0] || null;
-
     this.embeds.set(embedKey, {
       embed,
       containerElement,
-      iframeElement,
       embedKey,
       type,
       lastUsed: Date.now(),
@@ -160,7 +90,7 @@ class PowerBIEmbedRegistry {
     console.log(
       "💾 Cached PowerBI embed:",
       embedKey,
-      `(total: ${this.embeds.size}, iframe: ${iframeElement ? 'found' : 'pending'})`
+      `(total: ${this.embeds.size})`
     );
   }
 

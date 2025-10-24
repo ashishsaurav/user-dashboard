@@ -364,8 +364,8 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
             })}
           </div>
 
-          {/* Render ALL report tabs but only show the active one */}
-          <div className="tab-content-container">
+          {/* Render ALL tabs but hide inactive ones with opacity */}
+          <div className="tab-content-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
             {viewReports.map((report) => {
               // Always parse URL to get full config including pageName
               let reportConfig = null;
@@ -395,15 +395,17 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               return (
                 <div 
                   key={stableKey}
-                  className={`tab-content ${isActive ? 'tab-content-active' : 'tab-content-hidden'}`}
+                  className="tab-content"
                   style={{
-                    position: isActive ? 'relative' : 'absolute',
-                    visibility: isActive ? 'visible' : 'hidden',
-                    width: '100%',
-                    height: '100%',
+                    position: 'absolute',
                     top: 0,
                     left: 0,
-                    zIndex: isActive ? 1 : -1
+                    width: '100%',
+                    height: '100%',
+                    opacity: isActive ? 1 : 0,
+                    pointerEvents: isActive ? 'auto' : 'none',
+                    zIndex: isActive ? 1 : 0,
+                    transition: 'opacity 0.15s ease'
                   }}
                 >
                   {hasPowerBIConfig ? (
