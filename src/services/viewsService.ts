@@ -100,7 +100,13 @@ export class ViewsService {
   ): Promise<View> {
     const view = await apiClient.put<ViewDto>(API_ENDPOINTS.VIEWS.UPDATE(id), {
       userId,
-      data,
+      data: {
+        name: data.name,
+        isVisible: data.isVisible,
+        orderIndex: data.orderIndex,
+        ...(data.reportIds && { reportIds: data.reportIds }),
+        ...(data.widgetIds && { widgetIds: data.widgetIds }),
+      },
     });
     return this.transformToFrontend(view);
   }
