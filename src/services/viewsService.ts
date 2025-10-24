@@ -94,6 +94,8 @@ export class ViewsService {
       name: string;
       isVisible: boolean;
       orderIndex: number;
+      reportIds?: string[];
+      widgetIds?: string[];
     }
   ): Promise<View> {
     const view = await apiClient.put<ViewDto>(API_ENDPOINTS.VIEWS.UPDATE(id), {
