@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Report, Widget } from "../../types";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 import PowerBIEmbedReport from "../powerbi/PowerBIEmbedReport";
@@ -28,6 +28,28 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
   onReorderWidgets,
 }) => {
   const [activeReportTab, setActiveReportTab] = useState<string | null>(null);
+  
+  // Use refs to store order without triggering re-renders
+  const reportOrderMapRef = React.useRef<Record<string, number>>({});
+  const widgetOrderMapRef = React.useRef<Record<string, number>>({});
+  const tabNavRef = React.useRef<HTMLDivElement>(null);
+  const widgetsGridRef = React.useRef<HTMLDivElement>(null);
+  
+  // Track current view ID to detect view changes
+  const currentViewIdRef = React.useRef<string | null>(null);
+  
+  // Reset order maps when view changes
+  React.useEffect(() => {
+    if (selectedView && selectedView.id !== currentViewIdRef.current) {
+      console.log("🔄 View changed - resetting order maps");
+      reportOrderMapRef.current = {};
+      widgetOrderMapRef.current = {};
+      currentViewIdRef.current = selectedView.id;
+      
+      // Reset active tab when view changes
+      setActiveReportTab(null);
+    }
+  }, [selectedView]);
 
   // NEW: Drag and drop state for reports (tabs)
   const [draggedReportTab, setDraggedReportTab] = useState<string | null>(null);
@@ -165,8 +187,37 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
 
     newOrder.splice(insertIndex, 0, removed);
 
-    // Call reorder handler
+    console.log("🎯 ViewContentPanel: Reordering tabs with CSS order (no re-render):", newOrder);
+
+    // Update order map in ref (doesn't trigger re-render)
+    const orderMap: Record<string, number> = {};
+    newOrder.forEach((id, index) => {
+      orderMap[id] = index;
+    });
+    reportOrderMapRef.current = orderMap;
+    
+    // Manually update DOM elements with CSS order (no React re-render!)
+    setTimeout(() => {
+      if (tabNavRef.current) {
+        const tabs = tabNavRef.current.querySelectorAll('.tab-item');
+        console.log(`  Found ${tabs.length} tab elements`);
+        tabs.forEach((tab) => {
+          const tabElement = tab as HTMLElement;
+          const tabKey = tabElement.getAttribute('data-report-id');
+          console.log(`  Checking tab: data-report-id="${tabKey}"`);
+          if (tabKey && orderMap[tabKey] !== undefined) {
+            tabElement.style.order = String(orderMap[tabKey]);
+            console.log(`    ✅ Set tab "${tabKey}" order to ${orderMap[tabKey]}`);
+          }
+        });
+      } else {
+        console.warn("  ⚠️ tabNavRef.current is null");
+      }
+    }, 0);
+    
+    // Notify parent to save new order to backend
     if (onReorderReports) {
+      console.log("📤 Sending new report order to parent for backend save");
       onReorderReports(newOrder);
     }
 
@@ -236,8 +287,37 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
     const [removed] = newOrder.splice(draggedIndex, 1);
     newOrder.splice(targetIndex, 0, removed);
 
-    // Call reorder handler
+    console.log("🎯 ViewContentPanel: Reordering widgets with CSS order (no re-render):", newOrder);
+
+    // Update order map in ref (doesn't trigger re-render)
+    const orderMap: Record<string, number> = {};
+    newOrder.forEach((id, index) => {
+      orderMap[id] = index;
+    });
+    widgetOrderMapRef.current = orderMap;
+    
+    // Manually update DOM elements with CSS order (no React re-render!)
+    setTimeout(() => {
+      if (widgetsGridRef.current) {
+        const widgets = widgetsGridRef.current.querySelectorAll('.widget-card');
+        console.log(`  Found ${widgets.length} widget elements`);
+        widgets.forEach((widget) => {
+          const widgetElement = widget as HTMLElement;
+          const widgetKey = widgetElement.getAttribute('data-widget-id');
+          console.log(`  Checking widget: data-widget-id="${widgetKey}"`);
+          if (widgetKey && orderMap[widgetKey] !== undefined) {
+            widgetElement.style.order = String(orderMap[widgetKey]);
+            console.log(`    ✅ Set widget "${widgetKey}" order to ${orderMap[widgetKey]}`);
+          }
+        });
+      } else {
+        console.warn("  ⚠️ widgetsGridRef.current is null");
+      }
+    }, 0);
+    
+    // Notify parent to save new order to backend
     if (onReorderWidgets) {
+      console.log("📤 Sending new widget order to parent for backend save");
       onReorderWidgets(newOrder);
     }
 
@@ -292,7 +372,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
     return (
       <div className="content-panel reports-panel">
         <div className="reports-tabs">
-          <div className="tab-nav orderable-tabs">
+          <div ref={tabNavRef} className="tab-nav orderable-tabs">
             {viewReports.map((report) => {
               const isDragOver = dragOverReportTab === report.id;
               const dragOverClass = isDragOver
@@ -322,6 +402,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               return (
                 <div
                   key={tabStableKey}
+                  data-report-id={report.id}
                   className={`tab-item orderable-tab ${
                     activeReportTab === report.id ? "active" : ""
                   } ${
@@ -364,8 +445,8 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
             })}
           </div>
 
-          {/* Render ALL report tabs but only show the active one */}
-          <div className="tab-content-container">
+          {/* Render ALL tabs but hide inactive ones with opacity */}
+          <div className="tab-content-container" style={{ position: 'relative', width: '100%', height: '100%' }}>
             {viewReports.map((report) => {
               // Always parse URL to get full config including pageName
               let reportConfig = null;
@@ -396,7 +477,17 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
                 <div 
                   key={stableKey}
                   className="tab-content"
-                  style={{ display: isActive ? 'block' : 'none' }}
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    opacity: isActive ? 1 : 0,
+                    pointerEvents: isActive ? 'auto' : 'none',
+                    zIndex: isActive ? 1 : 0,
+                    transition: 'opacity 0.15s ease'
+                  }}
                 >
                   {hasPowerBIConfig ? (
                     <div className="powerbi-report-container">
@@ -449,7 +540,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
 
   return (
     <div className="content-panel widgets-panel">
-      <div className="widgets-grid orderable-widgets">
+      <div ref={widgetsGridRef} className="widgets-grid orderable-widgets">
         {viewWidgets.map((widget) => {
           const isDragOver = dragOverWidget === widget.id;
           const isDragging = draggedWidget === widget.id;
@@ -481,6 +572,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
           return (
             <div
               key={widgetStableKey}
+              data-widget-id={widget.id}
               className={`widget-card orderable-widget ${
                 isDragging ? "dragging" : ""
               } ${isDragOver ? "drag-over" : ""}`}

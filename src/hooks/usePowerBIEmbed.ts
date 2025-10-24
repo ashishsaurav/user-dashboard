@@ -29,7 +29,21 @@ export function usePowerBIEmbed({
   const containerRef = useRef<HTMLDivElement>(
     null
   ) as React.RefObject<HTMLDivElement>;
-  const [loading, setLoading] = useState(true);
+  
+  // Generate embed key
+  const embedKey = powerBIEmbedRegistry.generateKey(type, {
+    workspaceId,
+    reportId,
+    pageName,
+    visualName,
+  });
+  
+  // Use lazy initializer to check cache only on first render
+  const [loading, setLoading] = useState(() => {
+    const hasCache = powerBIEmbedRegistry.has(embedKey);
+    return !hasCache; // Don't show loading if cached
+  });
+  
   const [error, setError] = useState("");
   const instanceRef = useRef<powerbi.Report | powerbi.Visual | null>(null);
   const powerbiService = useRef(
@@ -39,6 +53,14 @@ export function usePowerBIEmbed({
       powerbi.factories.routerFactory
     )
   );
+  
+  // Set cached instance immediately if available
+  if (!instanceRef.current) {
+    const cached = powerBIEmbedRegistry.get(embedKey);
+    if (cached) {
+      instanceRef.current = cached;
+    }
+  }
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -50,9 +72,22 @@ export function usePowerBIEmbed({
       pageName,
       visualName,
     });
+    
+    console.log("🟢 usePowerBIEmbed EFFECT RUNNING for:", embedKey);
 
     const setupTokenRefreshTimer = async () => {
       try {
+        // Check cache first - before showing loading
+        const cachedInstance = powerBIEmbedRegistry.get(embedKey);
+        const hasCache = !!cachedInstance;
+        
+        console.log(`🔍 Cache check for ${embedKey}:`, hasCache ? 'FOUND' : 'NOT FOUND');
+        
+        // Only show loading if we don't have a cached instance
+        if (!hasCache) {
+          setLoading(true);
+        }
+        
         const embedInfo = await powerBIService.getEmbedToken(
           workspaceId,
           reportId
@@ -64,139 +99,38 @@ export function usePowerBIEmbed({
         if (!isMounted) return;
 
         // Try to reuse existing embed from registry
-        const cachedInstance = powerBIEmbedRegistry.get(embedKey);
-        if (cachedInstance) {
-          try {
-            // First try to transfer the instance
-            let transferredInstance = null;
-            if (containerRef.current) {
-              transferredInstance = powerBIEmbedRegistry.transfer(
-                embedKey,
-                containerRef.current
-              );
-            }
-
-            if (transferredInstance) {
-              try {
-                if (transferredInstance._needsReload) {
-                  // Full reload with complete config
-                  const fullConfig =
-                    type === "report"
-                      ? {
-                          type: "report" as const,
-                          id: reportId,
-                          embedUrl: embedInfo.embedUrl,
-                          accessToken: embedInfo.embedToken,
-                          tokenType: models.TokenType.Embed,
-                          pageName,
-                          settings: {
-                            filterPaneEnabled: false,
-                            navContentPaneEnabled: false,
-                            background: models.BackgroundType.Transparent,
-                            layoutType: models.LayoutType.Custom,
-                            customLayout: {
-                              displayOption: models.DisplayOption.FitToWidth,
-                            },
-                          },
-                        }
-                      : {
-                          type: "visual" as const,
-                          id: reportId,
-                          embedUrl: embedInfo.embedUrl,
-                          accessToken: embedInfo.embedToken,
-                          tokenType: models.TokenType.Embed,
-                          pageName: pageName!,
-                          visualName: visualName!,
-                          settings: {
-                            filterPaneEnabled: false,
-                            navContentPaneEnabled: false,
-                            background: models.BackgroundType.Transparent,
-                            layoutType: models.LayoutType.Custom,
-                            customLayout: {
-                              displayOption: models.DisplayOption.FitToPage,
-                            },
-                          },
-                        };
-
-                  await transferredInstance.reload(fullConfig);
-                  console.log("🔄 Full reload of PowerBI instance:", embedKey);
-                } else if (transferredInstance._needsReactivate) {
-                  // Refresh token and reactivate
-                  await transferredInstance.setAccessToken(
-                    embedInfo.embedToken
-                  );
-
-                  // For reports, ensure correct page is set
-                  if (type === "report" && pageName) {
-                    try {
-                      await (transferredInstance as powerbi.Report).setPage(
-                        pageName
-                      );
-                    } catch (e) {
-                      console.warn("Could not set page after reactivation:", e);
-                    }
-                  }
-
-                  console.log("♻️ Reactivated PowerBI instance:", embedKey);
-                } else {
-                  // Normal token refresh
-                  await transferredInstance.setAccessToken(
-                    embedInfo.embedToken
-                  );
-                  console.log("🔄 Refreshed PowerBI instance token:", embedKey);
-                }
-
-                instanceRef.current = transferredInstance;
-                setLoading(false);
-
-                // Set up next refresh
-                timeoutId = setTimeout(() => {
-                  if (isMounted) setupTokenRefreshTimer();
-                }, timeUntilRefresh);
-
-                return;
-              } catch (tokenErr) {
-                console.warn(
-                  "⚠️ Token refresh failed, attempting reload:",
-                  embedKey
-                );
-                try {
-                  // Try to reload the instance with new token
-                  const config =
-                    type === "report"
-                      ? {
-                          type: "report" as const,
-                          accessToken: embedInfo.embedToken,
-                        }
-                      : {
-                          type: "visual" as const,
-                          accessToken: embedInfo.embedToken,
-                          pageName: pageName!,
-                          visualName: visualName!,
-                        };
-
-                  await transferredInstance.reload(config);
-                  console.log(
-                    "✅ Successfully reloaded PowerBI instance:",
-                    embedKey
-                  );
-
-                  instanceRef.current = transferredInstance;
-                  setLoading(false);
-                  return;
-                } catch (reloadErr) {
-                  throw reloadErr;
-                }
-              }
-            }
-            throw new Error("Transfer or reload failed");
-          } catch (err) {
-            console.warn(
-              "⚠️ Instance reuse failed, will create new:",
-              embedKey,
-              err
-            );
+        if (cachedInstance && containerRef.current) {
+          console.log("♻️ Reusing cached PowerBI instance:", embedKey);
+          
+          // Check if the embed's iframe is still in the DOM
+          const currentIframe = containerRef.current.querySelector('iframe');
+          
+          if (!currentIframe) {
+            // Iframe was removed, need to re-embed it
+            console.log("⚠️ Iframe missing, re-embedding to new container");
+            
+            // Remove from cache and create fresh
             powerBIEmbedRegistry.remove(embedKey);
+            // Let it fall through to create new instance
+          } else {
+            console.log("✅ Iframe exists, reusing instance");
+            instanceRef.current = cachedInstance;
+            
+            // Update token silently
+            try {
+              await cachedInstance.setAccessToken(embedInfo.embedToken);
+            } catch (e) {
+              console.debug("Token update not needed or failed:", e);
+            }
+            
+            setLoading(false);
+            
+            // Set up next refresh
+            timeoutId = setTimeout(() => {
+              if (isMounted) setupTokenRefreshTimer();
+            }, timeUntilRefresh);
+            
+            return;
           }
         }
 

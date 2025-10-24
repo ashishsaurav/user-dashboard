@@ -23,57 +23,13 @@ class PowerBIEmbedRegistry {
     const instance = this.embeds.get(embedKey);
     if (!instance) return null;
 
-    try {
-      // Clean up new container completely
-      while (newContainer.firstChild) {
-        newContainer.firstChild.remove();
-      }
-
-      // Create a fresh container for the PowerBI embed
-      const embedContainer = document.createElement("div");
-      embedContainer.style.width = "100%";
-      embedContainer.style.height = "100%";
-      newContainer.appendChild(embedContainer);
-
-      // Get the existing iframe's src and other attributes
-      const currentIframe =
-        instance.containerElement.getElementsByTagName("iframe")[0];
-      if (currentIframe) {
-        const srcUrl = currentIframe.src;
-
-        // Create a new iframe with same attributes
-        const newIframe = document.createElement("iframe");
-        newIframe.style.width = "100%";
-        newIframe.style.height = "100%";
-        newIframe.style.border = "none";
-        Array.from(currentIframe.attributes).forEach((attr) => {
-          if (attr.name !== "src") {
-            newIframe.setAttribute(attr.name, attr.value);
-          }
-        });
-
-        embedContainer.appendChild(newIframe);
-
-        // Set src last to trigger load
-        newIframe.src = srcUrl;
-
-        // Mark instance for reactivation
-        instance.embed._needsReactivate = true;
-      } else {
-        // If no iframe exists, mark for complete reload
-        instance.embed._needsReload = true;
-      }
-
-      instance.containerElement = embedContainer;
-      instance.lastUsed = Date.now();
-
-      console.log("🔄 Transferred PowerBI embed with new iframe:", embedKey);
-      return instance.embed;
-    } catch (err) {
-      console.warn("⚠️ Transfer error, will force reload:", embedKey, err);
-      instance.embed._needsReload = true;
-      return instance.embed;
-    }
+    // Just update the container reference
+    // Since we're keeping all tabs rendered, no actual DOM transfer needed
+    instance.containerElement = newContainer;
+    instance.lastUsed = Date.now();
+    
+    console.log("✅ Updated container reference:", embedKey);
+    return instance.embed;
   }
 
   /**

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import * as powerbi from "powerbi-client";
 import { models } from "powerbi-client";
 import { usePowerBIEmbed } from "../../hooks/usePowerBIEmbed";
@@ -11,12 +11,14 @@ interface PowerBIEmbedReportProps {
   pageName?: string; // Optional specific page to show
 }
 
-const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
+const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = memo(({
   workspaceId,
   reportId,
   reportName,
   pageName,
 }) => {
+  console.log("🔵 PowerBIEmbedReport RENDER:", reportName);
+  
   const { loading, error, containerRef, instance } = usePowerBIEmbed({
     workspaceId,
     reportId,
@@ -60,6 +62,13 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
 
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
+      
+      // Skip resize if container is hidden or has zero dimensions
+      // This happens when the tab is inactive (display: none)
+      if (width === 0 || height === 0) {
+        console.debug("Skipping resize - container is hidden");
+        return;
+      }
 
       try {
         // Resize the active page
@@ -133,6 +142,16 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
       />
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function - only re-render if these props actually change
+  return (
+    prevProps.workspaceId === nextProps.workspaceId &&
+    prevProps.reportId === nextProps.reportId &&
+    prevProps.reportName === nextProps.reportName &&
+    prevProps.pageName === nextProps.pageName
+  );
+});
+
+PowerBIEmbedReport.displayName = 'PowerBIEmbedReport';
 
 export default PowerBIEmbedReport;

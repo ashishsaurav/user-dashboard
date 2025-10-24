@@ -94,11 +94,19 @@ export class ViewsService {
       name: string;
       isVisible: boolean;
       orderIndex: number;
+      reportIds?: string[];
+      widgetIds?: string[];
     }
   ): Promise<View> {
     const view = await apiClient.put<ViewDto>(API_ENDPOINTS.VIEWS.UPDATE(id), {
       userId,
-      data,
+      data: {
+        name: data.name,
+        isVisible: data.isVisible,
+        orderIndex: data.orderIndex,
+        ...(data.reportIds && { reportIds: data.reportIds }),
+        ...(data.widgetIds && { widgetIds: data.widgetIds }),
+      },
     });
     return this.transformToFrontend(view);
   }
@@ -165,13 +173,18 @@ export class ViewsService {
   }
 
   /**
-   * Reorder reports in view
+   * Reorder reports in a view
    */
   async reorderReports(
     viewId: string,
     userId: string,
-    items: Array<{ id: string; orderIndex: number }>
+    reportIds: string[]
   ): Promise<void> {
+    const items = reportIds.map((id, index) => ({
+      id,
+      orderIndex: index,
+    }));
+
     await apiClient.post(API_ENDPOINTS.VIEWS.REORDER_REPORTS(viewId), {
       userId,
       items,
@@ -179,13 +192,18 @@ export class ViewsService {
   }
 
   /**
-   * Reorder widgets in view
+   * Reorder widgets in a view
    */
   async reorderWidgets(
     viewId: string,
     userId: string,
-    items: Array<{ id: string; orderIndex: number }>
+    widgetIds: string[]
   ): Promise<void> {
+    const items = widgetIds.map((id, index) => ({
+      id,
+      orderIndex: index,
+    }));
+
     await apiClient.post(API_ENDPOINTS.VIEWS.REORDER_WIDGETS(viewId), {
       userId,
       items,

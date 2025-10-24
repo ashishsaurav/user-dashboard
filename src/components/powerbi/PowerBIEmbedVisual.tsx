@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, memo } from "react";
 import { models } from "powerbi-client";
 import { usePowerBIEmbed } from "../../hooks/usePowerBIEmbed";
 import "./PowerBIEmbed.css";
@@ -11,7 +11,7 @@ interface PowerBIEmbedVisualProps {
   widgetName: string;
 }
 
-const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
+const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = memo(({
   workspaceId,
   reportId,
   pageName,
@@ -44,6 +44,12 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
 
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
+      
+      // Skip resize if container is hidden or has zero dimensions
+      if (width === 0 || height === 0) {
+        console.debug("Skipping visual resize - container is hidden");
+        return;
+      }
 
       try {
         instance?.powerBiEmbed?.resizeActivePage(
@@ -114,6 +120,17 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
       />
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function - only re-render if these props actually change
+  return (
+    prevProps.workspaceId === nextProps.workspaceId &&
+    prevProps.reportId === nextProps.reportId &&
+    prevProps.pageName === nextProps.pageName &&
+    prevProps.visualName === nextProps.visualName &&
+    prevProps.widgetName === nextProps.widgetName
+  );
+});
+
+PowerBIEmbedVisual.displayName = 'PowerBIEmbedVisual';
 
 export default PowerBIEmbedVisual;
