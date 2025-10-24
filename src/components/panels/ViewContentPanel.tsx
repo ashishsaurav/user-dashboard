@@ -1,4 +1,4 @@
-import React, { useState, memo } from "react";
+import React, { useState, useMemo } from "react";
 import { View, Report, Widget } from "../../types";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 import PowerBIEmbedReport from "../powerbi/PowerBIEmbedReport";
@@ -17,7 +17,7 @@ interface ViewContentPanelProps {
   onReorderWidgets?: (widgetIds: string[]) => void; // NEW: Widget ordering
 }
 
-const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
+const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
   type,
   selectedView,
   reports,
@@ -29,22 +29,11 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
 }) => {
   const [activeReportTab, setActiveReportTab] = useState<string | null>(null);
   
-  // Local state for reordered IDs (doesn't trigger parent re-render)
-  const [localReportIds, setLocalReportIds] = useState<string[]>(selectedView?.reportIds || []);
-  const [localWidgetIds, setLocalWidgetIds] = useState<string[]>(selectedView?.widgetIds || []);
-  
-  // Sync local state when selectedView changes from parent
-  React.useEffect(() => {
-    if (selectedView?.reportIds) {
-      setLocalReportIds(selectedView.reportIds);
-    }
-  }, [selectedView?.reportIds]);
-  
-  React.useEffect(() => {
-    if (selectedView?.widgetIds) {
-      setLocalWidgetIds(selectedView.widgetIds);
-    }
-  }, [selectedView?.widgetIds]);
+  // Use refs to store order without triggering re-renders
+  const reportOrderMapRef = React.useRef<Record<string, number>>({});
+  const widgetOrderMapRef = React.useRef<Record<string, number>>({});
+  const tabNavRef = React.useRef<HTMLDivElement>(null);
+  const widgetsGridRef = React.useRef<HTMLDivElement>(null);
 
   // NEW: Drag and drop state for reports (tabs)
   const [draggedReportTab, setDraggedReportTab] = useState<string | null>(null);
@@ -85,15 +74,13 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
   }
 
   const getViewReports = () => {
-    // Use local reordered IDs instead of selectedView
-    return localReportIds
+    return selectedView.reportIds
       .map((id) => reports.find((r) => r.id === id))
       .filter(Boolean) as Report[];
   };
 
   const getViewWidgets = () => {
-    // Use local reordered IDs instead of selectedView
-    return localWidgetIds
+    return selectedView.widgetIds
       .map((id) => widgets.find((w) => w.id === id))
       .filter(Boolean) as Widget[];
   };
@@ -184,12 +171,29 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
 
     newOrder.splice(insertIndex, 0, removed);
 
-    console.log("🎯 ViewContentPanel: Updating local report order:", newOrder);
+    console.log("🎯 ViewContentPanel: Reordering tabs with CSS order (no re-render):", newOrder);
 
-    // Update LOCAL state only (doesn't trigger parent re-render)
-    setLocalReportIds(newOrder);
+    // Update order map in ref (doesn't trigger re-render)
+    const orderMap: Record<string, number> = {};
+    newOrder.forEach((id, index) => {
+      orderMap[id] = index;
+    });
+    reportOrderMapRef.current = orderMap;
     
-    // Notify parent (but parent should do nothing - just for future API sync)
+    // Manually update DOM elements with CSS order (no React re-render!)
+    if (tabNavRef.current) {
+      const tabs = tabNavRef.current.querySelectorAll('.tab-item');
+      tabs.forEach((tab) => {
+        const tabElement = tab as HTMLElement;
+        const tabKey = tabElement.getAttribute('data-report-id');
+        if (tabKey && orderMap[tabKey] !== undefined) {
+          tabElement.style.order = String(orderMap[tabKey]);
+          console.log(`  Set tab ${tabKey} order to ${orderMap[tabKey]}`);
+        }
+      });
+    }
+    
+    // Notify parent (but parent should do nothing)
     if (onReorderReports) {
       onReorderReports(newOrder);
     }
@@ -260,12 +264,29 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
     const [removed] = newOrder.splice(draggedIndex, 1);
     newOrder.splice(targetIndex, 0, removed);
 
-    console.log("🎯 ViewContentPanel: Updating local widget order:", newOrder);
+    console.log("🎯 ViewContentPanel: Reordering widgets with CSS order (no re-render):", newOrder);
 
-    // Update LOCAL state only (doesn't trigger parent re-render)
-    setLocalWidgetIds(newOrder);
+    // Update order map in ref (doesn't trigger re-render)
+    const orderMap: Record<string, number> = {};
+    newOrder.forEach((id, index) => {
+      orderMap[id] = index;
+    });
+    widgetOrderMapRef.current = orderMap;
     
-    // Notify parent (but parent should do nothing - just for future API sync)
+    // Manually update DOM elements with CSS order (no React re-render!)
+    if (widgetsGridRef.current) {
+      const widgets = widgetsGridRef.current.querySelectorAll('.widget-card');
+      widgets.forEach((widget) => {
+        const widgetElement = widget as HTMLElement;
+        const widgetKey = widgetElement.getAttribute('data-widget-id');
+        if (widgetKey && orderMap[widgetKey] !== undefined) {
+          widgetElement.style.order = String(orderMap[widgetKey]);
+          console.log(`  Set widget ${widgetKey} order to ${orderMap[widgetKey]}`);
+        }
+      });
+    }
+    
+    // Notify parent (but parent should do nothing)
     if (onReorderWidgets) {
       onReorderWidgets(newOrder);
     }
@@ -351,6 +372,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
               return (
                 <div
                   key={tabStableKey}
+                  data-report-id={report.id}
                   className={`tab-item orderable-tab ${
                     activeReportTab === report.id ? "active" : ""
                   } ${
@@ -488,7 +510,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
 
   return (
     <div className="content-panel widgets-panel">
-      <div className="widgets-grid orderable-widgets">
+      <div ref={widgetsGridRef} className="widgets-grid orderable-widgets">
         {viewWidgets.map((widget) => {
           const isDragOver = dragOverWidget === widget.id;
           const isDragging = draggedWidget === widget.id;
@@ -520,6 +542,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
           return (
             <div
               key={widgetStableKey}
+              data-widget-id={widget.id}
               className={`widget-card orderable-widget ${
                 isDragging ? "dragging" : ""
               } ${isDragOver ? "drag-over" : ""}`}
@@ -687,8 +710,6 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
       </svg>
     );
   }
-});
-
-ViewContentPanel.displayName = 'ViewContentPanel';
+};
 
 export default ViewContentPanel;
