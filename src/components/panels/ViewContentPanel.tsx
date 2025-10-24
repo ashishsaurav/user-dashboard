@@ -181,17 +181,23 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
     reportOrderMapRef.current = orderMap;
     
     // Manually update DOM elements with CSS order (no React re-render!)
-    if (tabNavRef.current) {
-      const tabs = tabNavRef.current.querySelectorAll('.tab-item');
-      tabs.forEach((tab) => {
-        const tabElement = tab as HTMLElement;
-        const tabKey = tabElement.getAttribute('data-report-id');
-        if (tabKey && orderMap[tabKey] !== undefined) {
-          tabElement.style.order = String(orderMap[tabKey]);
-          console.log(`  Set tab ${tabKey} order to ${orderMap[tabKey]}`);
-        }
-      });
-    }
+    setTimeout(() => {
+      if (tabNavRef.current) {
+        const tabs = tabNavRef.current.querySelectorAll('.tab-item');
+        console.log(`  Found ${tabs.length} tab elements`);
+        tabs.forEach((tab) => {
+          const tabElement = tab as HTMLElement;
+          const tabKey = tabElement.getAttribute('data-report-id');
+          console.log(`  Checking tab: data-report-id="${tabKey}"`);
+          if (tabKey && orderMap[tabKey] !== undefined) {
+            tabElement.style.order = String(orderMap[tabKey]);
+            console.log(`    ✅ Set tab "${tabKey}" order to ${orderMap[tabKey]}`);
+          }
+        });
+      } else {
+        console.warn("  ⚠️ tabNavRef.current is null");
+      }
+    }, 0);
     
     // Notify parent (but parent should do nothing)
     if (onReorderReports) {
@@ -274,17 +280,23 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
     widgetOrderMapRef.current = orderMap;
     
     // Manually update DOM elements with CSS order (no React re-render!)
-    if (widgetsGridRef.current) {
-      const widgets = widgetsGridRef.current.querySelectorAll('.widget-card');
-      widgets.forEach((widget) => {
-        const widgetElement = widget as HTMLElement;
-        const widgetKey = widgetElement.getAttribute('data-widget-id');
-        if (widgetKey && orderMap[widgetKey] !== undefined) {
-          widgetElement.style.order = String(orderMap[widgetKey]);
-          console.log(`  Set widget ${widgetKey} order to ${orderMap[widgetKey]}`);
-        }
-      });
-    }
+    setTimeout(() => {
+      if (widgetsGridRef.current) {
+        const widgets = widgetsGridRef.current.querySelectorAll('.widget-card');
+        console.log(`  Found ${widgets.length} widget elements`);
+        widgets.forEach((widget) => {
+          const widgetElement = widget as HTMLElement;
+          const widgetKey = widgetElement.getAttribute('data-widget-id');
+          console.log(`  Checking widget: data-widget-id="${widgetKey}"`);
+          if (widgetKey && orderMap[widgetKey] !== undefined) {
+            widgetElement.style.order = String(orderMap[widgetKey]);
+            console.log(`    ✅ Set widget "${widgetKey}" order to ${orderMap[widgetKey]}`);
+          }
+        });
+      } else {
+        console.warn("  ⚠️ widgetsGridRef.current is null");
+      }
+    }, 0);
     
     // Notify parent (but parent should do nothing)
     if (onReorderWidgets) {
