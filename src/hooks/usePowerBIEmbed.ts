@@ -74,6 +74,7 @@ export function usePowerBIEmbed({
     });
     
     console.log("🟢 usePowerBIEmbed EFFECT RUNNING for:", embedKey);
+    console.log("  Container ref exists:", !!containerRef.current);
 
     const setupTokenRefreshTimer = async () => {
       try {
@@ -102,7 +103,32 @@ export function usePowerBIEmbed({
         if (cachedInstance && containerRef.current) {
           console.log("♻️ Reusing cached PowerBI instance:", embedKey);
           
-          // Try to transfer the iframe to this container
+          // Check if iframe already exists in this container
+          const existingIframe = containerRef.current.querySelector('iframe');
+          
+          if (existingIframe) {
+            console.log("✅ iframe already in container, no transfer needed!");
+            instanceRef.current = cachedInstance;
+            
+            // Update token silently
+            try {
+              await cachedInstance.setAccessToken(embedInfo.embedToken);
+            } catch (e) {
+              console.debug("Token update not needed or failed:", e);
+            }
+            
+            setLoading(false);
+            
+            // Set up next refresh
+            timeoutId = setTimeout(() => {
+              if (isMounted) setupTokenRefreshTimer();
+            }, timeUntilRefresh);
+            
+            return;
+          }
+          
+          // iframe not in container, try to transfer it
+          console.log("📦 iframe not in container, attempting transfer...");
           const transferredInstance = powerBIEmbedRegistry.transfer(embedKey, containerRef.current);
           
           if (transferredInstance) {
