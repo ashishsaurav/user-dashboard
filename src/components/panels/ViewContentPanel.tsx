@@ -215,8 +215,9 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
       }
     }, 0);
     
-    // Notify parent (but parent should do nothing)
+    // Notify parent to save new order to backend
     if (onReorderReports) {
+      console.log("📤 Sending new report order to parent for backend save");
       onReorderReports(newOrder);
     }
 
@@ -314,8 +315,9 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
       }
     }, 0);
     
-    // Notify parent (but parent should do nothing)
+    // Notify parent to save new order to backend
     if (onReorderWidgets) {
+      console.log("📤 Sending new widget order to parent for backend save");
       onReorderWidgets(newOrder);
     }
 
