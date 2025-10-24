@@ -201,6 +201,44 @@ export class ViewsService {
   }
 
   /**
+   * Reorder reports in a view
+   */
+  async reorderReports(
+    viewId: string,
+    userId: string,
+    reportIds: string[]
+  ): Promise<void> {
+    const items = reportIds.map((id, index) => ({
+      id,
+      orderIndex: index,
+    }));
+
+    await apiClient.post(API_ENDPOINTS.VIEWS.REORDER_REPORTS(viewId), {
+      userId,
+      items,
+    });
+  }
+
+  /**
+   * Reorder widgets in a view
+   */
+  async reorderWidgets(
+    viewId: string,
+    userId: string,
+    widgetIds: string[]
+  ): Promise<void> {
+    const items = widgetIds.map((id, index) => ({
+      id,
+      orderIndex: index,
+    }));
+
+    await apiClient.post(API_ENDPOINTS.VIEWS.REORDER_WIDGETS(viewId), {
+      userId,
+      items,
+    });
+  }
+
+  /**
    * Transform backend DTO to frontend type
    * Note: Backend returns ALL reports/widgets in the view,
    * but frontend will filter by role-accessible ones
