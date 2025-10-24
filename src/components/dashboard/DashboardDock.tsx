@@ -461,13 +461,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     console.log("💾 Saving report order to backend:", newReportOrder);
     
     try {
-      // Update the view with new report order
-      const updatedView = { ...selectedView, reportIds: newReportOrder };
-      
-      // Save to backend
-      await viewsService.updateView(user.name, updatedView);
+      // Save to backend with correct signature
+      await viewsService.updateView(selectedView.id, user.name, {
+        name: selectedView.name,
+        isVisible: selectedView.isVisible,
+        orderIndex: selectedView.order,
+        reportIds: newReportOrder,
+        widgetIds: selectedView.widgetIds,
+      });
       
       // Update local state (without triggering layout reload)
+      const updatedView = { ...selectedView, reportIds: newReportOrder };
       setSelectedView(updatedView);
       
       console.log("✅ Report order saved successfully");
@@ -482,13 +486,17 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     console.log("💾 Saving widget order to backend:", newWidgetOrder);
     
     try {
-      // Update the view with new widget order
-      const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
-      
-      // Save to backend
-      await viewsService.updateView(user.name, updatedView);
+      // Save to backend with correct signature
+      await viewsService.updateView(selectedView.id, user.name, {
+        name: selectedView.name,
+        isVisible: selectedView.isVisible,
+        orderIndex: selectedView.order,
+        reportIds: selectedView.reportIds,
+        widgetIds: newWidgetOrder,
+      });
       
       // Update local state (without triggering layout reload)
+      const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
       setSelectedView(updatedView);
       
       console.log("✅ Widget order saved successfully");
