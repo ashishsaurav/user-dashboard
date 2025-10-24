@@ -173,34 +173,6 @@ export class ViewsService {
   }
 
   /**
-   * Reorder reports in view
-   */
-  async reorderReports(
-    viewId: string,
-    userId: string,
-    items: Array<{ id: string; orderIndex: number }>
-  ): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.VIEWS.REORDER_REPORTS(viewId), {
-      userId,
-      items,
-    });
-  }
-
-  /**
-   * Reorder widgets in view
-   */
-  async reorderWidgets(
-    viewId: string,
-    userId: string,
-    items: Array<{ id: string; orderIndex: number }>
-  ): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.VIEWS.REORDER_WIDGETS(viewId), {
-      userId,
-      items,
-    });
-  }
-
-  /**
    * Reorder reports in a view
    */
   async reorderReports(

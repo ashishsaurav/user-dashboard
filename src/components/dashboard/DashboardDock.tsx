@@ -461,12 +461,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     console.log("💾 Saving report order to backend:", newReportOrder);
     
     try {
-      // Call dedicated reorder endpoint
+      // Call dedicated reorder endpoint - DON'T update local state to avoid reload
       await viewsService.reorderReports(selectedView.id, user.name, newReportOrder);
-      
-      // Update local state (without triggering layout reload)
-      const updatedView = { ...selectedView, reportIds: newReportOrder };
-      setSelectedView(updatedView);
       
       console.log("✅ Report order saved successfully");
     } catch (error) {
@@ -480,12 +476,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     console.log("💾 Saving widget order to backend:", newWidgetOrder);
     
     try {
-      // Call dedicated reorder endpoint
+      // Call dedicated reorder endpoint - DON'T update local state to avoid reload
       await viewsService.reorderWidgets(selectedView.id, user.name, newWidgetOrder);
-      
-      // Update local state (without triggering layout reload)
-      const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
-      setSelectedView(updatedView);
       
       console.log("✅ Widget order saved successfully");
     } catch (error) {
