@@ -455,17 +455,47 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Ref to track if we're in a reorder operation
   const isReorderingRef = useRef<boolean>(false);
 
-  const handleReorderReports = useCallback((newReportOrder: string[]) => {
-    // DO NOTHING - let ViewContentPanel handle reordering internally
-    // This prevents triggering DashboardDock re-renders and rc-dock layout reloads
-    console.log("🎯 Report reorder - handled internally by ViewContentPanel");
-  }, []);
+  const handleReorderReports = useCallback(async (newReportOrder: string[]) => {
+    if (!selectedView) return;
+    
+    console.log("💾 Saving report order to backend:", newReportOrder);
+    
+    try {
+      // Update the view with new report order
+      const updatedView = { ...selectedView, reportIds: newReportOrder };
+      
+      // Save to backend
+      await viewsService.updateView(user.name, updatedView);
+      
+      // Update local state (without triggering layout reload)
+      setSelectedView(updatedView);
+      
+      console.log("✅ Report order saved successfully");
+    } catch (error) {
+      console.error("❌ Failed to save report order:", error);
+    }
+  }, [selectedView, user.name]);
 
-  const handleReorderWidgets = useCallback((newWidgetOrder: string[]) => {
-    // DO NOTHING - let ViewContentPanel handle reordering internally
-    // This prevents triggering DashboardDock re-renders and rc-dock layout reloads
-    console.log("🎯 Widget reorder - handled internally by ViewContentPanel");
-  }, []);
+  const handleReorderWidgets = useCallback(async (newWidgetOrder: string[]) => {
+    if (!selectedView) return;
+    
+    console.log("💾 Saving widget order to backend:", newWidgetOrder);
+    
+    try {
+      // Update the view with new widget order
+      const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
+      
+      // Save to backend
+      await viewsService.updateView(user.name, updatedView);
+      
+      // Update local state (without triggering layout reload)
+      setSelectedView(updatedView);
+      
+      console.log("✅ Widget order saved successfully");
+    } catch (error) {
+      console.error("❌ Failed to save widget order:", error);
+    }
+  }, [selectedView, user.name]);
 
   // Get accessible reports and widgets from API
   const getUserAccessibleReports = (): Report[] => {
