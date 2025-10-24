@@ -298,6 +298,21 @@ export function usePowerBIEmbed({
           instance.on("loaded", () => {
             console.log("✅ PowerBI instance loaded:", embedKey);
             if (isMounted) setLoading(false);
+            
+            // Update iframe reference in registry after PowerBI creates it
+            setTimeout(() => {
+              if (containerRef.current) {
+                const iframe = containerRef.current.getElementsByTagName("iframe")[0];
+                if (iframe) {
+                  const cachedInstance = powerBIEmbedRegistry.get(embedKey);
+                  if (cachedInstance) {
+                    // Update the stored instance with iframe reference
+                    powerBIEmbedRegistry.set(embedKey, instance, containerRef.current, type);
+                    console.log("🔄 Updated iframe reference in registry:", embedKey);
+                  }
+                }
+              }
+            }, 500);
           });
 
           instance.on("rendered", () => {

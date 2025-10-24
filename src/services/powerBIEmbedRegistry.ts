@@ -7,6 +7,7 @@
 interface EmbedInstance {
   embed: any; // powerbi.Report or powerbi.Visual
   containerElement: HTMLElement;
+  iframeElement: HTMLIFrameElement | null; // Direct reference to iframe
   embedKey: string;
   type: "report" | "visual";
   lastUsed: number;
@@ -30,18 +31,49 @@ class PowerBIEmbedRegistry {
         newContainer.firstChild.remove();
       }
 
-      // Get the existing iframe
-      const currentIframe =
-        instance.containerElement.getElementsByTagName("iframe")[0];
+      // Try to get iframe from stored reference first
+      let currentIframe = instance.iframeElement;
+      
+      // Verify iframe is still in DOM
+      if (currentIframe && !document.body.contains(currentIframe)) {
+        console.log("⚠️ Stored iframe no longer in DOM for", embedKey);
+        currentIframe = null;
+      }
+      
+      // If no stored iframe or it's gone, try to find it in current container
+      if (!currentIframe) {
+        currentIframe = instance.containerElement.getElementsByTagName("iframe")[0];
+      }
+      
+      // If still not found, search document for it
+      if (!currentIframe) {
+        const allIframes = Array.from(document.getElementsByTagName("iframe"));
+        // Look for iframe with matching src that contains our reportId
+        const reportId = embedKey.split(':')[2]; // Extract reportId from key
+        currentIframe = allIframes.find(iframe => 
+          iframe.src && iframe.src.includes(reportId)
+        ) || null;
+        
+        if (currentIframe) {
+          console.log("🔍 Found orphaned iframe in document for", embedKey);
+        }
+      }
       
       if (currentIframe) {
         // OPTIMIZED: Move iframe directly instead of recreating
         // This prevents reload and is instant
         newContainer.appendChild(currentIframe);
         
-        // Update container reference
+        // Update container and iframe references
         instance.containerElement = newContainer;
+        instance.iframeElement = currentIframe;
         instance.lastUsed = Date.now();
+        
+        // Ensure iframe is visible and properly sized
+        currentIframe.style.width = "100%";
+        currentIframe.style.height = "100%";
+        currentIframe.style.border = "none";
+        currentIframe.style.display = "block";
         
         // No need for reactivation - iframe is already live
         console.log("⚡ Instantly transferred PowerBI embed (no reload):", embedKey);
@@ -56,7 +88,7 @@ class PowerBIEmbedRegistry {
         instance.containerElement = embedContainer;
         instance.embed._needsReload = true;
         
-        console.log("⚠️ No iframe found, will reload:", embedKey);
+        console.log("⚠️ No iframe found anywhere, will reload:", embedKey);
         return instance.embed;
       }
     } catch (err) {
@@ -114,9 +146,13 @@ class PowerBIEmbedRegistry {
       this.cleanupOldest();
     }
 
+    // Get iframe element immediately for storage
+    const iframeElement = containerElement.getElementsByTagName("iframe")[0] || null;
+
     this.embeds.set(embedKey, {
       embed,
       containerElement,
+      iframeElement,
       embedKey,
       type,
       lastUsed: Date.now(),
@@ -124,7 +160,7 @@ class PowerBIEmbedRegistry {
     console.log(
       "💾 Cached PowerBI embed:",
       embedKey,
-      `(total: ${this.embeds.size})`
+      `(total: ${this.embeds.size}, iframe: ${iframeElement ? 'found' : 'pending'})`
     );
   }
 

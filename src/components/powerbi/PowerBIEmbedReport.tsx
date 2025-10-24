@@ -60,6 +60,13 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = memo(({
 
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
+      
+      // Skip resize if container is hidden or has zero dimensions
+      // This happens when the tab is inactive (display: none)
+      if (width === 0 || height === 0) {
+        console.debug("Skipping resize - container is hidden");
+        return;
+      }
 
       try {
         // Resize the active page

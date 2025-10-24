@@ -44,6 +44,12 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = memo(({
 
       const width = containerRef.current.clientWidth;
       const height = containerRef.current.clientHeight;
+      
+      // Skip resize if container is hidden or has zero dimensions
+      if (width === 0 || height === 0) {
+        console.debug("Skipping visual resize - container is hidden");
+        return;
+      }
 
       try {
         instance?.powerBiEmbed?.resizeActivePage(

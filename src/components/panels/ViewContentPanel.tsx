@@ -395,8 +395,16 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               return (
                 <div 
                   key={stableKey}
-                  className="tab-content"
-                  style={{ display: isActive ? 'block' : 'none' }}
+                  className={`tab-content ${isActive ? 'tab-content-active' : 'tab-content-hidden'}`}
+                  style={{
+                    position: isActive ? 'relative' : 'absolute',
+                    visibility: isActive ? 'visible' : 'hidden',
+                    width: '100%',
+                    height: '100%',
+                    top: 0,
+                    left: 0,
+                    zIndex: isActive ? 1 : -1
+                  }}
                 >
                   {hasPowerBIConfig ? (
                     <div className="powerbi-report-container">
