@@ -72,12 +72,16 @@ export function usePowerBIEmbed({
       pageName,
       visualName,
     });
+    
+    console.log("🟢 usePowerBIEmbed EFFECT RUNNING for:", embedKey);
 
     const setupTokenRefreshTimer = async () => {
       try {
         // Check cache first - before showing loading
         const cachedInstance = powerBIEmbedRegistry.get(embedKey);
         const hasCache = !!cachedInstance;
+        
+        console.log(`🔍 Cache check for ${embedKey}:`, hasCache ? 'FOUND' : 'NOT FOUND');
         
         // Only show loading if we don't have a cached instance
         if (!hasCache) {

@@ -456,50 +456,16 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   const isReorderingRef = useRef<boolean>(false);
 
   const handleReorderReports = useCallback((newReportOrder: string[]) => {
-    if (!selectedView) return;
-    
-    // OPTIMIZATION: Only update if order actually changed
-    if (JSON.stringify(selectedView.reportIds) === JSON.stringify(newReportOrder)) {
-      console.log("📌 Report order unchanged, skipping update");
-      return;
-    }
-    
-    // Mark that we're reordering (don't trigger layout reload)
-    isReorderingRef.current = true;
-    
-    const updatedView = { ...selectedView, reportIds: newReportOrder };
-    setSelectedView(updatedView);
-    
-    // Reset flag after React has processed the update
-    setTimeout(() => {
-      isReorderingRef.current = false;
-    }, 100);
-    
-    console.log("🔄 Reordered reports (no layout reload)");
-  }, [selectedView]);
+    // DO NOTHING - let ViewContentPanel handle reordering internally
+    // This prevents triggering DashboardDock re-renders and rc-dock layout reloads
+    console.log("🎯 Report reorder - handled internally by ViewContentPanel");
+  }, []);
 
   const handleReorderWidgets = useCallback((newWidgetOrder: string[]) => {
-    if (!selectedView) return;
-    
-    // OPTIMIZATION: Only update if order actually changed
-    if (JSON.stringify(selectedView.widgetIds) === JSON.stringify(newWidgetOrder)) {
-      console.log("📌 Widget order unchanged, skipping update");
-      return;
-    }
-    
-    // Mark that we're reordering (don't trigger layout reload)
-    isReorderingRef.current = true;
-    
-    const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
-    setSelectedView(updatedView);
-    
-    // Reset flag after React has processed the update
-    setTimeout(() => {
-      isReorderingRef.current = false;
-    }, 100);
-    
-    console.log("🔄 Reordered widgets (no layout reload)");
-  }, [selectedView]);
+    // DO NOTHING - let ViewContentPanel handle reordering internally
+    // This prevents triggering DashboardDock re-renders and rc-dock layout reloads
+    console.log("🎯 Widget reorder - handled internally by ViewContentPanel");
+  }, []);
 
   // Get accessible reports and widgets from API
   const getUserAccessibleReports = (): Report[] => {

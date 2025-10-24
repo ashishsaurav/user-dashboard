@@ -17,6 +17,8 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = memo(({
   reportName,
   pageName,
 }) => {
+  console.log("🔵 PowerBIEmbedReport RENDER:", reportName);
+  
   const { loading, error, containerRef, instance } = usePowerBIEmbed({
     workspaceId,
     reportId,

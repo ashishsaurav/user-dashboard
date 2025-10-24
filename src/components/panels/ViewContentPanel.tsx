@@ -28,6 +28,23 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
   onReorderWidgets,
 }) => {
   const [activeReportTab, setActiveReportTab] = useState<string | null>(null);
+  
+  // Local state for reordered IDs (doesn't trigger parent re-render)
+  const [localReportIds, setLocalReportIds] = useState<string[]>(selectedView?.reportIds || []);
+  const [localWidgetIds, setLocalWidgetIds] = useState<string[]>(selectedView?.widgetIds || []);
+  
+  // Sync local state when selectedView changes from parent
+  React.useEffect(() => {
+    if (selectedView?.reportIds) {
+      setLocalReportIds(selectedView.reportIds);
+    }
+  }, [selectedView?.reportIds]);
+  
+  React.useEffect(() => {
+    if (selectedView?.widgetIds) {
+      setLocalWidgetIds(selectedView.widgetIds);
+    }
+  }, [selectedView?.widgetIds]);
 
   // NEW: Drag and drop state for reports (tabs)
   const [draggedReportTab, setDraggedReportTab] = useState<string | null>(null);
@@ -68,13 +85,15 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
   }
 
   const getViewReports = () => {
-    return selectedView.reportIds
+    // Use local reordered IDs instead of selectedView
+    return localReportIds
       .map((id) => reports.find((r) => r.id === id))
       .filter(Boolean) as Report[];
   };
 
   const getViewWidgets = () => {
-    return selectedView.widgetIds
+    // Use local reordered IDs instead of selectedView
+    return localWidgetIds
       .map((id) => widgets.find((w) => w.id === id))
       .filter(Boolean) as Widget[];
   };
@@ -165,7 +184,12 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
 
     newOrder.splice(insertIndex, 0, removed);
 
-    // Call reorder handler
+    console.log("🎯 ViewContentPanel: Updating local report order:", newOrder);
+
+    // Update LOCAL state only (doesn't trigger parent re-render)
+    setLocalReportIds(newOrder);
+    
+    // Notify parent (but parent should do nothing - just for future API sync)
     if (onReorderReports) {
       onReorderReports(newOrder);
     }
@@ -236,7 +260,12 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
     const [removed] = newOrder.splice(draggedIndex, 1);
     newOrder.splice(targetIndex, 0, removed);
 
-    // Call reorder handler
+    console.log("🎯 ViewContentPanel: Updating local widget order:", newOrder);
+
+    // Update LOCAL state only (doesn't trigger parent re-render)
+    setLocalWidgetIds(newOrder);
+    
+    // Notify parent (but parent should do nothing - just for future API sync)
     if (onReorderWidgets) {
       onReorderWidgets(newOrder);
     }
