@@ -99,25 +99,39 @@ export function usePowerBIEmbed({
         if (!isMounted) return;
 
         // Try to reuse existing embed from registry
-        if (cachedInstance) {
+        if (cachedInstance && containerRef.current) {
           console.log("♻️ Reusing cached PowerBI instance:", embedKey);
-          instanceRef.current = cachedInstance;
           
-          // Update token silently
-          try {
-            await cachedInstance.setAccessToken(embedInfo.embedToken);
-          } catch (e) {
-            console.debug("Token update not needed or failed:", e);
+          // Check if the embed's iframe is still in the DOM
+          const currentIframe = containerRef.current.querySelector('iframe');
+          
+          if (!currentIframe) {
+            // Iframe was removed, need to re-embed it
+            console.log("⚠️ Iframe missing, re-embedding to new container");
+            
+            // Remove from cache and create fresh
+            powerBIEmbedRegistry.remove(embedKey);
+            // Let it fall through to create new instance
+          } else {
+            console.log("✅ Iframe exists, reusing instance");
+            instanceRef.current = cachedInstance;
+            
+            // Update token silently
+            try {
+              await cachedInstance.setAccessToken(embedInfo.embedToken);
+            } catch (e) {
+              console.debug("Token update not needed or failed:", e);
+            }
+            
+            setLoading(false);
+            
+            // Set up next refresh
+            timeoutId = setTimeout(() => {
+              if (isMounted) setupTokenRefreshTimer();
+            }, timeUntilRefresh);
+            
+            return;
           }
-          
-          setLoading(false);
-          
-          // Set up next refresh
-          timeoutId = setTimeout(() => {
-            if (isMounted) setupTokenRefreshTimer();
-          }, timeUntilRefresh);
-          
-          return;
         }
 
         // Create new embed if needed
