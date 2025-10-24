@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, memo } from "react";
 import { models } from "powerbi-client";
 import { usePowerBIEmbed } from "../../hooks/usePowerBIEmbed";
 import "./PowerBIEmbed.css";
@@ -11,7 +11,7 @@ interface PowerBIEmbedVisualProps {
   widgetName: string;
 }
 
-const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
+const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = memo(({
   workspaceId,
   reportId,
   pageName,
@@ -114,6 +114,17 @@ const PowerBIEmbedVisual: React.FC<PowerBIEmbedVisualProps> = ({
       />
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function - only re-render if these props actually change
+  return (
+    prevProps.workspaceId === nextProps.workspaceId &&
+    prevProps.reportId === nextProps.reportId &&
+    prevProps.pageName === nextProps.pageName &&
+    prevProps.visualName === nextProps.visualName &&
+    prevProps.widgetName === nextProps.widgetName
+  );
+});
+
+PowerBIEmbedVisual.displayName = 'PowerBIEmbedVisual';
 
 export default PowerBIEmbedVisual;

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, memo } from "react";
 import * as powerbi from "powerbi-client";
 import { models } from "powerbi-client";
 import { usePowerBIEmbed } from "../../hooks/usePowerBIEmbed";
@@ -11,7 +11,7 @@ interface PowerBIEmbedReportProps {
   pageName?: string; // Optional specific page to show
 }
 
-const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
+const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = memo(({
   workspaceId,
   reportId,
   reportName,
@@ -133,6 +133,16 @@ const PowerBIEmbedReport: React.FC<PowerBIEmbedReportProps> = ({
       />
     </div>
   );
-};
+}, (prevProps, nextProps) => {
+  // Custom comparison function - only re-render if these props actually change
+  return (
+    prevProps.workspaceId === nextProps.workspaceId &&
+    prevProps.reportId === nextProps.reportId &&
+    prevProps.reportName === nextProps.reportName &&
+    prevProps.pageName === nextProps.pageName
+  );
+});
+
+PowerBIEmbedReport.displayName = 'PowerBIEmbedReport';
 
 export default PowerBIEmbedReport;

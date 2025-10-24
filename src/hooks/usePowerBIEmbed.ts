@@ -29,7 +29,21 @@ export function usePowerBIEmbed({
   const containerRef = useRef<HTMLDivElement>(
     null
   ) as React.RefObject<HTMLDivElement>;
-  const [loading, setLoading] = useState(true);
+  
+  // Generate embed key
+  const embedKey = powerBIEmbedRegistry.generateKey(type, {
+    workspaceId,
+    reportId,
+    pageName,
+    visualName,
+  });
+  
+  // Use lazy initializer to check cache only on first render
+  const [loading, setLoading] = useState(() => {
+    const hasCache = powerBIEmbedRegistry.has(embedKey);
+    return !hasCache; // Don't show loading if cached
+  });
+  
   const [error, setError] = useState("");
   const instanceRef = useRef<powerbi.Report | powerbi.Visual | null>(null);
   const powerbiService = useRef(
@@ -39,6 +53,14 @@ export function usePowerBIEmbed({
       powerbi.factories.routerFactory
     )
   );
+  
+  // Set cached instance immediately if available
+  if (!instanceRef.current) {
+    const cached = powerBIEmbedRegistry.get(embedKey);
+    if (cached) {
+      instanceRef.current = cached;
+    }
+  }
 
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
@@ -53,6 +75,15 @@ export function usePowerBIEmbed({
 
     const setupTokenRefreshTimer = async () => {
       try {
+        // Check cache first - before showing loading
+        const cachedInstance = powerBIEmbedRegistry.get(embedKey);
+        const hasCache = !!cachedInstance;
+        
+        // Only show loading if we don't have a cached instance
+        if (!hasCache) {
+          setLoading(true);
+        }
+        
         const embedInfo = await powerBIService.getEmbedToken(
           workspaceId,
           reportId
@@ -64,7 +95,6 @@ export function usePowerBIEmbed({
         if (!isMounted) return;
 
         // Try to reuse existing embed from registry
-        const cachedInstance = powerBIEmbedRegistry.get(embedKey);
         if (cachedInstance) {
           try {
             // First try to transfer the instance
@@ -77,6 +107,9 @@ export function usePowerBIEmbed({
             }
 
             if (transferredInstance) {
+              // Set instance immediately for instant display
+              instanceRef.current = transferredInstance;
+              
               try {
                 if (transferredInstance._needsReload) {
                   // Full reload with complete config
@@ -119,9 +152,10 @@ export function usePowerBIEmbed({
                         };
 
                   await transferredInstance.reload(fullConfig);
+                  delete transferredInstance._needsReload;
                   console.log("🔄 Full reload of PowerBI instance:", embedKey);
                 } else if (transferredInstance._needsReactivate) {
-                  // Refresh token and reactivate
+                  // Refresh token and reactivate (no loading state needed)
                   await transferredInstance.setAccessToken(
                     embedInfo.embedToken
                   );
@@ -137,17 +171,25 @@ export function usePowerBIEmbed({
                     }
                   }
 
+                  delete transferredInstance._needsReactivate;
                   console.log("♻️ Reactivated PowerBI instance:", embedKey);
                 } else {
-                  // Normal token refresh
-                  await transferredInstance.setAccessToken(
-                    embedInfo.embedToken
-                  );
-                  console.log("🔄 Refreshed PowerBI instance token:", embedKey);
+                  // Instant transfer - no reload needed!
+                  // Just verify token is still valid, refresh if needed
+                  try {
+                    await transferredInstance.setAccessToken(
+                      embedInfo.embedToken
+                    );
+                    console.log("⚡ Instant transfer complete (no reload):", embedKey);
+                  } catch (e) {
+                    console.debug("Token refresh not needed:", e);
+                  }
                 }
 
-                instanceRef.current = transferredInstance;
-                setLoading(false);
+                // Loading should already be false for cached instances
+                if (loading) {
+                  setLoading(false);
+                }
 
                 // Set up next refresh
                 timeoutId = setTimeout(() => {
