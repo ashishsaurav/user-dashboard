@@ -354,7 +354,7 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
     return (
       <div className="content-panel reports-panel">
         <div className="reports-tabs">
-          <div className="tab-nav orderable-tabs">
+          <div ref={tabNavRef} className="tab-nav orderable-tabs">
             {viewReports.map((report) => {
               const isDragOver = dragOverReportTab === report.id;
               const dragOverClass = isDragOver
