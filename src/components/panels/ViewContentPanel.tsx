@@ -34,6 +34,22 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
   const widgetOrderMapRef = React.useRef<Record<string, number>>({});
   const tabNavRef = React.useRef<HTMLDivElement>(null);
   const widgetsGridRef = React.useRef<HTMLDivElement>(null);
+  
+  // Track current view ID to detect view changes
+  const currentViewIdRef = React.useRef<string | null>(null);
+  
+  // Reset order maps when view changes
+  React.useEffect(() => {
+    if (selectedView && selectedView.id !== currentViewIdRef.current) {
+      console.log("🔄 View changed - resetting order maps");
+      reportOrderMapRef.current = {};
+      widgetOrderMapRef.current = {};
+      currentViewIdRef.current = selectedView.id;
+      
+      // Reset active tab when view changes
+      setActiveReportTab(null);
+    }
+  }, [selectedView]);
 
   // NEW: Drag and drop state for reports (tabs)
   const [draggedReportTab, setDraggedReportTab] = useState<string | null>(null);
