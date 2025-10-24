@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, memo } from "react";
 import { View, Report, Widget } from "../../types";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 import PowerBIEmbedReport from "../powerbi/PowerBIEmbedReport";
@@ -17,7 +17,7 @@ interface ViewContentPanelProps {
   onReorderWidgets?: (widgetIds: string[]) => void; // NEW: Widget ordering
 }
 
-const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
+const ViewContentPanel: React.FC<ViewContentPanelProps> = memo(({
   type,
   selectedView,
   reports,
@@ -658,6 +658,8 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
       </svg>
     );
   }
-};
+});
+
+ViewContentPanel.displayName = 'ViewContentPanel';
 
 export default ViewContentPanel;

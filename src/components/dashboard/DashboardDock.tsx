@@ -452,25 +452,54 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     }
   };
 
-  const handleReorderReports = (newReportOrder: string[]) => {
-    if (!selectedView) return;
-    const updatedView = { ...selectedView, reportIds: newReportOrder };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
-    setSelectedView(updatedView);
-  };
+  // Ref to track if we're in a reorder operation
+  const isReorderingRef = useRef<boolean>(false);
 
-  const handleReorderWidgets = (newWidgetOrder: string[]) => {
+  const handleReorderReports = useCallback((newReportOrder: string[]) => {
     if (!selectedView) return;
-    const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
-    const updatedViews = views.map((v) =>
-      v.id === selectedView.id ? updatedView : v
-    );
-    handleUpdateViews(updatedViews);
+    
+    // OPTIMIZATION: Only update if order actually changed
+    if (JSON.stringify(selectedView.reportIds) === JSON.stringify(newReportOrder)) {
+      console.log("📌 Report order unchanged, skipping update");
+      return;
+    }
+    
+    // Mark that we're reordering (don't trigger layout reload)
+    isReorderingRef.current = true;
+    
+    const updatedView = { ...selectedView, reportIds: newReportOrder };
     setSelectedView(updatedView);
-  };
+    
+    // Reset flag after React has processed the update
+    setTimeout(() => {
+      isReorderingRef.current = false;
+    }, 100);
+    
+    console.log("🔄 Reordered reports (no layout reload)");
+  }, [selectedView]);
+
+  const handleReorderWidgets = useCallback((newWidgetOrder: string[]) => {
+    if (!selectedView) return;
+    
+    // OPTIMIZATION: Only update if order actually changed
+    if (JSON.stringify(selectedView.widgetIds) === JSON.stringify(newWidgetOrder)) {
+      console.log("📌 Widget order unchanged, skipping update");
+      return;
+    }
+    
+    // Mark that we're reordering (don't trigger layout reload)
+    isReorderingRef.current = true;
+    
+    const updatedView = { ...selectedView, widgetIds: newWidgetOrder };
+    setSelectedView(updatedView);
+    
+    // Reset flag after React has processed the update
+    setTimeout(() => {
+      isReorderingRef.current = false;
+    }, 100);
+    
+    console.log("🔄 Reordered widgets (no layout reload)");
+  }, [selectedView]);
 
   // Get accessible reports and widgets from API
   const getUserAccessibleReports = (): Report[] => {
@@ -538,7 +567,8 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
     );
   };
 
-  const createReportsContent = () => (
+  // Memoize content creation to prevent rc-dock remounts
+  const createReportsContent = useCallback(() => (
     <ViewContentPanel
       type="reports"
       selectedView={selectedView}
@@ -548,9 +578,9 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       onRemoveWidget={() => {}}
       onReorderReports={handleReorderReports}
     />
-  );
+  ), [selectedView, reports, handleRemoveReportFromView, handleReorderReports]);
 
-  const createWidgetsContent = () => (
+  const createWidgetsContent = useCallback(() => (
     <ViewContentPanel
       type="widgets"
       selectedView={selectedView}
@@ -560,7 +590,7 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       onRemoveWidget={handleRemoveWidgetFromView}
       onReorderWidgets={handleReorderWidgets}
     />
-  );
+  ), [selectedView, widgets, handleRemoveWidgetFromView, handleReorderWidgets]);
 
   const createWelcomeContent = () => (
     <WelcomeContent
@@ -1332,8 +1362,13 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
         }
       } else {
         // Only content changed, no structure update needed
-        console.log("📝 Only content changed, updating content in-place");
-        updateLayoutContent();
+        // SKIP if we're just reordering (let React handle the update)
+        if (isReorderingRef.current) {
+          console.log("🎯 Reorder in progress - skipping layout reload");
+        } else {
+          console.log("📝 Only content changed, updating content in-place");
+          updateLayoutContent();
+        }
       }
     }
   }, [
