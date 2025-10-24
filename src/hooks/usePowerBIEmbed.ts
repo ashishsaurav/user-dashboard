@@ -102,23 +102,16 @@ export function usePowerBIEmbed({
         if (cachedInstance && containerRef.current) {
           console.log("♻️ Reusing cached PowerBI instance:", embedKey);
           
-          // Check if the embed's iframe is still in the DOM
-          const currentIframe = containerRef.current.querySelector('iframe');
+          // Try to transfer the iframe to this container
+          const transferredInstance = powerBIEmbedRegistry.transfer(embedKey, containerRef.current);
           
-          if (!currentIframe) {
-            // Iframe was removed, need to re-embed it
-            console.log("⚠️ Iframe missing, re-embedding to new container");
-            
-            // Remove from cache and create fresh
-            powerBIEmbedRegistry.remove(embedKey);
-            // Let it fall through to create new instance
-          } else {
-            console.log("✅ Iframe exists, reusing instance");
-            instanceRef.current = cachedInstance;
+          if (transferredInstance) {
+            console.log("✅ Successfully transferred iframe, no reload needed!");
+            instanceRef.current = transferredInstance;
             
             // Update token silently
             try {
-              await cachedInstance.setAccessToken(embedInfo.embedToken);
+              await transferredInstance.setAccessToken(embedInfo.embedToken);
             } catch (e) {
               console.debug("Token update not needed or failed:", e);
             }
@@ -131,6 +124,11 @@ export function usePowerBIEmbed({
             }, timeUntilRefresh);
             
             return;
+          } else {
+            console.warn("⚠️ Transfer failed, will create new embed");
+            // Remove from cache and create fresh
+            powerBIEmbedRegistry.remove(embedKey);
+            // Let it fall through to create new instance
           }
         }
 
@@ -234,7 +232,10 @@ export function usePowerBIEmbed({
       isMounted = false;
       clearTimeout(timeoutId);
       console.log("🧹 Cleaning up PowerBI embed:", embedKey);
-      // Note: We don't remove from registry on unmount to allow reuse
+      
+      // CRITICAL: Detach iframe instead of destroying it
+      // This preserves the iframe for reuse when component remounts
+      powerBIEmbedRegistry.detach(embedKey);
     };
   }, [workspaceId, reportId, pageName, visualName, type]);
 

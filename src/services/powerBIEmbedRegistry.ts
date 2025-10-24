@@ -6,7 +6,8 @@
 
 interface EmbedInstance {
   embed: any; // powerbi.Report or powerbi.Visual
-  containerElement: HTMLElement;
+  containerElement: HTMLElement | null; // Can be null when detached
+  iframe: HTMLIFrameElement | null; // Store the actual iframe
   embedKey: string;
   type: "report" | "visual";
   lastUsed: number;
@@ -15,21 +16,101 @@ interface EmbedInstance {
 class PowerBIEmbedRegistry {
   private embeds = new Map<string, EmbedInstance>();
   private maxCacheSize = 20; // Limit number of cached embeds
+  private hiddenContainer: HTMLDivElement | null = null; // Container for detached iframes
+
+  constructor() {
+    // Create hidden container for detached iframes
+    this.hiddenContainer = document.createElement("div");
+    this.hiddenContainer.id = "powerbi-detached-container";
+    this.hiddenContainer.style.position = "absolute";
+    this.hiddenContainer.style.left = "-9999px";
+    this.hiddenContainer.style.top = "-9999px";
+    this.hiddenContainer.style.width = "1px";
+    this.hiddenContainer.style.height = "1px";
+    this.hiddenContainer.style.overflow = "hidden";
+    this.hiddenContainer.style.pointerEvents = "none";
+    document.body.appendChild(this.hiddenContainer);
+  }
 
   /**
    * Transfer embed instance to new container
+   * This physically moves the iframe to prevent reload
    */
   transfer(embedKey: string, newContainer: HTMLElement): any | null {
     const instance = this.embeds.get(embedKey);
     if (!instance) return null;
 
-    // Just update the container reference
-    // Since we're keeping all tabs rendered, no actual DOM transfer needed
-    instance.containerElement = newContainer;
-    instance.lastUsed = Date.now();
+    // Find the iframe in the cached instance
+    let iframe = instance.iframe;
     
-    console.log("✅ Updated container reference:", embedKey);
-    return instance.embed;
+    // If iframe not cached, try to find it in the old container
+    if (!iframe && instance.containerElement) {
+      iframe = instance.containerElement.querySelector("iframe") as HTMLIFrameElement;
+    }
+
+    // If still no iframe, check the hidden container
+    if (!iframe && this.hiddenContainer) {
+      const allIframes = this.hiddenContainer.querySelectorAll("iframe");
+      for (let i = 0; i < allIframes.length; i++) {
+        const potentialIframe = allIframes[i] as HTMLIFrameElement;
+        // Check if this iframe belongs to this embed by checking data attribute
+        if (potentialIframe.getAttribute("data-embed-key") === embedKey) {
+          iframe = potentialIframe;
+          break;
+        }
+      }
+    }
+
+    if (iframe) {
+      // Mark iframe with embed key for future identification
+      iframe.setAttribute("data-embed-key", embedKey);
+      
+      // Clear the new container first
+      newContainer.innerHTML = "";
+      
+      // Move iframe to new container (this doesn't cause reload!)
+      newContainer.appendChild(iframe);
+      
+      // Update instance references
+      instance.containerElement = newContainer;
+      instance.iframe = iframe;
+      instance.lastUsed = Date.now();
+      
+      console.log("✅ Transferred iframe to new container:", embedKey);
+      return instance.embed;
+    } else {
+      console.warn("⚠️ No iframe found for transfer:", embedKey);
+      return instance.embed;
+    }
+  }
+
+  /**
+   * Detach iframe from DOM but keep it in memory
+   * Called when component unmounts
+   */
+  detach(embedKey: string): void {
+    const instance = this.embeds.get(embedKey);
+    if (!instance) return;
+
+    // Find the iframe
+    let iframe = instance.iframe;
+    if (!iframe && instance.containerElement) {
+      iframe = instance.containerElement.querySelector("iframe") as HTMLIFrameElement;
+    }
+
+    if (iframe && this.hiddenContainer) {
+      // Mark iframe with embed key for future identification
+      iframe.setAttribute("data-embed-key", embedKey);
+      
+      // Move iframe to hidden container to preserve it
+      this.hiddenContainer.appendChild(iframe);
+      
+      // Update instance
+      instance.iframe = iframe;
+      instance.containerElement = null;
+      
+      console.log("💾 Detached iframe to hidden container:", embedKey);
+    }
   }
 
   /**
@@ -67,6 +148,14 @@ class PowerBIEmbedRegistry {
   }
 
   /**
+   * Get the iframe element for an embed
+   */
+  getIframe(embedKey: string): HTMLIFrameElement | null {
+    const instance = this.embeds.get(embedKey);
+    return instance?.iframe || null;
+  }
+
+  /**
    * Store embed instance
    */
   set(
@@ -80,9 +169,16 @@ class PowerBIEmbedRegistry {
       this.cleanupOldest();
     }
 
+    // Find the iframe that was just created
+    const iframe = containerElement.querySelector("iframe") as HTMLIFrameElement;
+    if (iframe) {
+      iframe.setAttribute("data-embed-key", embedKey);
+    }
+
     this.embeds.set(embedKey, {
       embed,
       containerElement,
+      iframe,
       embedKey,
       type,
       lastUsed: Date.now(),
@@ -107,8 +203,10 @@ class PowerBIEmbedRegistry {
   remove(embedKey: string): void {
     const instance = this.embeds.get(embedKey);
     if (instance) {
-      // Don't reset - just remove from registry
-      // The embed can still be reused if the DOM element exists
+      // Before removing, detach the iframe to preserve it
+      this.detach(embedKey);
+      
+      // Now remove from registry
       this.embeds.delete(embedKey);
       console.log("🗑️  Removed from registry:", embedKey);
     }
@@ -124,9 +222,15 @@ class PowerBIEmbedRegistry {
     // Remove oldest 20%
     const toRemove = Math.ceil(entries.length * 0.2);
     for (let i = 0; i < toRemove; i++) {
-      const [key] = entries[i];
+      const [key, instance] = entries[i];
+      
+      // Destroy the iframe when truly removing from cache
+      if (instance.iframe) {
+        instance.iframe.remove();
+      }
+      
       this.embeds.delete(key);
-      console.log("🧹 Auto-cleanup:", key);
+      console.log("🧹 Auto-cleanup and destroyed iframe:", key);
     }
   }
 
@@ -134,8 +238,21 @@ class PowerBIEmbedRegistry {
    * Clear all embeds
    */
   clear(): void {
+    // Destroy all iframes before clearing
+    this.embeds.forEach((instance, key) => {
+      if (instance.iframe) {
+        instance.iframe.remove();
+      }
+    });
+    
     this.embeds.clear();
-    console.log("🧹 Cleared all PowerBI embeds from registry");
+    
+    // Clear hidden container
+    if (this.hiddenContainer) {
+      this.hiddenContainer.innerHTML = "";
+    }
+    
+    console.log("🧹 Cleared all PowerBI embeds from registry and destroyed iframes");
   }
 
   /**
