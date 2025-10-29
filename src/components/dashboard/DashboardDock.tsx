@@ -34,10 +34,22 @@ import {
 } from "../../services/layoutPersistenceService";
 import "./styles/DashboardDock.css";
 import "./styles/GmailDockIntegration.css";
+import { useStableArray } from "../../hooks/useStableArray";
+import { useIncrementalLayout } from "../../hooks/useIncrementalLayout";
 
 interface DashboardDockProps {
   user: User;
   onLogout: () => void;
+}
+
+interface LayoutUpdateOptions {
+  addReports?: boolean;
+  removeReports?: boolean;
+  addWidgets?: boolean;
+  removeWidgets?: boolean;
+  updateNavigation?: boolean;
+  updateReportsContent?: boolean;
+  updateWidgetsContent?: boolean;
 }
 
 const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
@@ -122,6 +134,316 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
       isNavigationCollapsed: false,
     }
   );
+
+  // ========================================================================
+  // STABLE REFERENCES - Prevent content recreation on array replacements
+  // ========================================================================
+
+  const stableReports = useStableArray(reports);
+  const stableWidgets = useStableArray(widgets);
+  const stableViews = useStableArray(views);
+  const stableViewGroups = useStableArray(viewGroups);
+
+  // ========================================================================
+  // CONTENT CREATORS - Now use stable references
+  // ========================================================================
+
+  // Store content in refs to survive layout changes
+  const navigationContentRef = useRef<React.ReactNode>(null);
+  const reportsContentRef = useRef<React.ReactNode>(null);
+  const widgetsContentRef = useRef<React.ReactNode>(null);
+  const welcomeContentRef = useRef<React.ReactNode>(null);
+
+  // Track what content needs updates
+  const contentNeedsUpdateRef = useRef({
+    navigation: true,
+    reports: true,
+    widgets: true,
+    welcome: true,
+  });
+
+  // Update content only when actually needed
+  useEffect(() => {
+    console.log("📝 Checking if content needs update...");
+
+    // Navigation needs update if: views/groups/settings changed
+    if (contentNeedsUpdateRef.current.navigation) {
+      console.log("  ↻ Updating navigation content");
+      navigationContentRef.current = isDockCollapsed ? (
+        <CollapsedNavigationPanel
+          user={user}
+          views={stableViews}
+          viewGroups={stableViewGroups}
+          userNavSettings={navSettings}
+          onViewSelect={handleViewSelect}
+          selectedView={selectedView}
+          onUpdateViews={handleUpdateViews}
+          onUpdateViewGroups={handleUpdateViewGroups}
+          onUpdateNavSettings={handleUpdateNavSettings}
+          reports={stableReports}
+          widgets={stableWidgets}
+          popupPosition={navPanelPosition}
+          onRefreshData={async () => {
+            await Promise.all([
+              refetchViews(),
+              refetchViewGroups(),
+              refetchNavSettings(),
+            ]);
+          }}
+        />
+      ) : (
+        <NavigationPanel
+          user={user}
+          views={stableViews}
+          viewGroups={stableViewGroups}
+          userNavSettings={navSettings}
+          reports={stableReports}
+          widgets={stableWidgets}
+          onUpdateViews={handleUpdateViews}
+          onUpdateViewGroups={handleUpdateViewGroups}
+          onUpdateNavSettings={handleUpdateNavSettings}
+          onViewSelect={handleViewSelect}
+          selectedView={selectedView}
+          onRefreshData={async () => {
+            await Promise.all([
+              refetchViews(),
+              refetchViewGroups(),
+              refetchNavSettings(),
+            ]);
+          }}
+        />
+      );
+      contentNeedsUpdateRef.current.navigation = false;
+    }
+
+    // Reports needs update if: selectedView or reports array changed
+    if (contentNeedsUpdateRef.current.reports) {
+      console.log("  ↻ Updating reports content");
+      reportsContentRef.current = (
+        <ViewContentPanel
+          type="reports"
+          selectedView={selectedView}
+          reports={stableReports}
+          widgets={[]}
+          onRemoveReport={handleRemoveReportFromView}
+          onRemoveWidget={() => {}}
+          onReorderReports={handleReorderReports}
+        />
+      );
+      contentNeedsUpdateRef.current.reports = false;
+    }
+
+    // Widgets needs update if: selectedView or widgets array changed
+    if (contentNeedsUpdateRef.current.widgets) {
+      console.log("  ↻ Updating widgets content");
+      widgetsContentRef.current = (
+        <ViewContentPanel
+          type="widgets"
+          selectedView={selectedView}
+          reports={[]}
+          widgets={stableWidgets}
+          onRemoveReport={() => {}}
+          onRemoveWidget={handleRemoveWidgetFromView}
+          onReorderWidgets={handleReorderWidgets}
+        />
+      );
+      contentNeedsUpdateRef.current.widgets = false;
+    }
+
+    // Welcome needs update if: selectedView changed
+    if (contentNeedsUpdateRef.current.welcome) {
+      console.log("  ↻ Updating welcome content");
+      welcomeContentRef.current = (
+        <WelcomeContent
+          selectedView={selectedView}
+          onReopenReports={handleReopenReports}
+          onReopenWidgets={handleReopenWidgets}
+          onAddReport={() => setShowAddReportModal(true)}
+          onAddWidget={() => setShowAddWidgetModal(true)}
+          hasReports={
+            selectedView?.reportIds && selectedView.reportIds.length > 0
+          }
+          hasWidgets={
+            selectedView?.widgetIds && selectedView.widgetIds.length > 0
+          }
+        />
+      );
+      contentNeedsUpdateRef.current.welcome = false;
+    }
+  }, [
+    stableViews,
+    stableViewGroups,
+    stableReports,
+    stableWidgets,
+    selectedView,
+    navSettings,
+    isDockCollapsed,
+    navigationUpdateTrigger,
+  ]);
+
+  // Mark content for update when dependencies change
+  useEffect(() => {
+    contentNeedsUpdateRef.current.navigation = true;
+  }, [
+    stableViews,
+    stableViewGroups,
+    navSettings,
+    isDockCollapsed,
+    navigationUpdateTrigger,
+  ]);
+
+  useEffect(() => {
+    contentNeedsUpdateRef.current.reports = true;
+  }, [selectedView, stableReports]);
+
+  useEffect(() => {
+    contentNeedsUpdateRef.current.widgets = true;
+  }, [selectedView, stableWidgets]);
+
+  useEffect(() => {
+    contentNeedsUpdateRef.current.welcome = true;
+  }, [selectedView]);
+
+  // ========================================================================
+  // INCREMENTAL LAYOUT HOOK
+  // ========================================================================
+
+  const { updateLayoutIncrementally } = useIncrementalLayout();
+
+  // ========================================================================
+  // SMART LAYOUT MANAGEMENT - Uses incremental updates
+  // ========================================================================
+
+  // Track previous state to detect changes
+  const previousStateRef = useRef({
+    selectedView: selectedView?.id,
+    reportsVisible,
+    widgetsVisible,
+    isDockCollapsed,
+    layoutMode,
+  });
+
+  useEffect(() => {
+    if (!dockLayoutRef.current) return;
+
+    const currentLayout = dockLayoutRef.current.getLayout();
+    if (!currentLayout) return;
+
+    const prevState = previousStateRef.current;
+    const currentState = {
+      selectedView: selectedView?.id,
+      reportsVisible,
+      widgetsVisible,
+      isDockCollapsed,
+      layoutMode,
+    };
+
+    // Detect what changed
+    const changes = {
+      viewChanged: prevState.selectedView !== currentState.selectedView,
+      reportsVisibilityChanged:
+        prevState.reportsVisible !== currentState.reportsVisible,
+      widgetsVisibilityChanged:
+        prevState.widgetsVisible !== currentState.widgetsVisible,
+      collapseChanged:
+        prevState.isDockCollapsed !== currentState.isDockCollapsed,
+      layoutModeChanged: prevState.layoutMode !== currentState.layoutMode,
+    };
+
+    console.log("🔍 Layout state changes:", changes);
+
+    // Determine what layout operations are needed
+    const hasReports =
+      selectedView?.reportIds && selectedView.reportIds.length > 0;
+    const hasWidgets =
+      selectedView?.widgetIds && selectedView.widgetIds.length > 0;
+
+    // If layout mode changed, we need full rebuild (rare operation)
+    if (changes.layoutModeChanged) {
+      console.log("🔄 Layout mode changed - full rebuild required");
+      const newLayout = generateDynamicLayout();
+      dockLayoutRef.current.loadLayout(newLayout);
+      previousStateRef.current = currentState;
+      return;
+    }
+
+    // Otherwise, use incremental updates
+    const needsUpdate =
+      changes.viewChanged ||
+      changes.reportsVisibilityChanged ||
+      changes.widgetsVisibilityChanged ||
+      changes.collapseChanged;
+
+    if (needsUpdate) {
+      console.log("🔧 Applying incremental layout update");
+
+      const updateOptions: LayoutUpdateOptions = {
+        updateNavigation: changes.collapseChanged || changes.viewChanged,
+        addReports: reportsVisible && hasReports && !prevState.reportsVisible,
+        removeReports: !reportsVisible && prevState.reportsVisible,
+        updateReportsContent:
+          reportsVisible && hasReports && changes.viewChanged,
+        addWidgets: widgetsVisible && hasWidgets && !prevState.widgetsVisible,
+        removeWidgets: !widgetsVisible && prevState.widgetsVisible,
+        updateWidgetsContent:
+          widgetsVisible && hasWidgets && changes.viewChanged,
+      };
+
+      const updatedLayout = updateLayoutIncrementally(
+        currentLayout,
+        updateOptions,
+        {
+          navigation: navigationContentRef.current,
+          reports: reportsContentRef.current,
+          widgets: widgetsContentRef.current,
+          welcome: welcomeContentRef.current,
+        },
+        {
+          onToggleCollapse: handleToggleCollapse,
+          onNavigationManage: () => setShowNavigationModal(true),
+          onSystemSettings: () => setShowManageModal(true),
+          onReopenReports: handleReopenReports,
+          onReopenWidgets: handleReopenWidgets,
+          onAddReport: () => setShowAddReportModal(true),
+          onAddWidget: () => setShowAddWidgetModal(true),
+          onCloseReports: handleCloseReports,
+          onCloseWidgets: handleCloseWidgets,
+        },
+        {
+          isDockCollapsed,
+          navPanelOrientation,
+          isAdmin: user.role === "admin",
+          selectedView,
+          reportsVisible,
+          widgetsVisible,
+        }
+      );
+
+      // Apply updated layout (preserves existing panels)
+      dockLayoutRef.current.loadLayout(updatedLayout);
+
+      // Apply collapsed state after layout update
+      setTimeout(() => {
+        const navigationPanel = findNavigationPanel();
+        if (navigationPanel) {
+          if (isDockCollapsed) {
+            navigationPanel.setAttribute("data-collapsed", "true");
+          } else {
+            navigationPanel.removeAttribute("data-collapsed");
+          }
+        }
+      }, 0);
+    }
+
+    previousStateRef.current = currentState;
+  }, [
+    selectedView,
+    reportsVisible,
+    widgetsVisible,
+    isDockCollapsed,
+    layoutMode,
+    navigationUpdateTrigger,
+  ]);
 
   const { showSuccess, showError } = useNotification();
 
@@ -455,35 +777,49 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   // Ref to track if we're in a reorder operation
   const isReorderingRef = useRef<boolean>(false);
 
-  const handleReorderReports = useCallback(async (newReportOrder: string[]) => {
-    if (!selectedView) return;
-    
-    console.log("💾 Saving report order to backend:", newReportOrder);
-    
-    try {
-      // Call dedicated reorder endpoint - DON'T update local state to avoid reload
-      await viewsService.reorderReports(selectedView.id, user.name, newReportOrder);
-      
-      console.log("✅ Report order saved successfully");
-    } catch (error) {
-      console.error("❌ Failed to save report order:", error);
-    }
-  }, [selectedView, user.name]);
+  const handleReorderReports = useCallback(
+    async (newReportOrder: string[]) => {
+      if (!selectedView) return;
 
-  const handleReorderWidgets = useCallback(async (newWidgetOrder: string[]) => {
-    if (!selectedView) return;
-    
-    console.log("💾 Saving widget order to backend:", newWidgetOrder);
-    
-    try {
-      // Call dedicated reorder endpoint - DON'T update local state to avoid reload
-      await viewsService.reorderWidgets(selectedView.id, user.name, newWidgetOrder);
-      
-      console.log("✅ Widget order saved successfully");
-    } catch (error) {
-      console.error("❌ Failed to save widget order:", error);
-    }
-  }, [selectedView, user.name]);
+      console.log("💾 Saving report order to backend:", newReportOrder);
+
+      try {
+        // Call dedicated reorder endpoint - DON'T update local state to avoid reload
+        await viewsService.reorderReports(
+          selectedView.id,
+          user.name,
+          newReportOrder
+        );
+
+        console.log("✅ Report order saved successfully");
+      } catch (error) {
+        console.error("❌ Failed to save report order:", error);
+      }
+    },
+    [selectedView, user.name]
+  );
+
+  const handleReorderWidgets = useCallback(
+    async (newWidgetOrder: string[]) => {
+      if (!selectedView) return;
+
+      console.log("💾 Saving widget order to backend:", newWidgetOrder);
+
+      try {
+        // Call dedicated reorder endpoint - DON'T update local state to avoid reload
+        await viewsService.reorderWidgets(
+          selectedView.id,
+          user.name,
+          newWidgetOrder
+        );
+
+        console.log("✅ Widget order saved successfully");
+      } catch (error) {
+        console.error("❌ Failed to save widget order:", error);
+      }
+    },
+    [selectedView, user.name]
+  );
 
   // Get accessible reports and widgets from API
   const getUserAccessibleReports = (): Report[] => {
@@ -552,29 +888,35 @@ const DashboardDock: React.FC<DashboardDockProps> = ({ user, onLogout }) => {
   };
 
   // Memoize content creation to prevent rc-dock remounts
-  const createReportsContent = useCallback(() => (
-    <ViewContentPanel
-      type="reports"
-      selectedView={selectedView}
-      reports={getUserAccessibleReports()}
-      widgets={[]}
-      onRemoveReport={handleRemoveReportFromView}
-      onRemoveWidget={() => {}}
-      onReorderReports={handleReorderReports}
-    />
-  ), [selectedView, reports, handleRemoveReportFromView, handleReorderReports]);
+  const createReportsContent = useCallback(
+    () => (
+      <ViewContentPanel
+        type="reports"
+        selectedView={selectedView}
+        reports={getUserAccessibleReports()}
+        widgets={[]}
+        onRemoveReport={handleRemoveReportFromView}
+        onRemoveWidget={() => {}}
+        onReorderReports={handleReorderReports}
+      />
+    ),
+    [selectedView, reports, handleRemoveReportFromView, handleReorderReports]
+  );
 
-  const createWidgetsContent = useCallback(() => (
-    <ViewContentPanel
-      type="widgets"
-      selectedView={selectedView}
-      reports={[]}
-      widgets={getUserAccessibleWidgets()}
-      onRemoveReport={() => {}}
-      onRemoveWidget={handleRemoveWidgetFromView}
-      onReorderWidgets={handleReorderWidgets}
-    />
-  ), [selectedView, widgets, handleRemoveWidgetFromView, handleReorderWidgets]);
+  const createWidgetsContent = useCallback(
+    () => (
+      <ViewContentPanel
+        type="widgets"
+        selectedView={selectedView}
+        reports={[]}
+        widgets={getUserAccessibleWidgets()}
+        onRemoveReport={() => {}}
+        onRemoveWidget={handleRemoveWidgetFromView}
+        onReorderWidgets={handleReorderWidgets}
+      />
+    ),
+    [selectedView, widgets, handleRemoveWidgetFromView, handleReorderWidgets]
+  );
 
   const createWelcomeContent = () => (
     <WelcomeContent

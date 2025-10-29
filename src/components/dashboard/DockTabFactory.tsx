@@ -237,6 +237,8 @@ export class DockTabFactory {
       closable: false,
       dropMode: ["left", "right", "top", "bottom", "middle"],
       panelLock: {},
+      cached: true, // ← ADD THIS
+      cacheType: "always", // ← ADD THIS
     };
   }
 
@@ -277,6 +279,8 @@ export class DockTabFactory {
       closable: false,
       dropMode: ["left", "right", "top", "bottom", "middle"],
       panelLock: {},
+      cached: true, // ← ADD THIS
+      cacheType: "always", // ← ADD THIS
     };
   }
 
@@ -317,6 +321,8 @@ export class DockTabFactory {
       closable: false,
       dropMode: ["left", "right", "top", "bottom", "middle"],
       panelLock: {},
+      cached: true, // ← ADD THIS
+      cacheType: "always", // ← ADD THIS
     };
   }
 
@@ -339,9 +345,10 @@ export class DockTabFactory {
       ),
       content: content,
       closable: false,
-      cached: false,
       dropMode: ["left", "right", "top", "bottom", "middle"],
       panelLock: {},
+      cached: true, // ← ADD THIS
+      cacheType: "always", // ← ADD THIS
       // Pass options as data attribute for WelcomeContent to read
       ...(viewName && { viewName }),
       ...(options && { welcomeOptions: options }),
