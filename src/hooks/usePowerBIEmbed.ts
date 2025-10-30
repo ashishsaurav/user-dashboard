@@ -75,34 +75,20 @@ export function usePowerBIEmbed({
     
     console.log("🟢 usePowerBIEmbed EFFECT RUNNING for:", embedKey);
     console.log("  Container ref exists:", !!containerRef.current);
-    console.log("  Instance already exists:", !!instanceRef.current);
 
     const setupTokenRefreshTimer = async () => {
       try {
-        // CRITICAL OPTIMIZATION: Check if iframe is already in container
-        // If it is, skip the entire setup - this prevents re-embeds during layout changes
-        if (containerRef.current && instanceRef.current) {
-          const existingIframe = containerRef.current.querySelector('iframe');
-          const expectedKey = existingIframe?.getAttribute('data-embed-key');
-
-          if (existingIframe && expectedKey === embedKey) {
-            console.log("⚡ FAST PATH: iframe already in container, skipping setup!", embedKey);
-            setLoading(false);
-            return;
-          }
-        }
-
         // Check cache first - before showing loading
         const cachedInstance = powerBIEmbedRegistry.get(embedKey);
         const hasCache = !!cachedInstance;
-
+        
         console.log(`🔍 Cache check for ${embedKey}:`, hasCache ? 'FOUND' : 'NOT FOUND');
-
+        
         // Only show loading if we don't have a cached instance
         if (!hasCache) {
           setLoading(true);
         }
-
+        
         const embedInfo = await powerBIService.getEmbedToken(
           workspaceId,
           reportId
@@ -116,10 +102,10 @@ export function usePowerBIEmbed({
         // Try to reuse existing embed from registry
         if (cachedInstance && containerRef.current) {
           console.log("♻️ Reusing cached PowerBI instance:", embedKey);
-
+          
           // Check if iframe already exists in this container
           const existingIframe = containerRef.current.querySelector('iframe');
-
+          
           if (existingIframe) {
             console.log("✅ iframe already in container, no transfer needed!");
             instanceRef.current = cachedInstance;
