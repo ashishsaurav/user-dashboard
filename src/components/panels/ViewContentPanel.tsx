@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { View, Report, Widget } from "../../types";
 import DeleteConfirmModal from "../modals/DeleteConfirmModal";
 import PowerBIEmbedReport from "../powerbi/PowerBIEmbedReport";
@@ -464,51 +464,25 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               }
               
               const isActive = activeReportTab === report.id;
-              const hasPowerBIConfig = workspaceId && reportId;
-              
+              const hasPowerBIConfig = !!(workspaceId && reportId);
+
               // Generate stable key based on PowerBI config to prevent re-renders on reorder
               const stableKey = workspaceId && reportId && pageName
                 ? `report-${workspaceId}-${reportId}-${pageName}`
                 : workspaceId && reportId
                 ? `report-${workspaceId}-${reportId}`
                 : `report-${report.id}`;
-              
+
               return (
-                <div 
+                <PowerBIReportWrapper
                   key={stableKey}
-                  className="tab-content"
-                  style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    opacity: isActive ? 1 : 0,
-                    pointerEvents: isActive ? 'auto' : 'none',
-                    zIndex: isActive ? 1 : 0,
-                    transition: 'opacity 0.15s ease'
-                  }}
-                >
-                  {hasPowerBIConfig ? (
-                    <div className="powerbi-report-container">
-                      <PowerBIEmbedReport
-                        workspaceId={workspaceId!}
-                        reportId={reportId!}
-                        reportName={report.name}
-                        pageName={pageName} // Include specific page from URL
-                      />
-                    </div>
-                  ) : (
-                    <div className="report-no-config">
-                      <div className="no-config-message">
-                        <ReportsIcon />
-                        <h3>Report Not Configured</h3>
-                        <p>This report doesn't have PowerBI configuration yet.</p>
-                        <small>Provide a valid PowerBI URL or WorkspaceId/ReportId.</small>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  isActive={isActive}
+                  hasPowerBIConfig={hasPowerBIConfig}
+                  workspaceId={workspaceId}
+                  reportId={reportId}
+                  reportName={report.name}
+                  pageName={pageName}
+                />
               );
             })}
           </div>
@@ -544,13 +518,13 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
         {viewWidgets.map((widget) => {
           const isDragOver = dragOverWidget === widget.id;
           const isDragging = draggedWidget === widget.id;
-          
+
           // Try to get PowerBI config from URL or direct fields
           let workspaceId = widget.workspaceId;
           let reportId = widget.reportId;
           let pageName = widget.pageName;
           let visualName = widget.visualName;
-          
+
           // If not in fields, try parsing from URL
           if ((!workspaceId || !reportId || !pageName || !visualName) && widget.url) {
             const config = parsePowerBIVisualUrl(widget.url);
@@ -561,66 +535,34 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
               visualName = visualName || config.visualName;
             }
           }
-          
-          const hasPowerBIConfig = workspaceId && reportId && pageName && visualName;
+
+          const hasPowerBIConfig = !!(workspaceId && reportId && pageName && visualName);
 
           // Generate stable key based on PowerBI config to prevent re-renders on reorder
           const widgetStableKey = workspaceId && reportId && pageName && visualName
             ? `widget-${workspaceId}-${reportId}-${pageName}-${visualName}`
             : `widget-${widget.id}`;
-          
+
           return (
-            <div
+            <PowerBIWidgetWrapper
               key={widgetStableKey}
-              data-widget-id={widget.id}
-              className={`widget-card orderable-widget ${
-                isDragging ? "dragging" : ""
-              } ${isDragOver ? "drag-over" : ""}`}
-              draggable
+              widgetId={widget.id}
+              widgetName={widget.name}
+              isDragging={isDragging}
+              isDragOver={isDragOver}
+              hasPowerBIConfig={hasPowerBIConfig}
+              workspaceId={workspaceId}
+              reportId={reportId}
+              pageName={pageName}
+              visualName={visualName}
               onDragStart={(e) => handleWidgetDragStart(e, widget.id)}
               onDragEnd={handleWidgetDragEnd}
               onDragOver={handleWidgetDragOver}
               onDragEnter={(e) => handleWidgetDragEnter(e, widget.id)}
               onDragLeave={handleWidgetDragLeave}
               onDrop={(e) => handleWidgetDrop(e, widget.id)}
-            >
-              <div className="widget-header">
-                <div className="widget-drag-handle">
-                  <DragIcon />
-                </div>
-                <div className="widget-title">
-                  <WidgetsIcon />
-                  <span>{widget.name}</span>
-                </div>
-                <button
-                  className="tab-action-btn close-btn"
-                  onClick={() =>
-                    handleRemoveWidgetClick(widget.id, widget.name)
-                  }
-                  title="Remove from view"
-                >
-                  <CloseIcon />
-                </button>
-              </div>
-              <div className="widget-content">
-                {hasPowerBIConfig ? (
-                  <PowerBIEmbedVisual
-                    workspaceId={workspaceId!}
-                    reportId={reportId!}
-                    pageName={pageName!}
-                    visualName={visualName!}
-                    widgetName={widget.name}
-                  />
-                ) : (
-                  <div className="widget-no-config">
-                    <WidgetsIcon />
-                    <h4>Widget Not Configured</h4>
-                    <p>PowerBI configuration required</p>
-                    <small>Provide a valid PowerBI visual URL</small>
-                  </div>
-                )}
-              </div>
-            </div>
+              onRemove={() => handleRemoveWidgetClick(widget.id, widget.name)}
+            />
           );
         })}
       </div>
@@ -741,5 +683,227 @@ const ViewContentPanel: React.FC<ViewContentPanelProps> = ({
     );
   }
 };
+
+const PowerBIReportWrapper = React.memo<{
+  isActive: boolean;
+  hasPowerBIConfig: boolean;
+  workspaceId: string | undefined;
+  reportId: string | undefined;
+  reportName: string;
+  pageName: string | undefined;
+}>(({ isActive, hasPowerBIConfig, workspaceId, reportId, reportName, pageName }) => {
+  console.log(`🔄 PowerBIReportWrapper render: ${reportName}, active: ${isActive}`);
+
+  return (
+    <div
+      className="tab-content"
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        visibility: isActive ? 'visible' : 'hidden',
+        pointerEvents: isActive ? 'auto' : 'none',
+        zIndex: isActive ? 1 : 0
+      }}
+    >
+      {hasPowerBIConfig ? (
+        <div className="powerbi-report-container" style={{ width: '100%', height: '100%' }}>
+          <PowerBIEmbedReport
+            workspaceId={workspaceId!}
+            reportId={reportId!}
+            reportName={reportName}
+            pageName={pageName}
+          />
+        </div>
+      ) : (
+        <div className="report-no-config">
+          <div className="no-config-message">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+              <polyline points="14,2 14,8 20,8" />
+              <line x1="16" y1="13" x2="8" y2="13" />
+              <line x1="16" y1="17" x2="8" y2="17" />
+              <polyline points="10,9 9,9 8,9" />
+            </svg>
+            <h3>Report Not Configured</h3>
+            <p>This report doesn't have PowerBI configuration yet.</p>
+            <small>Provide a valid PowerBI URL or WorkspaceId/ReportId.</small>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}, (prev, next) => {
+  return (
+    prev.isActive === next.isActive &&
+    prev.hasPowerBIConfig === next.hasPowerBIConfig &&
+    prev.workspaceId === next.workspaceId &&
+    prev.reportId === next.reportId &&
+    prev.reportName === next.reportName &&
+    prev.pageName === next.pageName
+  );
+});
+
+PowerBIReportWrapper.displayName = 'PowerBIReportWrapper';
+
+const PowerBIWidgetWrapper = React.memo<{
+  widgetId: string;
+  widgetName: string;
+  isDragging: boolean;
+  isDragOver: boolean;
+  hasPowerBIConfig: boolean;
+  workspaceId: string | undefined;
+  reportId: string | undefined;
+  pageName: string | undefined;
+  visualName: string | undefined;
+  onDragStart: (e: React.DragEvent) => void;
+  onDragEnd: (e: React.DragEvent) => void;
+  onDragOver: (e: React.DragEvent) => void;
+  onDragEnter: (e: React.DragEvent) => void;
+  onDragLeave: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onRemove: () => void;
+}>(({
+  widgetId,
+  widgetName,
+  isDragging,
+  isDragOver,
+  hasPowerBIConfig,
+  workspaceId,
+  reportId,
+  pageName,
+  visualName,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
+  onRemove
+}) => {
+  console.log(`🔄 PowerBIWidgetWrapper render: ${widgetName}, dragging: ${isDragging}`);
+
+  return (
+    <div
+      data-widget-id={widgetId}
+      className={`widget-card orderable-widget ${
+        isDragging ? "dragging" : ""
+      } ${isDragOver ? "drag-over" : ""}`}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDragEnter={onDragEnter}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      <div className="widget-header">
+        <div className="widget-drag-handle">
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="9" cy="12" r="1" />
+            <circle cx="9" cy="5" r="1" />
+            <circle cx="9" cy="19" r="1" />
+            <circle cx="15" cy="12" r="1" />
+            <circle cx="15" cy="5" r="1" />
+            <circle cx="15" cy="19" r="1" />
+          </svg>
+        </div>
+        <div className="widget-title">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <rect x="3" y="3" width="7" height="7" />
+            <rect x="14" y="3" width="7" height="7" />
+            <rect x="14" y="14" width="7" height="7" />
+            <rect x="3" y="14" width="7" height="7" />
+          </svg>
+          <span>{widgetName}</span>
+        </div>
+        <button
+          className="tab-action-btn close-btn"
+          onClick={onRemove}
+          title="Remove from view"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+      </div>
+      <div className="widget-content">
+        {hasPowerBIConfig ? (
+          <PowerBIEmbedVisual
+            workspaceId={workspaceId!}
+            reportId={reportId!}
+            pageName={pageName!}
+            visualName={visualName!}
+            widgetName={widgetName}
+          />
+        ) : (
+          <div className="widget-no-config">
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            <h4>Widget Not Configured</h4>
+            <p>PowerBI configuration required</p>
+            <small>Provide a valid PowerBI visual URL</small>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}, (prev, next) => {
+  return (
+    prev.widgetId === next.widgetId &&
+    prev.widgetName === next.widgetName &&
+    prev.isDragging === next.isDragging &&
+    prev.isDragOver === next.isDragOver &&
+    prev.hasPowerBIConfig === next.hasPowerBIConfig &&
+    prev.workspaceId === next.workspaceId &&
+    prev.reportId === next.reportId &&
+    prev.pageName === next.pageName &&
+    prev.visualName === next.visualName
+  );
+});
+
+PowerBIWidgetWrapper.displayName = 'PowerBIWidgetWrapper';
 
 export default ViewContentPanel;
